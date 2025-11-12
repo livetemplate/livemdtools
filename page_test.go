@@ -1,0 +1,286 @@
+package livepage
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestParseFile(t *testing.T) {
+	// Create temp directory
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name      string
+		filename  string
+		content   string
+		wantTitle string
+		wantType  string
+		checkPage func(*testing.T, *Page)
+		wantError bool
+	}{
+		{
+			name:     "complete tutorial",
+			filename: "counter.md",
+			content: `---
+title: "Counter Tutorial"
+type: tutorial
+persist: localstorage
+---
+
+# Counter App
+
+## Server State
+
+` + "```go server readonly id=\"counter-state\"" + `
+type CounterState struct {
+    Counter int
+}
+` + "```" + `
+
+## Interactive Demo
+
+` + "```lvt interactive state=\"counter-state\"" + `
+<button lvt-click="increment">{{.Counter}}</button>
+` + "```" + `
+
+## Try It
+
+` + "```go wasm editable" + `
+package main
+func main() {}
+` + "```",
+			wantTitle: "Counter Tutorial",
+			wantType:  "tutorial",
+			checkPage: func(t *testing.T, p *Page) {
+				// Check blocks
+				if len(p.ServerBlocks) != 1 {
+					t.Errorf("ServerBlocks count = %d, want 1", len(p.ServerBlocks))
+				}
+				if len(p.InteractiveBlocks) != 1 {
+					t.Errorf("InteractiveBlocks count = %d, want 1", len(p.InteractiveBlocks))
+				}
+				if len(p.WasmBlocks) != 1 {
+					t.Errorf("WasmBlocks count = %d, want 1", len(p.WasmBlocks))
+				}
+
+				// Check server block
+				if sb, ok := p.ServerBlocks["counter-state"]; ok {
+					if sb.Language != "go" {
+						t.Errorf("ServerBlock language = %s, want go", sb.Language)
+					}
+					if sb.Content == "" {
+						t.Error("ServerBlock content is empty")
+					}
+				} else {
+					t.Error("ServerBlock 'counter-state' not found")
+				}
+
+				// Check interactive block references state
+				for _, ib := range p.InteractiveBlocks {
+					if ib.StateRef != "counter-state" {
+						t.Errorf("InteractiveBlock StateRef = %s, want counter-state", ib.StateRef)
+					}
+				}
+
+				// Check static HTML
+				if p.StaticHTML == "" {
+					t.Error("StaticHTML is empty")
+				}
+			},
+		},
+		{
+			name:     "minimal page",
+			filename: "simple.md",
+			content: `---
+title: "Simple Page"
+---
+
+# Simple
+
+Just text, no code blocks.`,
+			wantTitle: "Simple Page",
+			wantType:  "tutorial",
+			checkPage: func(t *testing.T, p *Page) {
+				if len(p.ServerBlocks) != 0 {
+					t.Error("Expected no server blocks")
+				}
+				if len(p.InteractiveBlocks) != 0 {
+					t.Error("Expected no interactive blocks")
+				}
+				if len(p.WasmBlocks) != 0 {
+					t.Error("Expected no wasm blocks")
+				}
+			},
+		},
+		{
+			name:     "interactive without state reference",
+			filename: "broken.md",
+			content: `---
+title: "Broken"
+---
+
+# Broken
+
+` + "```lvt interactive" + `
+<button>Click</button>
+` + "```",
+			wantError: true,
+		},
+		{
+			name:     "interactive with invalid state reference",
+			filename: "invalid-ref.md",
+			content: `---
+title: "Invalid"
+---
+
+# Invalid
+
+` + "```lvt interactive state=\"nonexistent\"" + `
+<button>Click</button>
+` + "```",
+			wantError: true,
+		},
+		{
+			name:     "auto-generated block IDs",
+			filename: "autoid.md",
+			content: `---
+title: "Auto IDs"
+---
+
+# Auto IDs
+
+` + "```go server readonly" + `
+type State1 struct {}
+` + "```" + `
+
+` + "```go server readonly" + `
+type State2 struct {}
+` + "```" + `
+
+` + "```go wasm editable" + `
+package main
+` + "```",
+			wantTitle: "Auto IDs",
+			wantType:  "tutorial", // Default type
+			checkPage: func(t *testing.T, p *Page) {
+				if len(p.ServerBlocks) != 2 {
+					t.Errorf("ServerBlocks count = %d, want 2", len(p.ServerBlocks))
+				}
+
+				// Check auto-generated IDs
+				if _, ok := p.ServerBlocks["server-0"]; !ok {
+					t.Error("Expected server-0 block")
+				}
+				if _, ok := p.ServerBlocks["server-1"]; !ok {
+					t.Error("Expected server-1 block")
+				}
+				if _, ok := p.WasmBlocks["wasm-2"]; !ok {
+					t.Error("Expected wasm-2 block")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Write test file
+			path := filepath.Join(tmpDir, tt.filename)
+			if err := os.WriteFile(path, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("Failed to write test file: %v", err)
+			}
+
+			// Parse file
+			page, err := ParseFile(path)
+
+			if tt.wantError {
+				if err == nil {
+					t.Fatal("Expected error but got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("ParseFile() error = %v", err)
+			}
+
+			// Check basic fields
+			if page.Title != tt.wantTitle {
+				t.Errorf("Title = %q, want %q", page.Title, tt.wantTitle)
+			}
+			if page.Type != tt.wantType {
+				t.Errorf("Type = %q, want %q", page.Type, tt.wantType)
+			}
+
+			// Run custom checks
+			if tt.checkPage != nil {
+				tt.checkPage(t, page)
+			}
+		})
+	}
+}
+
+func TestPageConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name       string
+		frontmatter string
+		wantPersist PersistMode
+		wantMultiStep bool
+		wantSteps int
+	}{
+		{
+			name: "default persist",
+			frontmatter: `---
+title: "Test"
+---`,
+			wantPersist: PersistLocalStorage,
+			wantMultiStep: false,
+			wantSteps: 0,
+		},
+		{
+			name: "server persist",
+			frontmatter: `---
+title: "Test"
+persist: server
+---`,
+			wantPersist: PersistServer,
+		},
+		{
+			name: "multi-step tutorial",
+			frontmatter: `---
+title: "Test"
+steps: 5
+---`,
+			wantPersist:   PersistLocalStorage, // Default
+			wantMultiStep: true,
+			wantSteps:     5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			content := tt.frontmatter + "\n\n# Test\n\nContent"
+			path := filepath.Join(tmpDir, "test.md")
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatalf("Failed to write test file: %v", err)
+			}
+
+			page, err := ParseFile(path)
+			if err != nil {
+				t.Fatalf("ParseFile() error = %v", err)
+			}
+
+			if page.Config.Persist != tt.wantPersist {
+				t.Errorf("Persist = %q, want %q", page.Config.Persist, tt.wantPersist)
+			}
+			if page.Config.MultiStep != tt.wantMultiStep {
+				t.Errorf("MultiStep = %v, want %v", page.Config.MultiStep, tt.wantMultiStep)
+			}
+			if page.Config.StepCount != tt.wantSteps {
+				t.Errorf("StepCount = %d, want %d", page.Config.StepCount, tt.wantSteps)
+			}
+		})
+	}
+}

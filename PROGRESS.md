@@ -17,16 +17,16 @@ See [docs/plans/2025-11-12-livepage-design.md](docs/plans/2025-11-12-livepage-de
 - [x] Initialize Go module
 - [x] Create directory structure
 - [x] Write progress tracker
-- [ ] Write design document
-- [ ] Create README.md
-- [ ] Initial commit
+- [x] Write design document
+- [x] Create README.md
+- [x] Initial commit
 
 ### Phase 2: Core Library 🚧
-- [ ] Markdown parser with code block extraction
-  - [ ] Parse frontmatter (title, type, persist)
-  - [ ] Extract code blocks with metadata
-  - [ ] Identify block types (server, wasm, lvt)
-  - [ ] Parse block attributes (id, state reference)
+- [x] Markdown parser with code block extraction
+  - [x] Parse frontmatter (title, type, persist)
+  - [x] Extract code blocks with metadata
+  - [x] Identify block types (server, wasm, lvt)
+  - [x] Parse block attributes (id, state reference)
 - [ ] Block type registry
   - [ ] ServerBlock implementation
   - [ ] WasmBlock implementation
