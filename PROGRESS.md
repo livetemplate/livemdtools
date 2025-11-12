@@ -35,15 +35,15 @@ See [docs/plans/2025-11-12-livepage-design.md](docs/plans/2025-11-12-livepage-de
   - [x] Convert code blocks to typed blocks
   - [x] Block ID generation (explicit and auto)
   - [x] Reference validation
-- [ ] Page state management
-  - [ ] PageState struct
-  - [ ] Code block state tracking
-  - [ ] Interactive block state tracking
-- [ ] Message multiplexing
-  - [ ] Envelope format (blockID, action, data)
-  - [ ] Message router
-  - [ ] Block-specific action handling
-- [ ] Integration with livetemplate
+- [x] Page state management
+  - [x] PageState struct
+  - [x] Code block state tracking
+  - [x] Interactive block state tracking (placeholder)
+- [x] Message multiplexing
+  - [x] Envelope format (blockID, action, data)
+  - [x] Message router
+  - [x] Block-specific action handling
+- [ ] Integration with livetemplate (deferred to Phase 3)
   - [ ] Mini template instances per interactive block
   - [ ] State struct instantiation
   - [ ] WebSocket multiplexing
