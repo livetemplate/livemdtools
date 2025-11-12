@@ -112,7 +112,7 @@ Text after`,
 				if b.Language != "go" {
 					t.Errorf("Language = %q, want \"go\"", b.Language)
 				}
-				if !contains(b.Flags, "readonly") {
+				if !containsString(b.Flags, "readonly") {
 					t.Errorf("Flags = %v, want to contain \"readonly\"", b.Flags)
 				}
 				if b.Metadata["id"] != "counter-state" {
@@ -136,7 +136,7 @@ func main() {}
 				if b.Type != "wasm" {
 					t.Errorf("Type = %q, want \"wasm\"", b.Type)
 				}
-				if !contains(b.Flags, "editable") {
+				if !containsString(b.Flags, "editable") {
 					t.Errorf("Flags = %v, want to contain \"editable\"", b.Flags)
 				}
 				if !strings.Contains(b.Content, "package main") {
@@ -325,7 +325,7 @@ Modify and run!
 	}
 }
 
-func contains(slice []string, str string) bool {
+func containsString(slice []string, str string) bool {
 	for _, s := range slice {
 		if s == str {
 			return true
