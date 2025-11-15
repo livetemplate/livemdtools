@@ -34,6 +34,7 @@ type WebSocketHandler struct {
 	mu         sync.RWMutex
 	instances  map[string]*BlockInstance // blockID -> instance
 	debug      bool
+	server     *Server // Reference to server for connection tracking
 }
 
 // BlockInstance represents a running LiveTemplate instance for an interactive block.
@@ -46,11 +47,12 @@ type BlockInstance struct {
 }
 
 // NewWebSocketHandler creates a new WebSocket handler for a page.
-func NewWebSocketHandler(page *livepage.Page, debug bool) *WebSocketHandler {
+func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool) *WebSocketHandler {
 	return &WebSocketHandler{
 		page:      page,
 		instances: make(map[string]*BlockInstance),
 		debug:     debug,
+		server:    server,
 	}
 }
 
@@ -62,7 +64,18 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[WS] Failed to upgrade connection: %v", err)
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		// Unregister connection
+		if h.server != nil {
+			h.server.UnregisterConnection(conn)
+		}
+		conn.Close()
+	}()
+
+	// Register connection for reload broadcasts
+	if h.server != nil {
+		h.server.RegisterConnection(conn)
+	}
 
 	if h.debug {
 		log.Printf("[WS] Client connected: %s", conn.RemoteAddr())

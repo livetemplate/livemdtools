@@ -47,6 +47,12 @@ export class MessageRouter {
 
       const { blockID, action, data } = envelope;
 
+      // Handle reload action (special case - no blockID)
+      if (action === "reload") {
+        this.handleReload(data?.filePath || "");
+        return;
+      }
+
       if (!blockID) {
         console.error("[MessageRouter] Message missing blockID:", envelope);
         return;
@@ -66,6 +72,75 @@ export class MessageRouter {
     } catch (error) {
       console.error("[MessageRouter] Error routing message:", error);
     }
+  }
+
+  /**
+   * Handle reload message from server
+   */
+  private handleReload(filePath: string): void {
+    console.log(`[MessageRouter] Page reloading: ${filePath} changed`);
+
+    // Show notification
+    this.showReloadNotification(filePath);
+
+    // Reload the page after a short delay to show the notification
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  }
+
+  /**
+   * Show reload notification overlay
+   */
+  private showReloadNotification(filePath: string): void {
+    const existing = document.getElementById("livepage-reload-notification");
+    if (existing) {
+      existing.remove();
+    }
+
+    const notification = document.createElement("div");
+    notification.id = "livepage-reload-notification";
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 100000;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+      ">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 20px;">🔄</div>
+          <div>
+            <div style="font-weight: 600;">File Updated</div>
+            <div style="opacity: 0.9; font-size: 12px; margin-top: 2px;">${filePath}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add animation
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(notification);
   }
 
   /**

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/livetemplate/livepage/internal/server"
 )
@@ -16,9 +17,27 @@ func ServeCommand(args []string) error {
 	dir := "."
 	port := "8080"
 	host := "localhost"
+	watch := false
 
-	if len(args) > 0 {
-		dir = args[0]
+	// Parse flags
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--watch" || arg == "-w" {
+			watch = true
+		} else if arg == "--port" || arg == "-p" {
+			if i+1 < len(args) {
+				port = args[i+1]
+				i++
+			}
+		} else if arg == "--host" {
+			if i+1 < len(args) {
+				host = args[i+1]
+				i++
+			}
+		} else if !strings.HasPrefix(arg, "-") {
+			// Positional argument (directory)
+			dir = arg
+		}
 	}
 
 	// Check if directory exists
@@ -49,9 +68,21 @@ func ServeCommand(args []string) error {
 		fmt.Printf("  %-30s %s\n", route.Pattern, route.FilePath)
 	}
 
+	// Enable watch mode if requested
+	if watch {
+		if err := srv.EnableWatch(true); err != nil {
+			return fmt.Errorf("failed to enable watch mode: %w", err)
+		}
+		defer srv.StopWatch()
+		fmt.Printf("\n👀 Watch mode enabled - files will auto-reload on changes\n")
+	}
+
 	// Start server
 	addr := fmt.Sprintf("%s:%s", host, port)
 	fmt.Printf("\n🌐 Server running at http://%s\n", addr)
+	if watch {
+		fmt.Printf("📝 Edit .md files and see changes instantly\n")
+	}
 	fmt.Printf("Press Ctrl+C to stop\n\n")
 
 	if err := http.ListenAndServe(addr, srv); err != nil {

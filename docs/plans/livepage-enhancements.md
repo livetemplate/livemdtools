@@ -531,9 +531,10 @@ Related: State 'counter-state' defined at line 20
 
 ---
 
-#### A3. Live Reload / Watch Mode
+#### A3. Live Reload / Watch Mode ✅
 **Impact**: HIGH - Essential authoring workflow
 **Effort**: Medium (5-6 hours)
+**Status**: COMPLETED (2025-11-15)
 
 **Current:**
 - Edit markdown
@@ -546,16 +547,25 @@ Related: State 'counter-state' defined at line 20
 livepage serve --watch examples/counter
 ```
 
-- Watches for `.md` file changes
-- Reloads pages automatically
-- Preserves WebSocket connections where possible
-- Shows overlay notification: "Reloaded index.md"
+- Watches for `.md` file changes ✅
+- Reloads pages automatically ✅
+- Preserves WebSocket connections where possible ✅
+- Shows overlay notification: "Reloaded index.md" ✅
 
 **Implementation:**
-- Add file watcher using `fsnotify`
-- Graceful reload of changed pages
-- Send reload signal to connected clients
-- Optional: Hot reload without full refresh
+- Add file watcher using `fsnotify` ✅
+- Graceful reload of changed pages ✅
+- Send reload signal to connected clients ✅
+- Optional: Hot reload without full refresh ✅
+
+**Changes:**
+- Created file watcher using fsnotify for monitoring .md file changes
+- Added --watch/-w flag to serve command with --port and --host support
+- Implemented connection tracking in Server to broadcast reload messages
+- Added BroadcastReload method to send reload notifications to all WebSocket clients
+- Enhanced client message router to handle "reload" action with notification overlay
+- Reload notification shows file path and smoothly reloads page after 500ms
+- Tested with manual file changes - watcher correctly detects and triggers reload
 
 ---
 
@@ -862,12 +872,12 @@ ignore:
 ### Phase 2: Workflow (Week 2-3)
 **Goal:** Improve authoring and learning experience
 
-✅ **Authoring:**
-- Live reload / watch mode (A3)
+**Authoring:**
+- ✅ Live reload / watch mode (A3) - COMPLETED
 - Scaffold generator - `livepage new` (A5)
 - Block inspector - `livepage blocks` (A6)
 
-✅ **Tutorial:**
+**Tutorial:**
 - Multiple interactive demos (2.1)
 - Progressive tutorial steps (2.2)
 - Guided challenges (2.3)

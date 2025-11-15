@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gorilla/websocket"
 	"github.com/livetemplate/livepage"
 	"github.com/livetemplate/livepage/internal/assets"
 )
@@ -22,16 +24,20 @@ type Route struct {
 
 // Server is the livepage development server.
 type Server struct {
-	rootDir string
-	routes  []*Route
-	mu      sync.RWMutex
+	rootDir     string
+	routes      []*Route
+	mu          sync.RWMutex
+	connections map[*websocket.Conn]bool // Track connected WebSocket clients
+	connMu      sync.RWMutex              // Separate mutex for connections
+	watcher     *Watcher                  // File watcher for live reload
 }
 
 // New creates a new server for the given root directory.
 func New(rootDir string) *Server {
 	return &Server{
-		rootDir: rootDir,
-		routes:  make([]*Route, 0),
+		rootDir:     rootDir,
+		routes:      make([]*Route, 0),
+		connections: make(map[*websocket.Conn]bool),
 	}
 }
 
@@ -155,7 +161,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	route := s.routes[0]
 
 	// Create WebSocket handler for this page
-	wsHandler := NewWebSocketHandler(route.Page, true) // debug=true
+	wsHandler := NewWebSocketHandler(route.Page, s, true) // debug=true
 	wsHandler.ServeHTTP(w, r)
 }
 
@@ -1001,4 +1007,84 @@ func shouldSwap(a, b *Route) bool {
 
 	// Alphabetical otherwise
 	return a.Pattern > b.Pattern
+}
+
+// RegisterConnection adds a WebSocket connection to the tracked connections.
+func (s *Server) RegisterConnection(conn *websocket.Conn) {
+	s.connMu.Lock()
+	defer s.connMu.Unlock()
+	s.connections[conn] = true
+	log.Printf("[Server] WebSocket connection registered: %d active connections", len(s.connections))
+}
+
+// UnregisterConnection removes a WebSocket connection from tracked connections.
+func (s *Server) UnregisterConnection(conn *websocket.Conn) {
+	s.connMu.Lock()
+	defer s.connMu.Unlock()
+	delete(s.connections, conn)
+	log.Printf("[Server] WebSocket connection unregistered: %d active connections", len(s.connections))
+}
+
+// BroadcastReload sends a reload message to all connected WebSocket clients.
+func (s *Server) BroadcastReload(filePath string) {
+	s.connMu.RLock()
+	defer s.connMu.RUnlock()
+
+	if len(s.connections) == 0 {
+		return
+	}
+
+	msg := map[string]interface{}{
+		"action":   "reload",
+		"filePath": filePath,
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("[Server] Failed to marshal reload message: %v", err)
+		return
+	}
+
+	log.Printf("[Server] Broadcasting reload for %s to %d connections", filePath, len(s.connections))
+
+	for conn := range s.connections {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			log.Printf("[Server] Failed to send reload to connection: %v", err)
+		}
+	}
+}
+
+// EnableWatch enables file watching for live reload.
+func (s *Server) EnableWatch(debug bool) error {
+	watcher, err := NewWatcher(s.rootDir, func(filePath string) error {
+		log.Printf("[Watch] File changed: %s", filePath)
+
+		// Re-discover pages
+		if err := s.Discover(); err != nil {
+			return fmt.Errorf("failed to re-discover pages: %w", err)
+		}
+
+		// Broadcast reload to all connected clients
+		s.BroadcastReload(filePath)
+
+		return nil
+	}, debug)
+
+	if err != nil {
+		return fmt.Errorf("failed to create watcher: %w", err)
+	}
+
+	s.watcher = watcher
+	s.watcher.Start()
+
+	log.Printf("[Watch] File watcher started for %s", s.rootDir)
+	return nil
+}
+
+// StopWatch stops the file watcher if it's running.
+func (s *Server) StopWatch() error {
+	if s.watcher != nil {
+		return s.watcher.Stop()
+	}
+	return nil
 }
