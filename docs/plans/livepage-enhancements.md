@@ -571,9 +571,10 @@ livepage serve --watch examples/counter
 
 ### Priority 2: Medium-High Impact, Medium Effort
 
-#### A4. Validation Command
+#### A4. Validation Command ✅
 **Impact**: Medium-High - Catches errors early
 **Effort**: Low-Medium (3-4 hours)
+**Status**: COMPLETED (2025-11-15)
 
 **Usage:**
 ```bash
@@ -609,10 +610,23 @@ livepage validate examples/counter
 - Report all errors at once
 
 **Implementation:**
-- Extract validation logic from parser
-- Add `validate` subcommand to CLI
-- Format errors nicely
-- Exit code: 0 (success) or 1 (errors)
+- Extract validation logic from parser ✅
+- Add `validate` subcommand to CLI ✅
+- Format errors nicely ✅
+- Exit code: 0 (success) or 1 (errors) ✅
+
+**Changes:**
+- Created `cmd/livepage/commands/validate.go` with ValidateCommand implementation
+- Added validate case to main.go switch statement
+- Updated CLI help text with validate command usage examples
+- Leverages existing ParseFile validation logic for consistency
+- Walks directory tree discovering all .md files (skips hidden directories)
+- Collects all errors before reporting (batch validation)
+- Displays checkmarks for valid files in real-time
+- Shows detailed error messages with file context and indentation
+- Provides summary statistics (total files, valid, errors)
+- Returns exit code 0 for success, 1 for validation failures
+- Tested with both valid and invalid files - works correctly
 
 ---
 

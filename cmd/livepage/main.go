@@ -23,6 +23,8 @@ func main() {
 	switch command {
 	case "serve":
 		err = commands.ServeCommand(args)
+	case "validate":
+		err = commands.ValidateCommand(args)
 	case "new":
 		fmt.Println("livepage new: Not yet implemented")
 		fmt.Println("See PROGRESS.md for implementation status")
@@ -47,15 +49,19 @@ func printUsage() {
 	fmt.Println("livepage - Interactive documentation made easy")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  livepage serve [directory]   Start development server")
-	fmt.Println("  livepage new <name>          Create new tutorial")
-	fmt.Println("  livepage version             Show version")
-	fmt.Println("  livepage help                Show this help")
+	fmt.Println("  livepage serve [directory]     Start development server")
+	fmt.Println("  livepage validate [directory]  Validate markdown files")
+	fmt.Println("  livepage new <name>            Create new tutorial")
+	fmt.Println("  livepage version               Show version")
+	fmt.Println("  livepage help                  Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  livepage serve               # Serve current directory")
-	fmt.Println("  livepage serve ./tutorials   # Serve tutorials directory")
-	fmt.Println("  livepage new my-tutorial     # Create new tutorial")
+	fmt.Println("  livepage serve                 # Serve current directory")
+	fmt.Println("  livepage serve ./tutorials     # Serve tutorials directory")
+	fmt.Println("  livepage serve --watch         # Serve with live reload")
+	fmt.Println("  livepage validate              # Validate current directory")
+	fmt.Println("  livepage validate examples/    # Validate specific directory")
+	fmt.Println("  livepage new my-tutorial       # Create new tutorial")
 	fmt.Println()
 	fmt.Println("Documentation: https://github.com/livetemplate/livepage")
 }
