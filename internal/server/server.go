@@ -216,6 +216,11 @@ func (s *Server) renderPage(page *livepage.Page) string {
     <title>%s</title>
     <link rel="stylesheet" href="/assets/livepage-client.css">
     <style>
+        /* Base styles */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
@@ -223,35 +228,213 @@ func (s *Server) renderPage(page *livepage.Page) string {
             margin: 0 auto;
             padding: 2rem;
             color: #333;
-            background: #f9f9f9;
+            background: linear-gradient(135deg, #f5f7fa 0%%, #e8ecf1 100%%);
+            min-height: 100vh;
         }
-        h1, h2, h3 { color: #2c3e50; }
+
+        /* Typography */
+        h1, h2, h3 {
+            color: #2c3e50;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            color: #555;
+        }
+
+        /* Code blocks */
         code {
             background: #f4f4f4;
             padding: 0.2rem 0.4rem;
-            border-radius: 3px;
+            border-radius: 4px;
             font-size: 0.9em;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            border: 1px solid #e1e4e8;
         }
+
         pre {
             background: #282c34;
             color: #abb2bf;
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 1.5rem;
+            border-radius: 12px;
             overflow-x: auto;
-            margin: 1rem 0;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.1);
         }
+
         pre code {
             background: none;
+            border: none;
             padding: 0;
             color: inherit;
         }
+
+        /* Interactive blocks */
         .livepage-wasm-block,
         .livepage-interactive-block {
             margin: 2rem 0;
-            padding: 1rem;
+            padding: 2rem;
             background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .livepage-wasm-block:hover,
+        .livepage-interactive-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        /* Buttons */
+        button {
+            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            margin: 0.25rem;
+            font-family: inherit;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Counter display */
+        .counter-display {
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f5f7fa 0%%, #ffffff 100%%);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e1e4e8;
+        }
+
+        .counter-display.positive {
+            color: #10b981;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .counter-display.negative {
+            color: #ef4444;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .counter-display.zero {
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+
+        /* Number transition animation */
+        @keyframes numberPulse {
+            0%%, 100%% { transform: scale(1); }
+            50%% { transform: scale(1.1); }
+        }
+
+        .counter-display.changed {
+            animation: numberPulse 0.3s ease;
+        }
+
+        /* Button groups */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .livepage-wasm-block,
+            .livepage-interactive-block {
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+
+            .counter-display {
+                font-size: 2.5rem;
+                padding: 1.5rem;
+            }
+
+            button {
+                padding: 0.625rem 1.25rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.75rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .livepage-wasm-block,
+            .livepage-interactive-block {
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+
+            .counter-display {
+                font-size: 2rem;
+                padding: 1rem;
+            }
+
+            button {
+                width: 100%%;
+                margin: 0.25rem 0;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
         }
     </style>
 </head>

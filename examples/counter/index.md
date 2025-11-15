@@ -42,13 +42,13 @@ This code runs on the server and handles all state changes.
 The counter below is powered by the state above:
 
 ```lvt
-<div class="counter-demo">
-    <h2>Count: {{.Counter}}</h2>
-    <div class="controls">
-        <button lvt-click="increment">+1</button>
-        <button lvt-click="decrement">-1</button>
-        <button lvt-click="reset">Reset</button>
-    </div>
+<div class="counter-display {{if gt .Counter 0}}positive{{else if lt .Counter 0}}negative{{else}}zero{{end}}">
+    {{.Counter}}
+</div>
+<div class="button-group">
+    <button lvt-click="increment">+1</button>
+    <button lvt-click="decrement">-1</button>
+    <button lvt-click="reset">Reset</button>
 </div>
 ```
 
