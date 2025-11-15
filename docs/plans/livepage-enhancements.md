@@ -926,7 +926,7 @@ ignore:
 - ✅ Block inspector - `livepage blocks` (A6) - COMPLETED
 
 **Tutorial:**
-- Multiple interactive demos (2.1)
+- ✅ Multiple interactive demos (2.1) - COMPLETED
 - Progressive tutorial steps (2.2)
 - Guided challenges (2.3)
 - ✅ Step navigation controls - sidebar TOC + bottom nav (2.4) - COMPLETED
