@@ -52,25 +52,14 @@ The counter below is powered by the state above:
 </div>
 ```
 
-*Note: Full interactivity coming soon!*
+Click the buttons above to interact with the counter! The state is managed on the server and updates are sent in real-time over WebSocket.
 
-## Step 3: Try It Yourself
+## How It Works
 
-Modify this Go code and click "Run" to see the output:
-
-```go wasm editable
-package main
-
-import "fmt"
-
-func main() {
-    for i := 0; i < 5; i++ {
-        fmt.Printf("Count: %d\n", i)
-    }
-}
-```
-
-*Note: WASM execution coming soon!*
+1. **User clicks a button** - The client sends an action (e.g., "increment") to the server
+2. **Server updates state** - The `Change` method updates the counter value
+3. **Server sends update** - The new state is sent back to the client
+4. **UI updates** - The counter display updates automatically
 
 ## Next Steps
 
