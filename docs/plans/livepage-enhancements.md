@@ -67,9 +67,10 @@ All enhancements are prioritized by **impact** (user value) and **effort** (impl
 
 ---
 
-#### 1.2 Dark/Light Theme Toggle
+#### 1.2 Dark/Light Theme Toggle ✅
 **Impact**: High - Comfort, accessibility, reading experience
 **Effort**: Low (2-3 hours)
+**Status**: COMPLETED (2025-11-15)
 
 **What:**
 Theme switcher for comfortable reading in any lighting condition:

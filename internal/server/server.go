@@ -216,6 +216,50 @@ func (s *Server) renderPage(page *livepage.Page) string {
     <title>%s</title>
     <link rel="stylesheet" href="/assets/livepage-client.css">
     <style>
+        /* Theme Variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: linear-gradient(135deg, #f5f7fa 0%%, #e8ecf1 100%%);
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-heading: #2c3e50;
+            --border-color: #e1e4e8;
+            --code-bg: #f4f4f4;
+            --code-border: #e1e4e8;
+            --pre-bg: #282c34;
+            --pre-text: #abb2bf;
+            --button-bg: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+            --button-shadow: rgba(102, 126, 234, 0.3);
+            --card-bg: #ffffff;
+            --card-border: rgba(0,0,0,0.06);
+            --card-shadow: rgba(0,0,0,0.08);
+            --accent: #0066cc;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: linear-gradient(135deg, #1a1a1a 0%%, #2d2d2d 100%%);
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-heading: #f0f0f0;
+            --border-color: #404040;
+            --code-bg: #2d2d2d;
+            --code-border: #404040;
+            --pre-bg: #1e1e1e;
+            --pre-text: #d4d4d4;
+            --button-bg: linear-gradient(135deg, #4da6ff 0%%, #357abd 100%%);
+            --button-shadow: rgba(77, 166, 255, 0.3);
+            --card-bg: #242424;
+            --card-border: rgba(255,255,255,0.1);
+            --card-shadow: rgba(0,0,0,0.3);
+            --accent: #4da6ff;
+        }
+
+        /* Theme transition */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
         /* Base styles */
         * {
             box-sizing: border-box;
@@ -227,14 +271,14 @@ func (s *Server) renderPage(page *livepage.Page) string {
             max-width: 900px;
             margin: 0 auto;
             padding: 2rem;
-            color: #333;
-            background: linear-gradient(135deg, #f5f7fa 0%%, #e8ecf1 100%%);
+            color: var(--text-primary);
+            background: var(--bg-secondary);
             min-height: 100vh;
         }
 
         /* Typography */
         h1, h2, h3 {
-            color: #2c3e50;
+            color: var(--text-heading);
             font-weight: 600;
             letter-spacing: -0.02em;
         }
@@ -252,28 +296,29 @@ func (s *Server) renderPage(page *livepage.Page) string {
 
         p {
             margin-bottom: 1.25rem;
-            color: #555;
+            color: var(--text-secondary);
         }
 
         /* Code blocks */
         code {
-            background: #f4f4f4;
+            background: var(--code-bg);
             padding: 0.2rem 0.4rem;
             border-radius: 4px;
             font-size: 0.9em;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--code-border);
+            color: var(--text-primary);
         }
 
         pre {
-            background: #282c34;
-            color: #abb2bf;
+            background: var(--pre-bg);
+            color: var(--pre-text);
             padding: 1.5rem;
             border-radius: 12px;
             overflow-x: auto;
             margin: 1.5rem 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
         }
 
         pre code {
@@ -288,22 +333,22 @@ func (s *Server) renderPage(page *livepage.Page) string {
         .livepage-interactive-block {
             margin: 2rem 0;
             padding: 2rem;
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 4px 16px var(--card-shadow);
+            border: 1px solid var(--card-border);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .livepage-wasm-block:hover,
         .livepage-interactive-block:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 24px var(--card-shadow);
         }
 
         /* Buttons */
         button {
-            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+            background: var(--button-bg);
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -312,19 +357,19 @@ func (s *Server) renderPage(page *livepage.Page) string {
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 8px var(--button-shadow);
             margin: 0.25rem;
             font-family: inherit;
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px var(--button-shadow);
         }
 
         button:active {
             transform: translateY(0);
-            box-shadow: 0 1px 4px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 1px 4px var(--button-shadow);
         }
 
         /* Counter display */
@@ -436,10 +481,128 @@ func (s *Server) renderPage(page *livepage.Page) string {
                 flex-direction: column;
             }
         }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--card-shadow);
+            border: 1px solid var(--card-border);
+        }
+
+        .theme-toggle button {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            margin: 0;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            min-width: 2.5rem;
+            box-shadow: none;
+        }
+
+        .theme-toggle button:hover {
+            background: var(--code-bg);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .theme-toggle button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .theme-toggle button:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button id="theme-light" title="Light theme" aria-label="Light theme">☀️</button>
+        <button id="theme-dark" title="Dark theme" aria-label="Dark theme">🌙</button>
+        <button id="theme-auto" title="Auto theme (system preference)" aria-label="Auto theme">🌓</button>
+    </div>
+
     %s
+
+    <script>
+        // Theme management
+        (function() {
+            const STORAGE_KEY = 'livepage-theme';
+            const html = document.documentElement;
+
+            // Get current theme from localStorage or default to 'auto'
+            function getStoredTheme() {
+                return localStorage.getItem(STORAGE_KEY) || 'auto';
+            }
+
+            // Get system preference
+            function getSystemTheme() {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            // Apply theme to HTML element
+            function applyTheme(theme) {
+                const effectiveTheme = theme === 'auto' ? getSystemTheme() : theme;
+                html.setAttribute('data-theme', effectiveTheme);
+
+                // Update button states
+                document.querySelectorAll('.theme-toggle button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const activeBtn = document.getElementById('theme-' + theme);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                }
+            }
+
+            // Set and save theme
+            function setTheme(theme) {
+                localStorage.setItem(STORAGE_KEY, theme);
+                applyTheme(theme);
+            }
+
+            // Initialize theme on page load (before paint to avoid flash)
+            const storedTheme = getStoredTheme();
+            applyTheme(storedTheme);
+
+            // Listen for system theme changes when in auto mode
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (getStoredTheme() === 'auto') {
+                    applyTheme('auto');
+                }
+            });
+
+            // Add click handlers after DOM is ready
+            window.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('theme-light').addEventListener('click', () => setTheme('light'));
+                document.getElementById('theme-dark').addEventListener('click', () => setTheme('dark'));
+                document.getElementById('theme-auto').addEventListener('click', () => setTheme('auto'));
+
+                // Keyboard shortcut: Ctrl+Shift+D
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                        e.preventDefault();
+                        const current = getStoredTheme();
+                        const next = current === 'light' ? 'dark' : current === 'dark' ? 'auto' : 'light';
+                        setTheme(next);
+                    }
+                });
+            });
+        })();
+    </script>
+
     <script src="/assets/livepage-client.js"></script>
 </body>
 </html>`, page.Title, content)
