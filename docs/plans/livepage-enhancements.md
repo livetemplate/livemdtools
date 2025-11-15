@@ -678,50 +678,72 @@ livepage new my-tutorial
 
 ---
 
-#### A6. Block Inspector CLI
+#### A6. Block Inspector CLI ✅
 **Impact**: Medium - Helps debugging
 **Effort**: Low-Medium (3-4 hours)
+**Status**: COMPLETED (2025-11-15)
 
 **Usage:**
 ```bash
 livepage blocks examples/counter
 
-examples/counter/index.md:
-  Line 20: server-0 (server, readonly)
+🔍 Inspecting blocks in: /Users/.../examples/counter
+
+index.md:
+  Line 1143: server-0 (server)
            State: CounterState
 
-  Line 44: lvt-0 (interactive)
-           References: server-0 (counter-state)
-           Template: 8 lines
+  Line 2207: lvt-1 (lvt)
+           References: (auto-linked to nearest server)
+           Template: 9 lines
 
-Total: 2 blocks (1 server, 1 interactive)
+────────────────────────────────────────────────────────────
+Summary:
+  Total blocks: 2
+  Server blocks: 1
+  WASM blocks: 0
+  Interactive blocks: 1
 ```
 
-**With details:**
+**With verbose mode:**
 ```bash
 livepage blocks examples/counter --verbose
+
+index.md:
 
 Block: server-0
   Type: server
   Language: go
-  Flags: readonly
-  Location: index.md:20-36
-  ID: counter-state
-  Content: type CounterState struct { ... }
+  Location: index.md:1143
+  State: CounterState
+  Content: // CounterState holds the application state...
 
-Block: lvt-0
-  Type: interactive
+Block: lvt-1
+  Type: lvt
   Language: lvt
-  Location: index.md:44-52
-  State Ref: counter-state → server-0 ✓
-  Template Lines: 8
+  Location: index.md:2207
+  State Ref: (auto-linked)
+  Template Lines: 9
 ```
 
 **Implementation:**
-- Parse without running server
-- List all discovered blocks
-- Show metadata, relationships
-- Validate references
+- Parse without running server ✅
+- List all discovered blocks ✅
+- Show metadata, relationships ✅
+- Validate references ✅
+- Support --verbose/-v flag ✅
+
+**Changes:**
+- Created BlocksCommand with file discovery and parsing
+- Parses CodeBlock information to get line numbers
+- Basic mode shows concise block list with key info
+- Verbose mode shows detailed block metadata
+- Auto-extracts state names from Go code
+- Shows template/code line counts
+- Displays auto-linking information for lvt blocks
+- Summary statistics for all block types
+- Wired blocks command to main.go and updated help text
+- Tested with counter example - works correctly
 
 ---
 
@@ -899,7 +921,8 @@ ignore:
 
 **Authoring:**
 - ✅ Live reload / watch mode (A3) - COMPLETED
-- Scaffold generator - `livepage new` (A5)
+- ✅ Validation command (A4) - COMPLETED
+- ✅ Scaffold generator - `livepage new` (A5) - COMPLETED
 - Block inspector - `livepage blocks` (A6)
 
 **Tutorial:**
