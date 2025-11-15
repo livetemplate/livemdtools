@@ -689,6 +689,242 @@ func (s *Server) renderPage(page *livepage.Page) string {
                 left: 0.5rem;
             }
         }
+
+        /* Tutorial Navigation - Sidebar TOC */
+        .livepage-nav-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            box-shadow: 2px 0 8px var(--card-shadow);
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .nav-sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .nav-sidebar-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-heading);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-sidebar-steps {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .nav-step {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-step a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .nav-step:hover a {
+            background: var(--code-bg);
+            color: var(--text-primary);
+        }
+
+        .nav-step.active a {
+            background: var(--accent);
+            color: white;
+            font-weight: 500;
+        }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%%;
+            background: var(--code-bg);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .nav-step.active .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .step-title {
+            flex: 1;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Tutorial Navigation - Bottom Bar */
+        .livepage-nav-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 280px;
+            right: 0;
+            height: 70px;
+            background: var(--card-bg);
+            border-top: 1px solid var(--card-border);
+            box-shadow: 0 -2px 8px var(--card-shadow);
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #0052a3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+        }
+
+        .nav-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .nav-btn:disabled {
+            background: var(--code-bg);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .nav-arrow {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .nav-progress {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .current-step,
+        .total-steps {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Adjust main content to make room for navigation */
+        body:has(.livepage-nav-sidebar) {
+            margin-left: 280px;
+            margin-bottom: 70px;
+        }
+
+        /* Responsive Navigation */
+        @media (max-width: 1024px) {
+            .livepage-nav-sidebar {
+                width: 240px;
+            }
+
+            .livepage-nav-bottom {
+                left: 240px;
+            }
+
+            body:has(.livepage-nav-sidebar) {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Hide sidebar on mobile, show hamburger menu */
+            .livepage-nav-sidebar {
+                transform: translateX(-100%%);
+                transition: transform 0.3s ease;
+            }
+
+            .livepage-nav-sidebar.open {
+                transform: translateX(0);
+            }
+
+            .livepage-nav-bottom {
+                left: 0;
+                padding: 0 1rem;
+            }
+
+            body:has(.livepage-nav-sidebar) {
+                margin-left: 0;
+            }
+
+            .nav-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .nav-label {
+                display: none;
+            }
+
+            .nav-arrow {
+                font-size: 1.5rem;
+            }
+
+            .nav-progress {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .livepage-nav-bottom {
+                height: 60px;
+                padding: 0 0.75rem;
+            }
+
+            body:has(.livepage-nav-sidebar) {
+                margin-bottom: 60px;
+            }
+
+            .nav-btn {
+                padding: 0.5rem 0.75rem;
+                min-width: 40px;
+            }
+
+            .nav-progress {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>

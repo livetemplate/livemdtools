@@ -3,6 +3,7 @@
  */
 
 import { LivepageClient } from "./livepage-client";
+import { TutorialNavigation } from "./core/navigation";
 
 /**
  * Auto-initialization function
@@ -47,6 +48,10 @@ function initializeLivepage(): void {
 
   // Expose client globally for debugging
   (window as any).livepageClient = client;
+
+  // Initialize tutorial navigation (if H2 headings exist)
+  const nav = new TutorialNavigation();
+  (window as any).livepageNavigation = nav;
 
   console.log(`[Livepage] Initialized with ${client.getBlockIds().length} blocks`);
 }
