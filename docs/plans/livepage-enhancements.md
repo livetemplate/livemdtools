@@ -124,15 +124,16 @@ Theme switcher for comfortable reading in any lighting condition:
 
 ---
 
-#### 1.3 Live State Inspector
+#### 1.3 Live State Inspector ✅
 **Impact**: High - Educational, shows "under the hood"
 **Effort**: Low (3-4 hours)
+**Status**: COMPLETED (2025-11-15)
 
 **What:**
 - Collapsible panel showing current server state as JSON
 - Updates in real-time as you interact
 - Shows WebSocket messages (sent/received)
-- Optional debug mode (enabled via `?debug=true`)
+- Auto-enabled when interactive blocks are present
 
 **Example:**
 ```
