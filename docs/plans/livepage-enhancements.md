@@ -929,7 +929,7 @@ ignore:
 - Multiple interactive demos (2.1)
 - Progressive tutorial steps (2.2)
 - Guided challenges (2.3)
-- Step navigation controls - sidebar TOC + bottom nav (2.4) - IN PROGRESS
+- ✅ Step navigation controls - sidebar TOC + bottom nav (2.4) - COMPLETED
 - Presentation mode (2.5)
 
 **Deliverable:** Smooth authoring workflow, engaging tutorial experience with full navigation
