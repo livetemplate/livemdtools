@@ -925,6 +925,228 @@ func (s *Server) renderPage(page *livepage.Page) string {
                 font-size: 0.75rem;
             }
         }
+
+        /* Counter Variations Styling */
+        .counter-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .counter-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .bounds-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .counter-display.at-max {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #78350f;
+        }
+
+        .counter-display.at-min {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        .counter-display.in-range {
+            background: var(--accent);
+            color: white;
+        }
+
+        .bounds-bar {
+            width: 100%%;
+            height: 6px;
+            background: var(--code-bg);
+            border-radius: 3px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .bounds-progress {
+            height: 100%%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        /* Step Counter */
+        .step-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .button-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .row-label {
+            font-weight: 500;
+            min-width: 80px;
+            color: var(--text-secondary);
+        }
+
+        .step-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            width: 100%%;
+            margin-top: 0.5rem;
+        }
+
+        /* Dual Counter */
+        .dual-counter-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .dual-counter-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .counter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .dual-counter-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Shopping Cart Product */
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 8px var(--card-shadow);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .product-header h4 {
+            margin: 0;
+            color: var(--text-heading);
+        }
+
+        .product-price {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .quantity-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: var(--code-bg);
+            border-radius: 8px;
+        }
+
+        .quantity-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .qty-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border-radius: 50%%;
+        }
+
+        .quantity-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .product-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .total-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .remove-btn {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            box-shadow: none;
+        }
+
+        .remove-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .removed-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
