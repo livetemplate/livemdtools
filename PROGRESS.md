@@ -1,6 +1,6 @@
 # Livepage Implementation Progress
 
-**Last Updated**: 2025-11-12
+**Last Updated**: 2025-11-15
 
 ## Project Overview
 
@@ -48,24 +48,25 @@ See [docs/plans/2025-11-12-livepage-design.md](docs/plans/2025-11-12-livepage-de
   - [ ] State struct instantiation
   - [ ] WebSocket multiplexing
 
-### Phase 3: CLI Tool 🚧
+### Phase 3: CLI Tool ✅
 - [x] Command structure
   - [x] `serve` command
-  - [ ] `new` command (scaffold generator)
+  - [x] `new` command (scaffold generator)
+  - [x] `validate` command
   - [x] `version` command
 - [x] Dev server
   - [x] Auto-discovery (scan .md files)
   - [x] Route generation
   - [x] Static markdown → HTML conversion
-  - [ ] Hot reload (file watcher) - deferred
+  - [x] Hot reload (file watcher with --watch flag)
   - [x] Built-in theme serving
-- [ ] Config file support
+- [x] Error handling
+  - [x] Friendly error messages with file/line context
+  - [x] Helpful suggestions (did you mean?)
+  - [x] Validation command for early error detection
+- [ ] Config file support (deferred to future)
   - [ ] Parse livepage.yaml
   - [ ] Apply configuration
-- [ ] Error handling
-  - [ ] Friendly error pages
-  - [ ] File location in errors
-  - [ ] Helpful suggestions
 
 ### Phase 4: Client Runtime 🖥️ ✅
 - [x] Core client (`@livetemplate/livepage-client`)
