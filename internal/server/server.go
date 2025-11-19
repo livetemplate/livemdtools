@@ -278,7 +278,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
             line-height: 1.6;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 2rem 1.5rem;
             color: var(--text-primary);
             background: var(--bg-secondary);
             min-height: 100vh;
@@ -321,10 +321,10 @@ func (s *Server) renderPage(page *livepage.Page) string {
         pre {
             background: var(--pre-bg);
             color: var(--pre-text);
-            padding: 1.5rem;
-            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            border-radius: 8px;
             overflow-x: auto;
-            margin: 1.5rem 0;
+            margin: 1.5rem -0.5rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border: 1px solid var(--border-color);
         }
@@ -340,7 +340,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
         .livepage-wasm-block,
         .livepage-interactive-block {
             margin: 2rem 0;
-            padding: 2rem;
+            padding: 1.5rem;
             background: var(--card-bg);
             border-radius: 16px;
             box-shadow: 0 4px 16px var(--card-shadow);
@@ -386,7 +386,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
             font-weight: 700;
             text-align: center;
             margin: 2rem 0;
-            padding: 2rem;
+            padding: 1.5rem;
             background: linear-gradient(135deg, #f5f7fa 0%%, #ffffff 100%%);
             border-radius: 16px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -540,7 +540,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
             left: 0;
             top: 0;
             bottom: 0;
-            width: 220px;
+            width: 180px;
             background: var(--card-bg);
             border-right: 1px solid var(--card-border);
             box-shadow: 2px 0 8px var(--card-shadow);
@@ -627,9 +627,9 @@ func (s *Server) renderPage(page *livepage.Page) string {
         .livepage-nav-bottom {
             position: fixed;
             bottom: 0;
-            left: 220px;
+            left: 180px;
             right: 0;
-            height: 70px;
+            height: 60px;
             background: var(--card-bg);
             border-top: 1px solid var(--card-border);
             box-shadow: 0 -2px 8px var(--card-shadow);
@@ -693,22 +693,22 @@ func (s *Server) renderPage(page *livepage.Page) string {
 
         /* Adjust main content to make room for navigation */
         body:has(.livepage-nav-sidebar) {
-            margin-left: 220px;
-            margin-bottom: 70px;
+            margin-left: 180px;
+            margin-bottom: 60px;
         }
 
         /* Responsive Navigation */
         @media (max-width: 1024px) {
             .livepage-nav-sidebar {
-                width: 240px;
+                width: 200px;
             }
 
             .livepage-nav-bottom {
-                left: 240px;
+                left: 200px;
             }
 
             body:has(.livepage-nav-sidebar) {
-                margin-left: 240px;
+                margin-left: 200px;
             }
         }
 
