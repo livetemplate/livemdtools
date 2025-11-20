@@ -1149,6 +1149,162 @@ With Phase 1 complete, Livepage will be a genuinely delightful tool for creating
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-11-15
-**Next Review**: After Phase 1 completion
+## Phase 5: Multi-Page Documentation Sites
+
+### B1. Multi-Page Documentation Site Capability
+**Impact**: HIGH - Enables full documentation sites, not just single tutorials
+**Effort**: High (18-24 hours)
+**Status**: PLANNED
+
+**What:**
+Build capability to create documentation sites with multiple pages, home page, and navigation - similar to https://lotusdocs.dev/
+
+**Site Structure:**
+```
+docs/
+├── livepage.yaml           # Site configuration
+├── index.md                # Home page (landing/overview)
+├── getting-started/
+│   ├── index.md           # Section home
+│   ├── installation.md
+│   └── quickstart.md
+├── tutorials/
+│   ├── index.md
+│   ├── counter.md
+│   └── todo-list.md
+└── reference/
+    ├── index.md
+    ├── blocks.md
+    └── configuration.md
+```
+
+**Configuration Format (livepage.yaml):**
+```yaml
+title: "LivePage Documentation"
+description: "Interactive documentation platform"
+type: site  # NEW: "site" vs "tutorial"
+
+site:
+  home: index.md
+  logo: /assets/logo.svg
+  repository: https://github.com/livetemplate/livepage
+
+navigation:
+  - title: Getting Started
+    path: getting-started
+    pages:
+      - title: Installation
+        path: getting-started/installation.md
+      - title: Quick Start
+        path: getting-started/quickstart.md
+
+  - title: Tutorials
+    path: tutorials
+    pages:
+      - title: Counter Example
+        path: tutorials/counter.md
+      - title: Todo List
+        path: tutorials/todo-list.md
+
+  - title: Reference
+    path: reference
+    collapsed: false  # Default expanded
+    pages:
+      - title: Block Types
+        path: reference/blocks.md
+      - title: Configuration
+        path: reference/configuration.md
+```
+
+**Core Components:**
+
+1. **Site Manager** (`internal/site/manager.go`)
+   - Multi-page discovery and loading
+   - Navigation tree building
+   - Site-wide configuration
+
+2. **Enhanced Parser**
+   - Extend frontmatter: `parent`, `order`, `hidden`, `tags`
+   - Support page metadata for navigation
+
+3. **Server Updates**
+   - Route handling for `/:path`
+   - Home page template (hero, features, CTAs)
+   - Site-wide navigation sidebar
+   - Breadcrumbs component
+   - Prev/Next page navigation
+
+4. **Navigation Components**
+   - Hierarchical sidebar (collapsible sections)
+   - Active page highlighting
+   - Responsive mobile menu
+   - Table of contents per page
+
+5. **Search Functionality**
+   - Client-side search index
+   - Fuzzy matching on titles + content
+   - Keyboard shortcut (Cmd+K)
+   - Search results overlay
+
+**Implementation Tasks:**
+
+- **Phase 1: Core Infrastructure** (6-8h)
+  - Site configuration schema
+  - Site manager implementation
+  - Multi-page route handling
+
+- **Phase 2: Navigation & UI** (5-7h)
+  - Site navigation sidebar
+  - Home page template
+  - Breadcrumbs and prev/next
+
+- **Phase 3: Enhancement** (4-5h)
+  - Auto-discovery from file structure
+  - Search functionality
+
+- **Phase 4: Example & Testing** (3-4h)
+  - Create `examples/docs-site/`
+  - E2E tests for navigation
+  - Professional styling
+
+**Success Criteria:**
+- ✓ Serve multi-page site from `livepage serve docs/`
+- ✓ Home page with hero, features, navigation
+- ✓ Hierarchical sidebar with sections
+- ✓ Breadcrumbs and prev/next navigation
+- ✓ Mix of static docs and interactive tutorials
+- ✓ Responsive design
+- ✓ Search across pages
+- ✓ Professional appearance
+- ✓ Working example in `examples/docs-site/`
+
+---
+
+### B2. Fix Presentation Mode ✅
+**Impact**: MEDIUM - Broken feature needs repair
+**Effort**: Low-Medium (2-3 hours)
+**Status**: ✅ COMPLETED (2025-11-20)
+
+**What was implemented:**
+- ✅ Presentation toggle button (📽️) in top toolbar
+- ✅ CSS styles for presentation mode (larger fonts, hidden sidebar, focused content)
+- ✅ JavaScript implementation for section-by-section navigation
+- ✅ Keyboard shortcuts: 'f' to toggle, arrow keys to navigate, Escape to exit
+- ✅ Integration with existing navigation buttons
+- ✅ E2E tests verifying all functionality
+
+**Changes:**
+- Added presentation button with projector emoji to HTML template
+- Implemented CSS for presentation mode: hides sidebar, enlarges fonts, focuses on one section
+- JavaScript manages section discovery, navigation, and mode toggling
+- Keyboard controls: f-key toggle, arrow keys for prev/next, Escape to exit
+- E2E test covers button click, keyboard shortcuts, navigation, and visual state
+- All tests passing
+
+**Commit**: `0b0d6eb`
+
+---
+
+**Document Version**: 1.1
+**Last Updated**: 2025-11-20
+**Next Review**: After Phase 5 planning approval

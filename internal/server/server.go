@@ -541,6 +541,91 @@ func (s *Server) renderPage(page *livepage.Page) string {
             transform: scale(0.95);
         }
 
+        /* Presentation Mode Button */
+        .presentation-btn {
+            position: fixed;
+            top: 1rem;
+            right: 10rem;
+            z-index: 1000;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--card-shadow);
+            transition: all 0.2s ease;
+        }
+
+        .presentation-btn:hover {
+            background: var(--code-bg);
+            transform: scale(1.05);
+        }
+
+        .presentation-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Presentation Mode Styles */
+        body.presentation-mode {
+            margin-left: 0 !important;
+        }
+
+        body.presentation-mode .livepage-nav-sidebar {
+            display: none;
+        }
+
+        body.presentation-mode .livepage-nav-bottom {
+            left: 0;
+            width: 100%%;
+        }
+
+        body.presentation-mode .theme-toggle,
+        body.presentation-mode .presentation-btn {
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+
+        body.presentation-mode .theme-toggle:hover,
+        body.presentation-mode .presentation-btn:hover {
+            opacity: 1;
+        }
+
+        /* Hide all H2 sections except current in presentation mode */
+        body.presentation-mode .content-wrapper > * {
+            display: none;
+        }
+
+        body.presentation-mode .presentation-current-section {
+            display: block !important;
+        }
+
+        body.presentation-mode .content-wrapper {
+            max-width: 1200px;
+            padding: 2rem 4rem;
+        }
+
+        body.presentation-mode h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        body.presentation-mode p,
+        body.presentation-mode li {
+            font-size: 1.25rem;
+            line-height: 1.8;
+        }
+
+        body.presentation-mode code {
+            font-size: 1.1rem;
+        }
+
+        body.presentation-mode pre {
+            font-size: 1rem;
+        }
 
         /* Tutorial Navigation - Sidebar TOC */
         .livepage-nav-sidebar {
@@ -1033,6 +1118,11 @@ func (s *Server) renderPage(page *livepage.Page) string {
         <button id="theme-auto" title="Auto theme (system preference)" aria-label="Auto theme">🌓</button>
     </div>
 
+    <!-- Presentation Mode Toggle -->
+    <button id="presentation-toggle" class="presentation-btn" title="Toggle presentation mode (F key)" aria-label="Toggle presentation mode">
+        📽️
+    </button>
+
     %s
 
     <script>
@@ -1098,6 +1188,149 @@ func (s *Server) renderPage(page *livepage.Page) string {
                         setTheme(next);
                     }
                 });
+            });
+        })();
+
+        // Presentation Mode
+        (function() {
+            let presentationMode = false;
+            let currentSectionIndex = 0;
+            let sections = [];
+
+            function getSections() {
+                // Get all H2 elements (tutorial sections)
+                const h2Elements = document.querySelectorAll('.content-wrapper > h2');
+                sections = [];
+
+                h2Elements.forEach((h2, index) => {
+                    const section = {
+                        heading: h2,
+                        elements: [h2],
+                        index: index
+                    };
+
+                    // Collect all elements until the next H2
+                    let nextElement = h2.nextElementSibling;
+                    while (nextElement && nextElement.tagName !== 'H2') {
+                        section.elements.push(nextElement);
+                        nextElement = nextElement.nextElementSibling;
+                    }
+
+                    sections.push(section);
+                });
+
+                return sections;
+            }
+
+            function showSection(index) {
+                if (sections.length === 0) return;
+
+                currentSectionIndex = Math.max(0, Math.min(index, sections.length - 1));
+
+                // Remove current section class from all
+                document.querySelectorAll('.presentation-current-section').forEach(el => {
+                    el.classList.remove('presentation-current-section');
+                });
+
+                // Add class to current section elements
+                const section = sections[currentSectionIndex];
+                section.elements.forEach(el => {
+                    el.classList.add('presentation-current-section');
+                });
+
+                // Scroll to section
+                section.heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function togglePresentationMode() {
+                presentationMode = !presentationMode;
+                const btn = document.getElementById('presentation-toggle');
+
+                if (presentationMode) {
+                    // Enter presentation mode
+                    document.body.classList.add('presentation-mode');
+                    btn.classList.add('active');
+
+                    // Get sections and show first one
+                    getSections();
+                    showSection(0);
+                } else {
+                    // Exit presentation mode
+                    document.body.classList.remove('presentation-mode');
+                    btn.classList.remove('active');
+
+                    // Remove all presentation classes
+                    document.querySelectorAll('.presentation-current-section').forEach(el => {
+                        el.classList.remove('presentation-current-section');
+                    });
+                }
+            }
+
+            function nextSection() {
+                if (presentationMode && currentSectionIndex < sections.length - 1) {
+                    showSection(currentSectionIndex + 1);
+                }
+            }
+
+            function previousSection() {
+                if (presentationMode && currentSectionIndex > 0) {
+                    showSection(currentSectionIndex - 1);
+                }
+            }
+
+            // Initialize after DOM is ready
+            window.addEventListener('DOMContentLoaded', () => {
+                const btn = document.getElementById('presentation-toggle');
+                if (btn) {
+                    btn.addEventListener('click', togglePresentationMode);
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // 'f' key to toggle presentation mode
+                    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                        // Only if not typing in an input
+                        if (document.activeElement.tagName !== 'INPUT' &&
+                            document.activeElement.tagName !== 'TEXTAREA') {
+                            e.preventDefault();
+                            togglePresentationMode();
+                        }
+                    }
+
+                    // Arrow keys for navigation in presentation mode
+                    if (presentationMode) {
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            nextSection();
+                        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            previousSection();
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            togglePresentationMode();
+                        }
+                    }
+                });
+
+                // Hook into navigation buttons if they exist
+                const navNext = document.getElementById('nav-next');
+                const navPrev = document.getElementById('nav-prev');
+
+                if (navNext) {
+                    navNext.addEventListener('click', () => {
+                        if (presentationMode) {
+                            nextSection();
+                        }
+                    });
+                }
+
+                if (navPrev) {
+                    navPrev.addEventListener('click', () => {
+                        if (presentationMode) {
+                            previousSection();
+                        }
+                    });
+                }
             });
         })();
     </script>
