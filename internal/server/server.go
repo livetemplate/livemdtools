@@ -246,14 +246,37 @@ func (s *Server) servePage(w http.ResponseWriter, r *http.Request, route *Route)
 	// TODO: Add WebSocket support for interactivity
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	html := s.renderPage(route.Page)
+	html := s.renderPage(route.Page, r.URL.Path)
 	w.Write([]byte(html))
 }
 
 // renderPage renders a page to HTML.
-func (s *Server) renderPage(page *livepage.Page) string {
+func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 	// Render code blocks with metadata for client discovery
 	content := s.renderContent(page)
+
+	// Render navigation sidebar for site mode
+	sidebar := ""
+	if s.siteManager != nil {
+		sidebar = s.renderSidebar(currentPath)
+	}
+
+	// Render breadcrumbs and prev/next for site mode
+	breadcrumbsHTML := ""
+	prevNextHTML := ""
+	if s.siteManager != nil {
+		breadcrumbsHTML = s.renderBreadcrumbs(currentPath)
+		prevNextHTML = s.renderPrevNext(currentPath)
+	}
+
+	// Wrap content with breadcrumbs and prev/next
+	contentWithNav := fmt.Sprintf(`
+		%s
+		<div class="content-wrapper">
+			%s
+		</div>
+		%s
+	`, breadcrumbsHTML, content, prevNextHTML)
 
 	// Basic HTML wrapper with the static content
 	html := fmt.Sprintf(`<!DOCTYPE html>
@@ -760,6 +783,159 @@ func (s *Server) renderPage(page *livepage.Page) string {
             line-height: 1.4;
         }
 
+        /* Site Navigation Styles */
+        .nav-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        .nav-section {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-section-title {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--code-bg);
+        }
+
+        .nav-pages {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-pages li a {
+            display: block;
+            padding: 0.6rem 1.5rem 0.6rem 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-pages li a:hover {
+            background: var(--code-bg);
+            color: var(--text-primary);
+        }
+
+        .nav-pages li a.active {
+            background: var(--code-bg);
+            color: var(--accent);
+            border-left-color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            padding: 1rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .breadcrumbs ol {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .breadcrumbs li {
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumbs a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumbs .separator {
+            color: var(--text-secondary);
+            margin: 0 0.25rem;
+        }
+
+        .breadcrumbs .current {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Page Navigation (Prev/Next) */
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .page-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            flex: 1;
+            max-width: 45%%;
+        }
+
+        .page-nav a:hover {
+            background: var(--code-bg);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--card-shadow);
+        }
+
+        .page-nav-prev {
+            justify-content: flex-start;
+        }
+
+        .page-nav-next {
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+
+        .page-nav .arrow {
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .page-nav .label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .page-nav-spacer {
+            flex: 1;
+        }
+
         /* Tutorial Navigation - Bottom Bar */
         .livepage-nav-bottom {
             position: fixed;
@@ -1168,6 +1344,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
     </button>
 
     %s
+    %s
 
     <script>
         // Theme management
@@ -1486,7 +1663,7 @@ func (s *Server) renderPage(page *livepage.Page) string {
         });
     </script>
 </body>
-</html>`, page.Title, content)
+</html>`, page.Title, sidebar, contentWithNav)
 
 	return html
 }
@@ -1645,4 +1822,103 @@ func (s *Server) StopWatch() error {
 		return s.watcher.Stop()
 	}
 	return nil
+}
+
+// renderSidebar renders the navigation sidebar for site mode
+func (s *Server) renderSidebar(currentPath string) string {
+	if s.siteManager == nil {
+		return ""
+	}
+
+	nav := s.siteManager.GetNavigation()
+	if len(nav) == 0 {
+		return ""
+	}
+
+	var html strings.Builder
+	html.WriteString(`<nav class="livepage-nav-sidebar">`)
+
+	// Site title/logo
+	if s.config.Site != nil && s.config.Title != "" {
+		html.WriteString(fmt.Sprintf(`<div class="nav-header"><h2>%s</h2></div>`, s.config.Title))
+	}
+
+	// Navigation sections
+	for _, section := range nav {
+		html.WriteString(`<div class="nav-section">`)
+		html.WriteString(fmt.Sprintf(`<div class="nav-section-title">%s</div>`, section.Title))
+
+		if len(section.Children) > 0 {
+			html.WriteString(`<ul class="nav-pages">`)
+			for _, page := range section.Children {
+				activeClass := ""
+				if page.Path == currentPath {
+					activeClass = " active"
+				}
+				html.WriteString(fmt.Sprintf(`<li><a href="%s" class="nav-page-link%s">%s</a></li>`, page.Path, activeClass, page.Title))
+			}
+			html.WriteString(`</ul>`)
+		}
+
+		html.WriteString(`</div>`)
+	}
+
+	html.WriteString(`</nav>`)
+	return html.String()
+}
+
+// renderBreadcrumbs renders breadcrumb navigation
+func (s *Server) renderBreadcrumbs(currentPath string) string {
+	if s.siteManager == nil {
+		return ""
+	}
+
+	breadcrumbs := s.siteManager.GetBreadcrumbs(currentPath)
+	if len(breadcrumbs) <= 1 {
+		return ""
+	}
+
+	var html strings.Builder
+	html.WriteString(`<nav class="breadcrumbs" aria-label="Breadcrumb"><ol>`)
+
+	for i, crumb := range breadcrumbs {
+		if i < len(breadcrumbs)-1 {
+			html.WriteString(fmt.Sprintf(`<li><a href="%s">%s</a></li>`, crumb.Path, crumb.Title))
+			html.WriteString(`<li class="separator">›</li>`)
+		} else {
+			html.WriteString(fmt.Sprintf(`<li class="current">%s</li>`, crumb.Title))
+		}
+	}
+
+	html.WriteString(`</ol></nav>`)
+	return html.String()
+}
+
+// renderPrevNext renders previous/next page navigation
+func (s *Server) renderPrevNext(currentPath string) string {
+	if s.siteManager == nil {
+		return ""
+	}
+
+	prev, next := s.siteManager.GetPrevNext(currentPath)
+
+	if prev == nil && next == nil {
+		return ""
+	}
+
+	var html strings.Builder
+	html.WriteString(`<nav class="page-nav">`)
+
+	if prev != nil {
+		html.WriteString(fmt.Sprintf(`<a href="%s" class="page-nav-prev"><span class="arrow">←</span><span class="label">%s</span></a>`, prev.Path, prev.Title))
+	} else {
+		html.WriteString(`<span class="page-nav-spacer"></span>`)
+	}
+
+	if next != nil {
+		html.WriteString(fmt.Sprintf(`<a href="%s" class="page-nav-next"><span class="label">%s</span><span class="arrow">→</span></a>`, next.Path, next.Title))
+	}
+
+	html.WriteString(`</nav>`)
+	return html.String()
 }
