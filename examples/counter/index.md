@@ -183,10 +183,10 @@ flowchart TB
     end
 
     UI -->|User clicks button| Client
-    Client -->|Send action: 'increment'| WS_Client
+    Client -->|Send action: increment| WS_Client
     WS_Client <-->|WebSocket Connection| WS_Server
     WS_Server -->|Route action| Router
-    Router -->|Call Change()| State
+    Router -->|Call Change| State
     State -->|Read state| Template
     Template -->|Render HTML| WS_Server
     WS_Server -->|Push update| WS_Client
