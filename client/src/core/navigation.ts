@@ -27,6 +27,11 @@ export class TutorialNavigation {
   }
 
   private init() {
+    // Skip tutorial navigation if site navigation exists
+    if (document.querySelector('.livepage-nav-sidebar')) {
+      return; // Site mode - navigation already rendered by server
+    }
+
     // Parse H2 headings as tutorial steps
     this.parseSteps();
 
