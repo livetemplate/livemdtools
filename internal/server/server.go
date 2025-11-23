@@ -168,6 +168,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Serve search index for site mode
+	if r.URL.Path == "/search-index.json" && s.siteManager != nil {
+		s.serveSearchIndex(w, r)
+		return
+	}
+
 	// Serve assets
 	if strings.HasPrefix(r.URL.Path, "/assets/") {
 		s.serveAsset(w, r)
@@ -185,8 +191,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// No route found
-	http.NotFound(w, r)
+	// No route found - redirect to home page instead of 404
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // serveWebSocket handles WebSocket connections for interactive blocks.
@@ -238,6 +244,29 @@ func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.NotFound(w, r)
+}
+
+// serveSearchIndex serves the search index JSON for site mode
+func (s *Server) serveSearchIndex(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.siteManager == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Generate search index
+	searchIndex := s.siteManager.GenerateSearchIndex()
+
+	// Return as JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-cache") // Don't cache during development
+
+	if err := json.NewEncoder(w).Encode(searchIndex); err != nil {
+		http.Error(w, "Failed to encode search index", http.StatusInternalServerError)
+		return
+	}
 }
 
 // servePage serves a page.
@@ -342,7 +371,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
+            line-height: 1.7;
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 1.5rem;
@@ -353,31 +382,129 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         /* Content wrapper for readable line lengths */
         .content-wrapper {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
+            padding: 2rem 3rem;
         }
 
         /* Typography */
         h1, h2, h3 {
             color: var(--text-heading);
-            font-weight: 600;
             letter-spacing: -0.02em;
+            line-height: 1.4;
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
+            font-size: 3rem !important;
+            font-weight: 900 !important;
+            margin-bottom: 2rem !important;
+            margin-top: 0 !important;
+            padding-bottom: 1rem !important;
+            border-bottom: 4px solid var(--accent) !important;
+            color: var(--text-heading) !important;
+            line-height: 1.2 !important;
+            letter-spacing: -0.025em !important;
+        }
+
+        /* Subtitle/description that follows H1 */
+        h1 + p {
+            font-size: 1.25rem;
+            margin-top: 0;
+            padding-top: 1.5rem;
+            margin-bottom: 3rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
         }
 
         h2 {
-            font-size: 1.75rem;
-            margin-top: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.875rem !important;
+            font-weight: 800 !important;
+            margin-top: 4rem !important;
+            margin-bottom: 1.5rem !important;
+            padding-bottom: 0.75rem !important;
+            border-bottom: 3px solid var(--border-color) !important;
+            color: var(--text-heading) !important;
+            line-height: 1.3 !important;
+            letter-spacing: -0.02em !important;
+        }
+
+        h3 {
+            font-size: 1.5rem !important;
+            font-weight: 800 !important;
+            margin-top: 2.5rem !important;
+            margin-bottom: 1rem !important;
+            color: var(--text-heading) !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Space content after H2 to prevent sticking to border */
+        h2 + p, h2 + ul, h2 + ol, h2 + pre, h2 + h3 {
+            padding-top: 1rem;
+        }
+
+        /* Space content after H3 */
+        h3 + p, h3 + ul, h3 + ol, h3 + pre {
+            padding-top: 0.5rem;
         }
 
         p {
             margin-bottom: 1.25rem;
+            margin-top: 0;
             color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Better list styling */
+        ul, ol {
+            margin: 1rem 0 1.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Add spacing after lists before next heading */
+        ul + h2, ol + h2,
+        ul + h3, ol + h3 {
+            margin-top: 3rem;
+        }
+
+        /* Content links */
+        .content-wrapper a:not(.prev-next-link) {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0, 102, 204, 0.3);
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .content-wrapper a:not(.prev-next-link):hover {
+            border-bottom-color: var(--accent);
+            background: rgba(0, 102, 204, 0.05);
+            padding: 0 0.2rem;
+            margin: 0 -0.2rem;
+        }
+
+        .content-wrapper a:not(.prev-next-link):visited {
+            color: rgb(117, 55, 184);
+            border-bottom-color: rgba(117, 55, 184, 0.3);
+        }
+
+        .content-wrapper a:not(.prev-next-link):visited:hover {
+            border-bottom-color: rgb(117, 55, 184);
+            background: rgba(117, 55, 184, 0.05);
+        }
+
+        [data-theme="dark"] .content-wrapper a:not(.prev-next-link):visited {
+            color: rgb(196, 181, 253);
+            border-bottom-color: rgba(196, 181, 253, 0.3);
         }
 
         /* Code blocks */
@@ -511,11 +638,18 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             }
 
             h1 {
-                font-size: 2rem;
+                font-size: 2.5rem !important;
+                font-weight: 900 !important;
             }
 
             h2 {
-                font-size: 1.5rem;
+                font-size: 1.625rem !important;
+                font-weight: 800 !important;
+            }
+
+            h3 {
+                font-size: 1.375rem !important;
+                font-weight: 800 !important;
             }
 
             .livepage-wasm-block,
@@ -541,7 +675,18 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             }
 
             h1 {
-                font-size: 1.75rem;
+                font-size: 2rem !important;
+                font-weight: 900 !important;
+            }
+
+            h2 {
+                font-size: 1.5rem !important;
+                font-weight: 800 !important;
+            }
+
+            h3 {
+                font-size: 1.25rem !important;
+                font-weight: 800 !important;
             }
 
             .livepage-wasm-block,
@@ -565,19 +710,72 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             }
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
+        /* Unified Page Toolbar */
+        .page-toolbar {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
+            bottom: 1.5rem;
+            right: 1.5rem;
             z-index: 1000;
             display: flex;
             gap: 0.5rem;
+            align-items: center;
             background: var(--card-bg);
-            padding: 0.5rem;
+            padding: 0.35rem;
             border-radius: 8px;
             box-shadow: 0 2px 8px var(--card-shadow);
             border: 1px solid var(--card-border);
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .page-toolbar:hover {
+            opacity: 1;
+            box-shadow: 0 4px 12px var(--card-shadow);
+        }
+
+        /* Presentation Mode Button */
+        .presentation-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            margin: 0;
+            border-radius: 6px;
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .presentation-btn svg {
+            width: 1.1rem;
+            height: 1.1rem;
+            display: block;
+        }
+
+        .presentation-btn:hover {
+            background: var(--code-bg);
+        }
+
+        .presentation-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .presentation-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
         }
 
         .theme-toggle button {
@@ -587,9 +785,21 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             padding: 0.5rem;
             margin: 0;
             border-radius: 6px;
-            font-size: 1.2rem;
-            min-width: 2.5rem;
+            font-size: 1rem;
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             box-shadow: none;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle button svg {
+            width: 1.1rem;
+            height: 1.1rem;
+            display: block;
         }
 
         .theme-toggle button:hover {
@@ -606,34 +816,6 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         .theme-toggle button:active {
             transform: scale(0.95);
-        }
-
-        /* Presentation Mode Button */
-        .presentation-btn {
-            position: fixed;
-            top: 1rem;
-            right: 10rem;
-            z-index: 1000;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-primary);
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 2px 8px var(--card-shadow);
-            transition: all 0.2s ease;
-        }
-
-        .presentation-btn:hover {
-            background: var(--code-bg);
-            transform: scale(1.05);
-        }
-
-        .presentation-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
         }
 
         /* Presentation Mode Styles */
@@ -700,7 +882,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             left: 0;
             top: 0;
             bottom: 0;
-            width: 180px;
+            width: 360px;
             background: var(--card-bg);
             border-right: 1px solid var(--card-border);
             box-shadow: 2px 0 8px var(--card-shadow);
@@ -785,13 +967,13 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         /* Site Navigation Styles */
         .nav-header {
-            padding: 1.5rem;
+            padding: 2rem 2.5rem;
             border-bottom: 1px solid var(--border-color);
         }
 
         .nav-header h2 {
             margin: 0;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: var(--text-heading);
         }
@@ -801,8 +983,8 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
         }
 
         .nav-section-title {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.85rem;
+            padding: 1rem 2.5rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--text-secondary);
             text-transform: uppercase;
@@ -818,12 +1000,13 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         .nav-pages li a {
             display: block;
-            padding: 0.6rem 1.5rem 0.6rem 2rem;
+            padding: 0.85rem 2.5rem 0.85rem 3rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
-            border-left: 3px solid transparent;
+            border-left: 4px solid transparent;
+            margin: 2px 0;
         }
 
         .nav-pages li a:hover {
@@ -832,10 +1015,14 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
         }
 
         .nav-pages li a.active {
-            background: var(--code-bg);
+            background: rgba(0, 102, 204, 0.1);
             color: var(--accent);
             border-left-color: var(--accent);
-            font-weight: 500;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .nav-pages li a.active {
+            background: rgba(77, 166, 255, 0.15);
         }
 
         /* Breadcrumbs */
@@ -850,20 +1037,29 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
             margin: 0;
             padding: 0;
             display: flex;
-            align-items: center;
+            align-items: baseline;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0;
         }
 
         .breadcrumbs li {
-            display: flex;
-            align-items: center;
+            display: inline-flex;
+            align-items: baseline;
+        }
+
+        .breadcrumbs a,
+        .breadcrumbs .current,
+        .breadcrumbs .separator {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            vertical-align: baseline;
         }
 
         .breadcrumbs a {
             color: var(--accent);
             text-decoration: none;
-            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .breadcrumbs a:hover {
@@ -872,13 +1068,12 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         .breadcrumbs .separator {
             color: var(--text-secondary);
-            margin: 0 0.25rem;
+            margin: 0 0.5rem;
         }
 
         .breadcrumbs .current {
             color: var(--text-primary);
             font-weight: 500;
-            font-size: 0.9rem;
         }
 
         /* Page Navigation (Prev/Next) */
@@ -1006,22 +1201,22 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
         /* Adjust main content to make room for navigation */
         body:has(.livepage-nav-sidebar) {
-            margin-left: 180px;
+            margin-left: 360px;
             margin-bottom: 60px;
         }
 
         /* Responsive Navigation */
         @media (max-width: 1024px) {
             .livepage-nav-sidebar {
-                width: 200px;
+                width: 320px;
             }
 
             .livepage-nav-bottom {
-                left: 200px;
+                left: 320px;
             }
 
             body:has(.livepage-nav-sidebar) {
-                margin-left: 200px;
+                margin-left: 320px;
             }
         }
 
@@ -1331,17 +1526,45 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Theme Toggle -->
-    <div class="theme-toggle">
-        <button id="theme-light" title="Light theme" aria-label="Light theme">☀️</button>
-        <button id="theme-dark" title="Dark theme" aria-label="Dark theme">🌙</button>
-        <button id="theme-auto" title="Auto theme (system preference)" aria-label="Auto theme">🌓</button>
-    </div>
+    <!-- Unified Toolbar -->
+    <div class="page-toolbar">
+        <!-- Presentation Mode Toggle -->
+        <button id="presentation-toggle" class="presentation-btn" title="Toggle presentation mode (F key)" aria-label="Toggle presentation mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+                <polyline points="17 2 12 7 7 2"/>
+            </svg>
+        </button>
 
-    <!-- Presentation Mode Toggle -->
-    <button id="presentation-toggle" class="presentation-btn" title="Toggle presentation mode (F key)" aria-label="Toggle presentation mode">
-        📽️
-    </button>
+        <!-- Theme Toggle -->
+        <div class="theme-toggle">
+            <button id="theme-light" title="Light theme" aria-label="Light theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+            </button>
+            <button id="theme-dark" title="Dark theme" aria-label="Dark theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <button id="theme-auto" title="Auto theme (system preference)" aria-label="Auto theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+            </button>
+        </div>
+    </div>
 
     %s
     %s
@@ -1425,7 +1648,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string) string {
 
             function getSections() {
                 // Get all H2 elements (tutorial sections)
-                const h2Elements = document.querySelectorAll('.content-wrapper > h2');
+                const h2Elements = document.querySelectorAll('.content-wrapper h2');
                 sections = [];
 
                 h2Elements.forEach((h2, index) => {
@@ -1676,11 +1899,9 @@ func (s *Server) renderContent(page *livepage.Page) string {
 	// For now, the client will need to discover blocks by parsing the HTML
 	// In Phase 4.5, we'll improve this to inject proper data attributes during parsing
 
-	// Wrap content in a readable-width container for better typography
-	// Navigation elements (sidebar, bottom nav) are outside this wrapper
-	wrappedContent := fmt.Sprintf(`<div class="content-wrapper">%s</div>`, content)
-
-	return wrappedContent
+	// Return content directly - the .content-wrapper will be added by the page template
+	// This avoids double-nesting of .content-wrapper divs
+	return content
 }
 
 // mdToPattern converts a markdown file path to a URL pattern.

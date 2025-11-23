@@ -227,3 +227,126 @@ func TestPresentationMode(t *testing.T) {
 
 	t.Logf("✓ Presentation mode working correctly!")
 }
+
+// TestPresentationModeDocsS site tests presentation mode specifically on the docs-site
+// This is a regression test for the nested .content-wrapper bug reported by the user
+func TestPresentationModeDocsSite(t *testing.T) {
+	// Start the server for docs-site
+	serverCmd := exec.Command("./livepage", "serve", "examples/docs-site", "--port", "9191")
+	serverCmd.Stdout = os.Stdout
+	serverCmd.Stderr = os.Stderr
+
+	if err := serverCmd.Start(); err != nil {
+		t.Fatalf("Failed to start server: %v", err)
+	}
+	defer func() {
+		if serverCmd.Process != nil {
+			serverCmd.Process.Kill()
+		}
+	}()
+
+	// Wait for server to start
+	time.Sleep(5 * time.Second)
+
+	// Create chrome context
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+	)
+
+	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancel()
+
+	ctx, cancel := chromedp.NewContext(allocCtx)
+	defer cancel()
+
+	// Set timeout
+	ctx, cancel = context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	var h2Count int
+	var currentSectionExists bool
+	var bodyHasClass bool
+	var contentVisible bool
+
+	// Navigate to the intro page (where user reported the bug)
+	err := chromedp.Run(ctx,
+		chromedp.Navigate("http://localhost:9191/getting-started/intro"),
+		chromedp.Sleep(2*time.Second),
+
+		// Count H2 elements found by the selector
+		chromedp.Evaluate(`document.querySelectorAll('.content-wrapper h2').length`, &h2Count),
+	)
+
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	t.Logf("H2 elements found: %d", h2Count)
+
+	if h2Count == 0 {
+		t.Fatal("No H2 elements found - the selector '.content-wrapper h2' is not working")
+	}
+
+	// Click presentation mode button
+	err = chromedp.Run(ctx,
+		chromedp.Click("#presentation-toggle"),
+		chromedp.Sleep(1*time.Second),
+
+		// Check body has presentation-mode class
+		chromedp.Evaluate(`document.body.classList.contains('presentation-mode')`, &bodyHasClass),
+
+		// Check current section marker exists
+		chromedp.Evaluate(`document.querySelector('.presentation-current-section') !== null`, &currentSectionExists),
+
+		// Check if first section content is visible (not display:none)
+		chromedp.Evaluate(`(function() {
+			var section = document.querySelector('.presentation-current-section');
+			if (!section) return false;
+			var style = window.getComputedStyle(section);
+			return style.display !== 'none';
+		})()`, &contentVisible),
+	)
+
+	if err != nil {
+		t.Fatalf("Failed to activate presentation mode: %v", err)
+	}
+
+	t.Logf("Body has presentation-mode class: %v", bodyHasClass)
+	t.Logf("Current section exists: %v", currentSectionExists)
+	t.Logf("Content is visible: %v", contentVisible)
+
+	if !bodyHasClass {
+		t.Error("Body should have presentation-mode class")
+	}
+
+	if !currentSectionExists {
+		t.Error("Current section should be marked - content would disappear without this!")
+	}
+
+	if !contentVisible {
+		t.Error("Content should be visible in presentation mode, not hidden")
+	}
+
+	// Additional check: verify content actually rendered
+	var hasText bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`(function() {
+			var section = document.querySelector('.presentation-current-section');
+			return section && section.textContent.trim().length > 0;
+		})()`, &hasText),
+	)
+
+	if err != nil {
+		t.Fatalf("Failed to check content: %v", err)
+	}
+
+	t.Logf("Section has text content: %v", hasText)
+
+	if !hasText {
+		t.Error("Current section should have visible text content")
+	}
+
+	t.Logf("✓ Presentation mode working correctly on docs-site!")
+}

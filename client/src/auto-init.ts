@@ -4,6 +4,9 @@
 
 import { LivepageClient } from "./livepage-client";
 import { TutorialNavigation } from "./core/navigation";
+import { SiteSearch } from "./core/search";
+import { CodeCopy } from "./core/code-copy";
+import { PageTOC } from "./core/page-toc";
 import { hasEditableBlocks, preloadMonaco } from "./editor/monaco-loader";
 
 /**
@@ -59,6 +62,18 @@ function initializeLivepage(): void {
   // Initialize tutorial navigation (if H2 headings exist)
   const nav = new TutorialNavigation();
   (window as any).livepageNavigation = nav;
+
+  // Initialize page TOC (for site-mode pages with H2 sections)
+  const pageTOC = new PageTOC();
+  (window as any).livepagePageTOC = pageTOC;
+
+  // Initialize site search (if in site mode)
+  const search = new SiteSearch();
+  (window as any).livepageSearch = search;
+
+  // Initialize code copy buttons
+  const codeCopy = new CodeCopy();
+  (window as any).livepageCodeCopy = codeCopy;
 
   console.log(`[Livepage] Initialized with ${client.getBlockIds().length} blocks`);
 }

@@ -403,6 +403,131 @@ func (m *Manager) Reload(filePath string) error {
 	return nil
 }
 
+// SearchEntry represents a single entry in the search index
+type SearchEntry struct {
+	Title   string `json:"title"`
+	Path    string `json:"path"`
+	Content string `json:"content"`
+	Section string `json:"section,omitempty"`
+}
+
+// GenerateSearchIndex creates a search index from all pages
+func (m *Manager) GenerateSearchIndex() []SearchEntry {
+	entries := make([]SearchEntry, 0)
+
+	for _, page := range m.pages {
+		if page.Page == nil {
+			continue
+		}
+
+		// Extract text content from the page
+		content := extractTextContent(page.Page)
+
+		// Find the section this page belongs to
+		section := ""
+		for _, navNode := range m.nav {
+			for _, child := range navNode.Children {
+				if child.Path == page.Path {
+					section = navNode.Title
+					break
+				}
+			}
+			if section != "" {
+				break
+			}
+		}
+
+		entries = append(entries, SearchEntry{
+			Title:   page.Title,
+			Path:    page.Path,
+			Content: content,
+			Section: section,
+		})
+	}
+
+	return entries
+}
+
+// extractTextContent extracts plain text from a page for search indexing
+func extractTextContent(page *livepage.Page) string {
+	var content strings.Builder
+
+	// Add page title
+	if page.Title != "" {
+		content.WriteString(page.Title)
+		content.WriteString(" ")
+	}
+
+	// Extract text from HTML content
+	// Simple approach: strip HTML tags
+	htmlContent := page.StaticHTML
+
+	// Remove script and style tags completely
+	htmlContent = removeTagContent(htmlContent, "script")
+	htmlContent = removeTagContent(htmlContent, "style")
+
+	// Remove code blocks (pre tags - usually not useful for search)
+	htmlContent = removeTagContent(htmlContent, "pre")
+
+	// Remove all HTML tags but keep the text
+	htmlContent = stripHTMLTags(htmlContent)
+
+	// Remove extra whitespace
+	lines := strings.Split(htmlContent, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed != "" {
+			content.WriteString(trimmed)
+			content.WriteString(" ")
+		}
+	}
+
+	// Limit content length for search index (first ~500 chars)
+	result := content.String()
+	if len(result) > 500 {
+		result = result[:500]
+	}
+
+	return result
+}
+
+// removeTagContent removes a tag and its content
+func removeTagContent(html, tag string) string {
+	// Simple regex-like replacement for removing tags and their content
+	// Not using regex to avoid dependency
+	result := html
+	for {
+		start := strings.Index(result, "<"+tag)
+		if start == -1 {
+			break
+		}
+		end := strings.Index(result[start:], "</"+tag+">")
+		if end == -1 {
+			break
+		}
+		result = result[:start] + result[start+end+len("</"+tag+">"):]
+	}
+	return result
+}
+
+// stripHTMLTags removes all HTML tags but keeps text content
+func stripHTMLTags(html string) string {
+	var result strings.Builder
+	inTag := false
+
+	for i := 0; i < len(html); i++ {
+		if html[i] == '<' {
+			inTag = true
+		} else if html[i] == '>' {
+			inTag = false
+		} else if !inTag {
+			result.WriteByte(html[i])
+		}
+	}
+
+	return result.String()
+}
+
 // mdToURLPath converts a markdown file path to a URL path
 // Examples:
 //   - "index.md" → "/"
