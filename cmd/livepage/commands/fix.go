@@ -126,8 +126,9 @@ func FixCommand(args []string) error {
 	}
 
 	// Print summary
-	fmt.Printf("\n" + strings.Repeat("─", 60) + "\n")
-	fmt.Printf("Summary:\n")
+	separator := "\n" + strings.Repeat("─", 60) + "\n"
+	fmt.Print(separator)
+	fmt.Println("Summary:")
 	fmt.Printf("  Total files:  %d\n", totalFiles)
 	fmt.Printf("  Files fixed:  %d\n", fixedFiles)
 	fmt.Printf("  Total fixes:  %d\n", totalFixes)

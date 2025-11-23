@@ -123,8 +123,9 @@ func BlocksCommand(args []string) error {
 	}
 
 	// Print summary
-	fmt.Printf(strings.Repeat("─", 60) + "\n")
-	fmt.Printf("Summary:\n")
+	separator := strings.Repeat("─", 60) + "\n"
+	fmt.Print(separator)
+	fmt.Println("Summary:")
 	fmt.Printf("  Total blocks: %d\n", totalBlocks)
 	fmt.Printf("  Server blocks: %d\n", serverCount)
 	fmt.Printf("  WASM blocks: %d\n", wasmCount)
