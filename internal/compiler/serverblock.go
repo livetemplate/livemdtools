@@ -355,11 +355,23 @@ func dispatchAction(state interface{}, action string, ctx *livetemplate.Context)
 	for i := 0; i < stateType.NumMethod(); i++ {
 		method := stateType.Method(i)
 		if strings.ToLower(method.Name) == actionLower {
+			// Validate method signature: func(receiver, *Context) error
+			methodType := method.Type
+			if methodType.NumIn() != 2 || methodType.NumOut() != 1 {
+				return fmt.Errorf("method %%s has invalid signature: expected func(*Context) error", method.Name)
+			}
+
 			// Found matching method, call it
 			methodVal := stateVal.Method(i)
 			results := methodVal.Call([]reflect.Value{reflect.ValueOf(ctx)})
-			if len(results) == 1 && !results[0].IsNil() {
-				return results[0].Interface().(error)
+			if len(results) == 1 {
+				if results[0].IsNil() {
+					return nil
+				}
+				if errVal, ok := results[0].Interface().(error); ok {
+					return errVal
+				}
+				return fmt.Errorf("method %%s does not return error type", method.Name)
 			}
 			return nil
 		}
