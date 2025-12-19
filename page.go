@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -21,8 +22,9 @@ func ParseFile(path string) (*Page, error) {
 		absPath = path
 	}
 
-	// Parse markdown
-	fm, codeBlocks, staticHTML, err := ParseMarkdown(content)
+	// Parse markdown with partial support
+	baseDir := filepath.Dir(absPath)
+	fm, codeBlocks, staticHTML, err := ParseMarkdownWithPartials(content, baseDir)
 	if err != nil {
 		// Wrap with file context
 		return nil, NewParseError(absPath, 1, fmt.Sprintf("Failed to parse markdown: %v", err))
@@ -40,9 +42,84 @@ func ParseFile(path string) (*Page, error) {
 		StepCount: fm.Steps,
 	}
 
+	// Apply frontmatter config options (sources, styling, blocks, features)
+	page.Config.MergeFromFrontmatter(fm)
+
 	// Build blocks (pass source file for error context)
 	if err := page.buildBlocks(codeBlocks, absPath); err != nil {
 		return nil, err // Already a ParseError from buildBlocks
+	}
+
+	return page, nil
+}
+
+// MergeFromFrontmatter applies frontmatter config options to PageConfig.
+// Frontmatter values take precedence over any existing values.
+func (pc *PageConfig) MergeFromFrontmatter(fm *Frontmatter) {
+	// Sources - copy from frontmatter if present
+	if fm.Sources != nil {
+		if pc.Sources == nil {
+			pc.Sources = make(map[string]SourceConfig)
+		}
+		for name, src := range fm.Sources {
+			pc.Sources[name] = src
+		}
+	}
+
+	// Styling - frontmatter takes precedence for non-zero values
+	if fm.Styling != nil {
+		if fm.Styling.Theme != "" {
+			pc.Styling.Theme = fm.Styling.Theme
+		}
+		if fm.Styling.PrimaryColor != "" {
+			pc.Styling.PrimaryColor = fm.Styling.PrimaryColor
+		}
+		if fm.Styling.Font != "" {
+			pc.Styling.Font = fm.Styling.Font
+		}
+	}
+
+	// Blocks - frontmatter takes precedence
+	if fm.Blocks != nil {
+		pc.Blocks = *fm.Blocks
+	}
+
+	// Features - frontmatter takes precedence
+	if fm.Features != nil {
+		pc.Features = *fm.Features
+	}
+}
+
+// ParseString parses markdown content from a string and creates a Page.
+// This is useful for the playground where content comes from user input.
+func ParseString(content string) (*Page, error) {
+	// Parse markdown (no partials support for string input)
+	fm, codeBlocks, staticHTML, err := ParseMarkdownWithPartials([]byte(content), "")
+	if err != nil {
+		return nil, NewParseError("playground", 1, fmt.Sprintf("Failed to parse markdown: %v", err))
+	}
+
+	// Create page
+	page := New("playground")
+	page.Title = fm.Title
+	if page.Title == "" {
+		page.Title = "Playground"
+	}
+	page.Type = fm.Type
+	page.StaticHTML = staticHTML
+	page.SourceFile = "playground"
+	page.Config = PageConfig{
+		Persist:   fm.Persist,
+		MultiStep: fm.Steps > 0,
+		StepCount: fm.Steps,
+	}
+
+	// Apply frontmatter config options (sources, styling, blocks, features)
+	page.Config.MergeFromFrontmatter(fm)
+
+	// Build blocks
+	if err := page.buildBlocks(codeBlocks, "playground"); err != nil {
+		return nil, err
 	}
 
 	return page, nil
@@ -77,16 +154,61 @@ func (p *Page) buildBlocks(codeBlocks []*CodeBlock, sourceFile string) error {
 			p.WasmBlocks[block.ID] = block
 
 		case "lvt":
-			// Auto-link to nearest previous server block if no explicit state ref
+			// IMPORTANT: Extract lvt-source metadata from ORIGINAL content BEFORE template processing
+			// because autoGenerateTableTemplate() strips the lvt-source attribute
 			stateRef := cb.Metadata["state"]
-			if stateRef == "" {
+			hasAutoPersist := hasAutoPersistForm(cb.Content)
+			sourceName := getLvtSource(cb.Content)
+			elementType := getLvtSourceElementType(cb.Content)
+			columns := getTableColumns(cb.Content)
+			actions := getTableActions(cb.Content)
+
+			// Apply smart template generation for tables/selects with lvt-source
+			processedContent := autoGenerateTableTemplate(cb.Content)
+			processedContent = autoGenerateSelectTemplate(processedContent)
+
+			if stateRef == "" && (hasAutoPersist || sourceName != "") {
+				// Create auto-generated server block
+				blockID := getBlockID(cb, i)
+				autoID := "auto-persist-" + blockID
+
+				// Build metadata for the generated server block
+				metadata := map[string]string{}
+				if hasAutoPersist {
+					metadata["auto-persist"] = "true"
+				}
+				if sourceName != "" {
+					metadata["lvt-source"] = sourceName
+					// Add element type info for code generation
+					metadata["lvt-element"] = elementType
+					if elementType == "table" {
+						// Pass column and action info for datatable generation
+						if columns != "" {
+							metadata["lvt-columns"] = columns
+						}
+						if actions != "" {
+							metadata["lvt-actions"] = actions
+						}
+					}
+				}
+
+				// Create a marker ServerBlock that will be compiled
+				block := &ServerBlock{
+					ID:       autoID,
+					Language: "go",
+					Content:  processedContent, // Store processed LVT content
+					Metadata: metadata,
+				}
+				p.ServerBlocks[autoID] = block
+				stateRef = autoID
+			} else if stateRef == "" {
 				stateRef = lastServerBlockID
 			}
 
 			block := &InteractiveBlock{
 				ID:       getBlockID(cb, i),
 				StateRef: stateRef,
-				Content:  cb.Content,
+				Content:  processedContent, // Use processed content with auto-generated templates
 				Metadata: cb.Metadata,
 			}
 			p.InteractiveBlocks[block.ID] = block
@@ -159,4 +281,170 @@ func getBlockID(cb *CodeBlock, index int) string {
 
 	// Generate ID from type and index
 	return fmt.Sprintf("%s-%d", cb.Type, index)
+}
+
+// hasAutoPersistForm checks if LVT content contains a form with lvt-persist attribute
+func hasAutoPersistForm(content string) bool {
+	// Look for <form ... lvt-persist="...">
+	formRegex := regexp.MustCompile(`<form[^>]*lvt-persist="[^"]+"[^>]*>`)
+	return formRegex.MatchString(content)
+}
+
+// getLvtSource extracts the lvt-source attribute value from LVT content
+// Returns empty string if not found
+func getLvtSource(content string) string {
+	// Look for lvt-source="name" on any element
+	sourceRegex := regexp.MustCompile(`lvt-source="([^"]+)"`)
+	match := sourceRegex.FindStringSubmatch(content)
+	if match != nil && len(match) > 1 {
+		return match[1]
+	}
+	return ""
+}
+
+// getLvtSourceElementType detects what kind of element has the lvt-source attribute
+// Returns "table", "select", or "div" (default)
+func getLvtSourceElementType(content string) string {
+	// Check if lvt-source is on a table element
+	tableRegex := regexp.MustCompile(`(?i)<table[^>]*lvt-source=`)
+	if tableRegex.MatchString(content) {
+		return "table"
+	}
+	// Check if lvt-source is on a select element
+	selectRegex := regexp.MustCompile(`(?i)<select[^>]*lvt-source=`)
+	if selectRegex.MatchString(content) {
+		return "select"
+	}
+	return "div"
+}
+
+// getTableColumns extracts lvt-columns from a table element
+// Returns a comma-separated list like "name:Name,email:Email"
+func getTableColumns(content string) string {
+	columnsRegex := regexp.MustCompile(`lvt-columns="([^"]+)"`)
+	match := columnsRegex.FindStringSubmatch(content)
+	if match != nil && len(match) > 1 {
+		return match[1]
+	}
+	return ""
+}
+
+// getTableActions extracts lvt-actions from a table element
+// Returns a comma-separated list like "edit:Edit,delete:Delete"
+func getTableActions(content string) string {
+	actionsRegex := regexp.MustCompile(`lvt-actions="([^"]+)"`)
+	match := actionsRegex.FindStringSubmatch(content)
+	if match != nil && len(match) > 1 {
+		return match[1]
+	}
+	return ""
+}
+
+// autoGenerateTableTemplate transforms <table lvt-source="..."> into a datatable component template.
+// Uses the datatable component from livetemplate/components for rich features like sorting and pagination.
+func autoGenerateTableTemplate(content string) string {
+	// Check if this is a table with lvt-source and empty/minimal content
+	tableRegex := regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
+	match := tableRegex.FindStringSubmatch(content)
+	if match == nil {
+		return content
+	}
+
+	attrs := match[1]
+	innerContent := strings.TrimSpace(match[2])
+
+	// If table has substantial inner content (like {{range}} or {{template}}), don't override
+	if strings.Contains(innerContent, "{{range") || strings.Contains(innerContent, "<tbody>") || strings.Contains(innerContent, "{{template") {
+		return content
+	}
+
+	// Extract any extra classes or attributes we want to preserve (not lvt-source, lvt-columns, lvt-actions)
+	cleanedAttrs := attrs
+	cleanedAttrs = regexp.MustCompile(`\s*lvt-source="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = regexp.MustCompile(`\s*lvt-columns="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = regexp.MustCompile(`\s*lvt-actions="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = strings.TrimSpace(cleanedAttrs)
+
+	// Generate simple datatable template call
+	// The datatable component handles all rendering, sorting, and pagination
+	var generated strings.Builder
+
+	// Wrap in a div with any extra attributes (like class) if present
+	if cleanedAttrs != "" {
+		generated.WriteString(fmt.Sprintf("<div%s>\n", cleanedAttrs))
+		generated.WriteString("{{template \"lvt:datatable:default:v1\" .Table}}\n")
+		generated.WriteString("</div>")
+	} else {
+		generated.WriteString("{{template \"lvt:datatable:default:v1\" .Table}}")
+	}
+
+	// Use ReplaceAllLiteralString to avoid special chars being interpreted as backreferences
+	return tableRegex.ReplaceAllLiteralString(content, generated.String())
+}
+
+// titleCase converts a string to title case (first letter uppercase)
+func titleCase(s string) string {
+	if s == "" {
+		return s
+	}
+	// Handle snake_case by converting underscores to spaces and capitalizing each word
+	s = strings.ReplaceAll(s, "_", " ")
+	words := strings.Fields(s)
+	for i, word := range words {
+		if len(word) > 0 {
+			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+		}
+	}
+	return strings.Join(words, "")
+}
+
+// autoGenerateSelectTemplate transforms <select lvt-source="..."> into a full template
+// if the select is empty. Supports lvt-value and lvt-label attributes.
+func autoGenerateSelectTemplate(content string) string {
+	// Check if this is a select with lvt-source and empty/minimal content
+	selectRegex := regexp.MustCompile(`(?s)<select([^>]*lvt-source="[^"]+[^>]*)>(.*?)</select>`)
+	match := selectRegex.FindStringSubmatch(content)
+	if match == nil {
+		return content
+	}
+
+	attrs := match[1]
+	innerContent := strings.TrimSpace(match[2])
+
+	// If select has substantial inner content (like {{range}} or <option>), don't override
+	if strings.Contains(innerContent, "{{range") || strings.Contains(innerContent, "<option") {
+		return content
+	}
+
+	// Parse lvt-value="fieldName" - defaults to "id"
+	valueField := "Id"
+	valueMatch := regexp.MustCompile(`lvt-value="([^"]+)"`).FindStringSubmatch(attrs)
+	if valueMatch != nil {
+		valueField = titleCase(valueMatch[1])
+	}
+
+	// Parse lvt-label="fieldName" - defaults to "name"
+	labelField := "Name"
+	labelMatch := regexp.MustCompile(`lvt-label="([^"]+)"`).FindStringSubmatch(attrs)
+	if labelMatch != nil {
+		labelField = titleCase(labelMatch[1])
+	}
+
+	// Build cleaned attributes (remove lvt-value and lvt-label)
+	cleanedAttrs := attrs
+	cleanedAttrs = regexp.MustCompile(`\s*lvt-value="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = regexp.MustCompile(`\s*lvt-label="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
+
+	// Generate the template
+	var generated strings.Builder
+	generated.WriteString("<select")
+	generated.WriteString(cleanedAttrs)
+	generated.WriteString(">\n")
+	generated.WriteString("  {{range .Data}}\n")
+	generated.WriteString(fmt.Sprintf("  <option value=\"{{.%s}}\">{{.%s}}</option>\n", valueField, labelField))
+	generated.WriteString("  {{end}}\n")
+	generated.WriteString("</select>")
+
+	// Use ReplaceAllLiteralString to avoid special chars being interpreted as backreferences
+	return selectRegex.ReplaceAllLiteralString(content, generated.String())
 }
