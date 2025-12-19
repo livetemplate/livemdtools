@@ -4,15 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/livetemplate/components/base"
+	"github.com/livetemplate/components/datatable"
 	"github.com/livetemplate/livetemplate"
 	"github.com/livetemplate/livepage"
 	"github.com/livetemplate/livepage/internal/compiler"
+	"github.com/livetemplate/livepage/internal/config"
 )
 
 var upgrader = websocket.Upgrader{
@@ -37,6 +42,8 @@ type WebSocketHandler struct {
 	server     *Server // Reference to server for connection tracking
 	compiler   *compiler.ServerBlockCompiler
 	stateFactories map[string]func() compiler.Store // Compiled state factories
+	rootDir    string // Site root directory for database path
+	config     *config.Config // Site configuration with sources
 }
 
 // BlockInstance represents a running LiveTemplate instance for an interactive block.
@@ -49,7 +56,7 @@ type BlockInstance struct {
 }
 
 // NewWebSocketHandler creates a new WebSocket handler for a page.
-func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool) *WebSocketHandler {
+func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool, rootDir string, cfg *config.Config) *WebSocketHandler {
 	if debug {
 		log.Printf("[WS] Creating WebSocket handler for page: %s", page.ID)
 		log.Printf("[WS] Page has %d server blocks", len(page.ServerBlocks))
@@ -63,6 +70,8 @@ func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool) *WebSo
 		server:         server,
 		compiler:       compiler.NewServerBlockCompiler(debug),
 		stateFactories: make(map[string]func() compiler.Store),
+		rootDir:        rootDir,
+		config:         cfg,
 	}
 
 	// Compile all server blocks
@@ -71,14 +80,77 @@ func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool) *WebSo
 	return h
 }
 
+// Close cleans up all resources including plugin processes and build artifacts
+func (h *WebSocketHandler) Close() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.debug {
+		log.Printf("[WS] Closing WebSocket handler, cleaning up %d instances", len(h.instances))
+	}
+
+	// Close all state instances (kills plugin processes)
+	for blockID, instance := range h.instances {
+		if instance.state != nil {
+			if err := instance.state.Close(); err != nil && h.debug {
+				log.Printf("[WS] Error closing state for block %s: %v", blockID, err)
+			}
+		}
+	}
+
+	// Clear instances map
+	h.instances = make(map[string]*BlockInstance)
+
+	// Cleanup compiler build artifacts
+	if h.compiler != nil {
+		h.compiler.Cleanup()
+	}
+}
+
 // compileServerBlocks compiles all server blocks into loadable plugins
 func (h *WebSocketHandler) compileServerBlocks() {
+	// Debug: list all server block IDs first
+	if h.debug {
+		var blockIDs []string
+		for id := range h.page.ServerBlocks {
+			blockIDs = append(blockIDs, id)
+		}
+		log.Printf("[WS] All server block IDs: %v", blockIDs)
+	}
+
 	for blockID, block := range h.page.ServerBlocks {
 		if h.debug {
-			log.Printf("[WS] Compiling server block: %s", blockID)
+			log.Printf("[WS] Compiling server block: %s (metadata: %v)", blockID, block.Metadata)
 		}
 
-		factory, err := h.compiler.CompileServerBlock(block)
+		var factory func() compiler.Store
+		var err error
+
+		// Check if this is an lvt-source block (takes precedence if both are present)
+		if sourceName := block.Metadata["lvt-source"]; sourceName != "" {
+			// lvt-source block - generate code to fetch from source
+			// Check page-level sources first (from frontmatter), then site-level (from livepage.yaml)
+			sourceCfg, found := h.getEffectiveSource(sourceName)
+			if !found {
+				log.Printf("[WS] Source %q not found (checked frontmatter and livepage.yaml) for block %s", sourceName, blockID)
+				continue
+			}
+			if h.debug {
+				log.Printf("[WS] Compiling lvt-source block: %s (source: %s, type: %s)", blockID, sourceName, sourceCfg.Type)
+			}
+			factory, err = h.compiler.CompileLvtSource(blockID, sourceName, sourceCfg, h.rootDir, block.Metadata)
+		} else if block.Metadata["auto-persist"] == "true" {
+			// Auto-persist block - generate code from form fields
+			dbPath := filepath.Join(h.rootDir, "site.sqlite")
+			if h.debug {
+				log.Printf("[WS] Compiling auto-persist block: %s (db: %s)", blockID, dbPath)
+			}
+			factory, err = h.compiler.CompileAutoPersist(blockID, block.Content, dbPath)
+		} else {
+			// Regular server block
+			factory, err = h.compiler.CompileServerBlock(block)
+		}
+
 		if err != nil {
 			log.Printf("[WS] Failed to compile block %s: %v", blockID, err)
 			continue
@@ -90,6 +162,43 @@ func (h *WebSocketHandler) compileServerBlocks() {
 			log.Printf("[WS] Successfully compiled block: %s", blockID)
 		}
 	}
+
+	// Debug: list all compiled state factories
+	if h.debug {
+		var factoryIDs []string
+		for id := range h.stateFactories {
+			factoryIDs = append(factoryIDs, id)
+		}
+		log.Printf("[WS] Compiled state factories: %v", factoryIDs)
+	}
+}
+
+// getEffectiveSource looks up a source by name, checking page-level sources first
+// (from frontmatter), then falling back to site-level sources (from livepage.yaml).
+func (h *WebSocketHandler) getEffectiveSource(name string) (config.SourceConfig, bool) {
+	// Check page-level sources first (from frontmatter)
+	if h.page != nil && h.page.Config.Sources != nil {
+		if src, ok := h.page.Config.Sources[name]; ok {
+			// Convert livepage.SourceConfig to config.SourceConfig
+			return config.SourceConfig{
+				Type:    src.Type,
+				Cmd:     src.Cmd,
+				Query:   src.Query,
+				URL:     src.URL,
+				File:    src.File,
+				Options: src.Options,
+			}, true
+		}
+	}
+
+	// Fall back to site-level sources (from livepage.yaml)
+	if h.config != nil && h.config.Sources != nil {
+		if src, ok := h.config.Sources[name]; ok {
+			return src, true
+		}
+	}
+
+	return config.SourceConfig{}, false
 }
 
 // ServeHTTP handles WebSocket upgrade and message routing.
@@ -169,17 +278,26 @@ func (h *WebSocketHandler) initializeInstances(conn *websocket.Conn) {
 		// Since livetemplate.New() requires template files, we use a workaround:
 		// Write content to a temp file, parse it, then delete
 		tmpFile := fmt.Sprintf("/tmp/lvt-%s.tmpl", blockID)
+		if h.debug {
+			log.Printf("[WS] Block %s template content:\n%s", blockID, block.Content)
+		}
 		if err := os.WriteFile(tmpFile, []byte(block.Content), 0644); err != nil {
 			log.Printf("[WS] Failed to write temp template for block %s: %v", blockID, err)
 			continue
 		}
 		defer os.Remove(tmpFile)
 
-		tmpl, err := livetemplate.New(blockID, livetemplate.WithParseFiles(tmpFile))
+		tmpl, err := livetemplate.New(blockID,
+			livetemplate.WithComponentTemplates(getComponentTemplates()...),
+			livetemplate.WithParseFiles(tmpFile))
 		if err != nil {
 			log.Printf("[WS] Failed to create template for block %s: %v", blockID, err)
 			continue
 		}
+
+		// Register component-specific template functions for tree generation
+		// These are needed because WithComponentTemplates adds funcs to t.tmpl but not t.funcs
+		tmpl.Funcs(getComponentFuncs())
 
 		instance := &BlockInstance{
 			blockID:  blockID,
@@ -201,7 +319,7 @@ func (h *WebSocketHandler) initializeInstances(conn *websocket.Conn) {
 	}
 }
 
-// sendInitialState sends the initial rendered HTML to the client.
+// sendInitialState sends the initial tree update to the client.
 func (h *WebSocketHandler) sendInitialState(instance *BlockInstance) {
 	instance.mu.Lock()
 	defer instance.mu.Unlock()
@@ -222,6 +340,8 @@ func (h *WebSocketHandler) sendInitialState(instance *BlockInstance) {
 			log.Printf("[WS] Failed to get state for %s: %v", instance.blockID, err)
 			return
 		}
+		// Hydrate datatable structs so template methods work
+		stateData = hydrateDataTableState(stateData)
 		if h.debug {
 			log.Printf("[WS] RPC state for %s: %+v (type: %T)", instance.blockID, stateData, stateData)
 		}
@@ -233,29 +353,18 @@ func (h *WebSocketHandler) sendInitialState(instance *BlockInstance) {
 		}
 	}
 
-	// Render initial HTML using Execute
+	// Render tree update using ExecuteUpdates (follows LiveTemplate tree-update specification)
 	var buf bytes.Buffer
-	if err := instance.template.Execute(&buf, stateData); err != nil {
+	if err := instance.template.ExecuteUpdates(&buf, stateData); err != nil {
 		log.Printf("[WS] Failed to render initial state for %s: %v", instance.blockID, err)
 		return
 	}
 
-	html := buf.String()
-
-	// Send as update message with properly encoded JSON
-	data := map[string]interface{}{
-		"html": html,
-	}
-	dataJSON, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("[WS] Failed to marshal data: %v", err)
-		return
-	}
-
+	// The buffer contains the tree JSON directly
 	response := MessageEnvelope{
 		BlockID: instance.blockID,
-		Action:  "update",
-		Data:    json.RawMessage(dataJSON),
+		Action:  "tree",
+		Data:    json.RawMessage(buf.Bytes()),
 	}
 
 	h.sendMessage(instance.conn, response)
@@ -315,7 +424,7 @@ func (h *WebSocketHandler) handleAction(instance *BlockInstance, action string, 
 	return nil
 }
 
-// sendUpdate re-renders the state and sends an update to the client.
+// sendUpdate re-renders the state and sends a tree update to the client.
 func (h *WebSocketHandler) sendUpdate(instance *BlockInstance) {
 	instance.mu.Lock()
 	defer instance.mu.Unlock()
@@ -336,35 +445,26 @@ func (h *WebSocketHandler) sendUpdate(instance *BlockInstance) {
 			log.Printf("[WS] Failed to get state for %s: %v", instance.blockID, err)
 			return
 		}
+		// Hydrate datatable structs so template methods work
+		stateData = hydrateDataTableState(stateData)
 	} else {
 		// Regular in-process state
 		stateData = instance.state
 	}
 
-	// For now, use Execute to get full HTML (ExecuteUpdates not yet implemented)
-	// TODO: Use ExecuteUpdates when tree diffing is available
+	// Render tree update using ExecuteUpdates (follows LiveTemplate tree-update specification)
+	// ExecuteUpdates returns only changed dynamics after the first render
 	var buf bytes.Buffer
-	if err := instance.template.Execute(&buf, stateData); err != nil {
+	if err := instance.template.ExecuteUpdates(&buf, stateData); err != nil {
 		log.Printf("[WS] Failed to render update for %s: %v", instance.blockID, err)
 		return
 	}
 
-	html := buf.String()
-
-	// Send as update message with properly encoded JSON
-	data := map[string]interface{}{
-		"html": html,
-	}
-	dataJSON, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("[WS] Failed to marshal data: %v", err)
-		return
-	}
-
+	// The buffer contains the tree JSON directly
 	response := MessageEnvelope{
 		BlockID: instance.blockID,
-		Action:  "update",
-		Data:    json.RawMessage(dataJSON),
+		Action:  "tree",
+		Data:    json.RawMessage(buf.Bytes()),
 	}
 
 	h.sendMessage(instance.conn, response)
@@ -390,3 +490,80 @@ func (h *WebSocketHandler) sendMessage(conn *websocket.Conn, envelope MessageEnv
 
 // Note: State types are now dynamically compiled from server blocks
 // No need for hardcoded placeholder states
+
+// hydrateDataTableState converts JSON map data back to typed datatable structs.
+// When state is transmitted via RPC as JSON, structs become maps and lose their methods.
+// This function reconstructs datatable.DataTable so template methods work correctly.
+func hydrateDataTableState(stateData interface{}) interface{} {
+	stateMap, ok := stateData.(map[string]interface{})
+	if !ok {
+		return stateData
+	}
+
+	// Check for Table field with datatable data (used by lvt-source datatables)
+	// Try lowercase first (json:"table"), then uppercase (json:"Table")
+	for _, key := range []string{"table", "Table"} {
+		if tableData, ok := stateMap[key].(map[string]interface{}); ok {
+			if hydratedTable := hydrateDataTable(tableData); hydratedTable != nil {
+				stateMap[key] = hydratedTable
+			}
+			break
+		}
+	}
+
+	return stateData
+}
+
+// hydrateDataTable converts a map[string]interface{} to a *datatable.DataTable.
+func hydrateDataTable(tableData map[string]interface{}) *datatable.DataTable {
+	// Re-serialize and deserialize to get proper types
+	tableJSON, err := json.Marshal(tableData)
+	if err != nil {
+		log.Printf("[WS] hydrateDataTable: marshal error: %v", err)
+		return nil
+	}
+
+	var dt datatable.DataTable
+	if err := json.Unmarshal(tableJSON, &dt); err != nil {
+		log.Printf("[WS] hydrateDataTable: unmarshal error: %v", err)
+		return nil
+	}
+
+	log.Printf("[WS] hydrateDataTable: success, ID=%s, Columns=%d, Rows=%d",
+		dt.ID(), len(dt.Columns), len(dt.Rows))
+
+	return &dt
+}
+
+// convertTemplateSet converts a base.TemplateSet to a livetemplate.TemplateSet.
+// This is needed because the components library uses base.TemplateSet while
+// livetemplate.WithComponentTemplates expects livetemplate.TemplateSet.
+// The types are structurally identical so we just copy the fields.
+func convertTemplateSet(bs *base.TemplateSet) *livetemplate.TemplateSet {
+	return &livetemplate.TemplateSet{
+		FS:        bs.FS,
+		Pattern:   bs.Pattern,
+		Namespace: bs.Namespace,
+		Funcs:     bs.Funcs,
+	}
+}
+
+// getComponentTemplates returns livetemplate.TemplateSet versions of all component templates
+func getComponentTemplates() []*livetemplate.TemplateSet {
+	return []*livetemplate.TemplateSet{
+		convertTemplateSet(datatable.Templates()),
+	}
+}
+
+// getComponentFuncs returns all component-specific template functions
+// These need to be registered with tmpl.Funcs() for tree generation to work
+func getComponentFuncs() template.FuncMap {
+	funcs := template.FuncMap{}
+	// Merge all component funcs
+	for _, set := range getComponentTemplates() {
+		for name, fn := range set.Funcs {
+			funcs[name] = fn
+		}
+	}
+	return funcs
+}

@@ -17,9 +17,16 @@ type Page struct {
 
 // PageConfig contains configuration for a page.
 type PageConfig struct {
+	// Page behavior
 	Persist   PersistMode
 	MultiStep bool
 	StepCount int
+
+	// Effective config (merged from frontmatter + site config)
+	Sources  map[string]SourceConfig
+	Styling  StylingConfig
+	Blocks   BlocksConfig
+	Features FeaturesConfig
 }
 
 // PersistMode determines how tutorial state is persisted.

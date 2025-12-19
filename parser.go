@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"html"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -14,12 +17,48 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// SourceConfig represents a data source configuration for lvt-source blocks.
+type SourceConfig struct {
+	Type    string            `yaml:"type"`           // exec, pg, rest, csv, json
+	Cmd     string            `yaml:"cmd,omitempty"`  // For exec type
+	Query   string            `yaml:"query,omitempty"` // For pg type
+	URL     string            `yaml:"url,omitempty"`  // For rest type
+	File    string            `yaml:"file,omitempty"` // For csv/json types
+	Options map[string]string `yaml:"options,omitempty"`
+}
+
+// StylingConfig represents styling/theme configuration.
+type StylingConfig struct {
+	Theme        string `yaml:"theme"`
+	PrimaryColor string `yaml:"primary_color"`
+	Font         string `yaml:"font"`
+}
+
+// BlocksConfig represents code block display configuration.
+type BlocksConfig struct {
+	AutoID          bool   `yaml:"auto_id"`
+	IDFormat        string `yaml:"id_format"`
+	ShowLineNumbers bool   `yaml:"show_line_numbers"`
+}
+
+// FeaturesConfig represents feature flags.
+type FeaturesConfig struct {
+	HotReload bool `yaml:"hot_reload"`
+}
+
 // Frontmatter represents the YAML frontmatter at the top of a markdown file.
 type Frontmatter struct {
+	// Page metadata
 	Title   string      `yaml:"title"`
 	Type    string      `yaml:"type"`    // tutorial, guide, reference, playground
 	Persist PersistMode `yaml:"persist"` // none, localstorage, server
 	Steps   int         `yaml:"steps"`
+
+	// Config options (can override livepage.yaml)
+	Sources  map[string]SourceConfig `yaml:"sources,omitempty"`
+	Styling  *StylingConfig          `yaml:"styling,omitempty"`
+	Blocks   *BlocksConfig           `yaml:"blocks,omitempty"`
+	Features *FeaturesConfig         `yaml:"features,omitempty"`
 }
 
 // CodeBlock represents a code block extracted from markdown.
@@ -311,4 +350,143 @@ func (p *Page) ParseFiles(files ...string) error {
 	// TODO: Implement multi-file parsing
 	// For now, assume single file
 	return fmt.Errorf("not implemented")
+}
+
+// partialRegex matches {{partial "filename"}} or {{partial "filename.md"}}
+var partialRegex = regexp.MustCompile(`\{\{\s*partial\s+"([^"]+)"\s*\}\}`)
+
+// ProcessPartials recursively processes {{partial "file.md"}} directives in content.
+// baseDir is the directory to resolve relative paths from.
+// seen tracks already-included files to prevent circular dependencies.
+func ProcessPartials(content []byte, baseDir string, seen map[string]bool) ([]byte, error) {
+	if seen == nil {
+		seen = make(map[string]bool)
+	}
+
+	// Find all partial directives
+	matches := partialRegex.FindAllSubmatchIndex(content, -1)
+	if len(matches) == 0 {
+		return content, nil
+	}
+
+	// Process in reverse order to maintain correct positions
+	result := make([]byte, len(content))
+	copy(result, content)
+
+	for i := len(matches) - 1; i >= 0; i-- {
+		match := matches[i]
+		fullMatchStart := match[0]
+		fullMatchEnd := match[1]
+		filenameStart := match[2]
+		filenameEnd := match[3]
+
+		filename := string(content[filenameStart:filenameEnd])
+
+		// Resolve path relative to baseDir
+		partialPath := filepath.Join(baseDir, filename)
+		absPath, err := filepath.Abs(partialPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve partial path '%s': %w", filename, err)
+		}
+
+		// Check for circular dependency
+		if seen[absPath] {
+			return nil, fmt.Errorf("circular dependency detected: %s", absPath)
+		}
+		seen[absPath] = true
+
+		// Read the partial file
+		partialContent, err := os.ReadFile(absPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read partial '%s': %w", filename, err)
+		}
+
+		// Strip frontmatter from partial (partials don't contribute frontmatter)
+		_, partialBody, err := extractFrontmatter(partialContent)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse partial '%s': %w", filename, err)
+		}
+
+		// Recursively process partials in the included content
+		partialDir := filepath.Dir(absPath)
+		processedPartial, err := ProcessPartials(partialBody, partialDir, seen)
+		if err != nil {
+			return nil, fmt.Errorf("error processing partial '%s': %w", filename, err)
+		}
+
+		// Replace the directive with the partial content
+		result = append(result[:fullMatchStart], append(processedPartial, result[fullMatchEnd:]...)...)
+	}
+
+	return result, nil
+}
+
+// ParseMarkdownWithPartials parses markdown with partial file support.
+// baseDir is used to resolve relative paths in {{partial "file.md"}} directives.
+func ParseMarkdownWithPartials(content []byte, baseDir string) (*Frontmatter, []*CodeBlock, string, error) {
+	// First, extract frontmatter before processing partials
+	frontmatter, remaining, err := extractFrontmatter(content)
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("failed to parse frontmatter: %w", err)
+	}
+
+	// Process partials in the remaining content
+	processed, err := ProcessPartials(remaining, baseDir, nil)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	// Now parse the processed content (without frontmatter since we already extracted it)
+	// We need to reconstruct the content for ParseMarkdown or parse directly here
+
+	// Parse markdown with goldmark
+	md := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+	)
+
+	reader := text.NewReader(processed)
+	doc := md.Parser().Parse(reader)
+
+	// Extract and collect livepage code blocks
+	var codeBlocks []*CodeBlock
+	blockMap := make(map[ast.Node]*CodeBlock)
+	lineOffset := bytes.Count(content[:len(content)-len(remaining)], []byte("\n"))
+
+	err = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+
+		if fenced, ok := n.(*ast.FencedCodeBlock); ok {
+			block, parseErr := parseCodeBlock(fenced, processed, lineOffset)
+			if parseErr != nil {
+				return ast.WalkStop, parseErr
+			}
+			if block != nil {
+				codeBlocks = append(codeBlocks, block)
+				blockMap[n] = block
+			}
+		}
+
+		return ast.WalkContinue, nil
+	})
+
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("failed to walk AST: %w", err)
+	}
+
+	// Generate HTML
+	var htmlBuf bytes.Buffer
+	if err := md.Renderer().Render(&htmlBuf, processed, doc); err != nil {
+		return nil, nil, "", fmt.Errorf("failed to render HTML: %w", err)
+	}
+
+	// Post-process HTML to add data attributes
+	htmlStr := htmlBuf.String()
+	htmlStr = injectBlockAttributes(htmlStr, codeBlocks)
+
+	return frontmatter, codeBlocks, htmlStr, nil
 }

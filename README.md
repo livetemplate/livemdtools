@@ -121,6 +121,50 @@ livepage serve --config custom.yaml    # Use custom config file
 
 See `livepage.yaml.example` for all available options.
 
+### Frontmatter Configuration (Optional)
+
+For single-file apps, you can define configuration directly in the markdown frontmatter, making `livepage.yaml` optional:
+
+```markdown
+---
+title: "My App"
+sources:
+  users:
+    type: json
+    file: users.json
+  api_data:
+    type: rest
+    url: https://api.example.com/data
+  db_users:
+    type: pg
+    query: "SELECT * FROM users"
+styling:
+  theme: dark
+  primary_color: "#6366f1"
+features:
+  hot_reload: true
+---
+
+# My App
+
+```lvt
+<div lvt-source="users">
+  {{range .Data}}<p>{{.Name}}</p>{{end}}
+</div>
+```
+```
+
+**Supported frontmatter config options:**
+
+| Option | Description |
+|--------|-------------|
+| `sources` | Data sources (json, csv, rest, pg, exec) |
+| `styling` | Theme configuration (theme, primary_color, font) |
+| `blocks` | Code block settings (auto_id, id_format, show_line_numbers) |
+| `features` | Feature flags (hot_reload) |
+
+Frontmatter config takes precedence over `livepage.yaml` when both exist.
+
 ## Development
 
 ```bash

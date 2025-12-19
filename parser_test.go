@@ -331,3 +331,415 @@ func containsString(slice []string, str string) bool {
 	}
 	return false
 }
+
+func TestParseFrontmatterWithSources(t *testing.T) {
+	content := `---
+title: "Source Test"
+sources:
+  users:
+    type: json
+    file: users.json
+  api_data:
+    type: rest
+    url: https://api.example.com/data
+  db_users:
+    type: pg
+    query: "SELECT * FROM users"
+  shell_data:
+    type: exec
+    cmd: ./get-data.sh
+  products:
+    type: csv
+    file: products.csv
+---
+
+# Test Content`
+
+	fm, _, err := extractFrontmatter([]byte(content))
+	if err != nil {
+		t.Fatalf("extractFrontmatter() error = %v", err)
+	}
+
+	if fm.Title != "Source Test" {
+		t.Errorf("Title = %q, want %q", fm.Title, "Source Test")
+	}
+
+	if len(fm.Sources) != 5 {
+		t.Fatalf("got %d sources, want 5", len(fm.Sources))
+	}
+
+	// Check JSON source
+	jsonSrc, ok := fm.Sources["users"]
+	if !ok {
+		t.Fatal("missing 'users' source")
+	}
+	if jsonSrc.Type != "json" {
+		t.Errorf("users.Type = %q, want %q", jsonSrc.Type, "json")
+	}
+	if jsonSrc.File != "users.json" {
+		t.Errorf("users.File = %q, want %q", jsonSrc.File, "users.json")
+	}
+
+	// Check REST source
+	restSrc, ok := fm.Sources["api_data"]
+	if !ok {
+		t.Fatal("missing 'api_data' source")
+	}
+	if restSrc.Type != "rest" {
+		t.Errorf("api_data.Type = %q, want %q", restSrc.Type, "rest")
+	}
+	if restSrc.URL != "https://api.example.com/data" {
+		t.Errorf("api_data.URL = %q, want %q", restSrc.URL, "https://api.example.com/data")
+	}
+
+	// Check PostgreSQL source
+	pgSrc, ok := fm.Sources["db_users"]
+	if !ok {
+		t.Fatal("missing 'db_users' source")
+	}
+	if pgSrc.Type != "pg" {
+		t.Errorf("db_users.Type = %q, want %q", pgSrc.Type, "pg")
+	}
+	if pgSrc.Query != "SELECT * FROM users" {
+		t.Errorf("db_users.Query = %q, want %q", pgSrc.Query, "SELECT * FROM users")
+	}
+
+	// Check exec source
+	execSrc, ok := fm.Sources["shell_data"]
+	if !ok {
+		t.Fatal("missing 'shell_data' source")
+	}
+	if execSrc.Type != "exec" {
+		t.Errorf("shell_data.Type = %q, want %q", execSrc.Type, "exec")
+	}
+	if execSrc.Cmd != "./get-data.sh" {
+		t.Errorf("shell_data.Cmd = %q, want %q", execSrc.Cmd, "./get-data.sh")
+	}
+
+	// Check CSV source
+	csvSrc, ok := fm.Sources["products"]
+	if !ok {
+		t.Fatal("missing 'products' source")
+	}
+	if csvSrc.Type != "csv" {
+		t.Errorf("products.Type = %q, want %q", csvSrc.Type, "csv")
+	}
+	if csvSrc.File != "products.csv" {
+		t.Errorf("products.File = %q, want %q", csvSrc.File, "products.csv")
+	}
+}
+
+func TestParseFrontmatterWithStyling(t *testing.T) {
+	content := `---
+title: "Styled App"
+styling:
+  theme: dark
+  primary_color: "#6366f1"
+  font: Inter
+---
+
+# Content`
+
+	fm, _, err := extractFrontmatter([]byte(content))
+	if err != nil {
+		t.Fatalf("extractFrontmatter() error = %v", err)
+	}
+
+	if fm.Styling == nil {
+		t.Fatal("Styling is nil")
+	}
+	if fm.Styling.Theme != "dark" {
+		t.Errorf("Styling.Theme = %q, want %q", fm.Styling.Theme, "dark")
+	}
+	if fm.Styling.PrimaryColor != "#6366f1" {
+		t.Errorf("Styling.PrimaryColor = %q, want %q", fm.Styling.PrimaryColor, "#6366f1")
+	}
+	if fm.Styling.Font != "Inter" {
+		t.Errorf("Styling.Font = %q, want %q", fm.Styling.Font, "Inter")
+	}
+}
+
+func TestParseFrontmatterWithBlocks(t *testing.T) {
+	content := `---
+title: "Block Config"
+blocks:
+  auto_id: true
+  id_format: "block-%d"
+  show_line_numbers: true
+---
+
+# Content`
+
+	fm, _, err := extractFrontmatter([]byte(content))
+	if err != nil {
+		t.Fatalf("extractFrontmatter() error = %v", err)
+	}
+
+	if fm.Blocks == nil {
+		t.Fatal("Blocks is nil")
+	}
+	if !fm.Blocks.AutoID {
+		t.Error("Blocks.AutoID = false, want true")
+	}
+	if fm.Blocks.IDFormat != "block-%d" {
+		t.Errorf("Blocks.IDFormat = %q, want %q", fm.Blocks.IDFormat, "block-%d")
+	}
+	if !fm.Blocks.ShowLineNumbers {
+		t.Error("Blocks.ShowLineNumbers = false, want true")
+	}
+}
+
+func TestParseFrontmatterWithFeatures(t *testing.T) {
+	content := `---
+title: "Feature Config"
+features:
+  hot_reload: true
+---
+
+# Content`
+
+	fm, _, err := extractFrontmatter([]byte(content))
+	if err != nil {
+		t.Fatalf("extractFrontmatter() error = %v", err)
+	}
+
+	if fm.Features == nil {
+		t.Fatal("Features is nil")
+	}
+	if !fm.Features.HotReload {
+		t.Error("Features.HotReload = false, want true")
+	}
+}
+
+func TestParseFrontmatterWithAllConfig(t *testing.T) {
+	content := `---
+title: "Full Config App"
+type: page
+persist: server
+sources:
+  users:
+    type: json
+    file: data.json
+styling:
+  theme: dark
+  primary_color: "#ff5733"
+blocks:
+  auto_id: true
+features:
+  hot_reload: true
+---
+
+# Full Config App
+
+Content here.`
+
+	fm, remaining, err := extractFrontmatter([]byte(content))
+	if err != nil {
+		t.Fatalf("extractFrontmatter() error = %v", err)
+	}
+
+	// Check basic frontmatter
+	if fm.Title != "Full Config App" {
+		t.Errorf("Title = %q, want %q", fm.Title, "Full Config App")
+	}
+	if fm.Type != "page" {
+		t.Errorf("Type = %q, want %q", fm.Type, "page")
+	}
+	if fm.Persist != PersistServer {
+		t.Errorf("Persist = %q, want %q", fm.Persist, PersistServer)
+	}
+
+	// Check sources
+	if len(fm.Sources) != 1 {
+		t.Fatalf("got %d sources, want 1", len(fm.Sources))
+	}
+	if src, ok := fm.Sources["users"]; !ok || src.Type != "json" {
+		t.Error("users source not parsed correctly")
+	}
+
+	// Check styling
+	if fm.Styling == nil || fm.Styling.Theme != "dark" {
+		t.Error("Styling not parsed correctly")
+	}
+
+	// Check blocks
+	if fm.Blocks == nil || !fm.Blocks.AutoID {
+		t.Error("Blocks not parsed correctly")
+	}
+
+	// Check features
+	if fm.Features == nil || !fm.Features.HotReload {
+		t.Error("Features not parsed correctly")
+	}
+
+	// Check remaining content
+	if !strings.Contains(string(remaining), "Full Config App") {
+		t.Error("remaining content missing heading")
+	}
+}
+
+func TestPageConfigMergeFromFrontmatter(t *testing.T) {
+	t.Run("merge sources", func(t *testing.T) {
+		pc := &PageConfig{}
+		fm := &Frontmatter{
+			Sources: map[string]SourceConfig{
+				"users": {Type: "json", File: "users.json"},
+				"api":   {Type: "rest", URL: "https://api.example.com"},
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		if len(pc.Sources) != 2 {
+			t.Fatalf("got %d sources, want 2", len(pc.Sources))
+		}
+		if pc.Sources["users"].Type != "json" {
+			t.Errorf("users.Type = %q, want %q", pc.Sources["users"].Type, "json")
+		}
+		if pc.Sources["api"].URL != "https://api.example.com" {
+			t.Errorf("api.URL = %q, want %q", pc.Sources["api"].URL, "https://api.example.com")
+		}
+	})
+
+	t.Run("merge styling partial", func(t *testing.T) {
+		pc := &PageConfig{
+			Styling: StylingConfig{
+				Theme:        "light",
+				PrimaryColor: "#000000",
+				Font:         "Arial",
+			},
+		}
+		fm := &Frontmatter{
+			Styling: &StylingConfig{
+				Theme: "dark", // Override theme only
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		// Theme should be overridden
+		if pc.Styling.Theme != "dark" {
+			t.Errorf("Styling.Theme = %q, want %q", pc.Styling.Theme, "dark")
+		}
+		// PrimaryColor should be preserved
+		if pc.Styling.PrimaryColor != "#000000" {
+			t.Errorf("Styling.PrimaryColor = %q, want %q (should be preserved)", pc.Styling.PrimaryColor, "#000000")
+		}
+		// Font should be preserved
+		if pc.Styling.Font != "Arial" {
+			t.Errorf("Styling.Font = %q, want %q (should be preserved)", pc.Styling.Font, "Arial")
+		}
+	})
+
+	t.Run("merge blocks", func(t *testing.T) {
+		pc := &PageConfig{
+			Blocks: BlocksConfig{
+				AutoID:   false,
+				IDFormat: "old-%d",
+			},
+		}
+		fm := &Frontmatter{
+			Blocks: &BlocksConfig{
+				AutoID:          true,
+				IDFormat:        "new-%d",
+				ShowLineNumbers: true,
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		if !pc.Blocks.AutoID {
+			t.Error("Blocks.AutoID = false, want true")
+		}
+		if pc.Blocks.IDFormat != "new-%d" {
+			t.Errorf("Blocks.IDFormat = %q, want %q", pc.Blocks.IDFormat, "new-%d")
+		}
+		if !pc.Blocks.ShowLineNumbers {
+			t.Error("Blocks.ShowLineNumbers = false, want true")
+		}
+	})
+
+	t.Run("merge features", func(t *testing.T) {
+		pc := &PageConfig{}
+		fm := &Frontmatter{
+			Features: &FeaturesConfig{
+				HotReload: true,
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		if !pc.Features.HotReload {
+			t.Error("Features.HotReload = false, want true")
+		}
+	})
+
+	t.Run("nil frontmatter values preserved", func(t *testing.T) {
+		pc := &PageConfig{
+			Sources: map[string]SourceConfig{
+				"existing": {Type: "csv", File: "data.csv"},
+			},
+			Styling: StylingConfig{
+				Theme: "light",
+			},
+		}
+		fm := &Frontmatter{} // All nil
+
+		pc.MergeFromFrontmatter(fm)
+
+		// Existing values should be preserved
+		if len(pc.Sources) != 1 {
+			t.Errorf("got %d sources, want 1 (should preserve existing)", len(pc.Sources))
+		}
+		if pc.Styling.Theme != "light" {
+			t.Errorf("Styling.Theme = %q, want %q (should preserve existing)", pc.Styling.Theme, "light")
+		}
+	})
+
+	t.Run("frontmatter adds to existing sources", func(t *testing.T) {
+		pc := &PageConfig{
+			Sources: map[string]SourceConfig{
+				"existing": {Type: "csv", File: "data.csv"},
+			},
+		}
+		fm := &Frontmatter{
+			Sources: map[string]SourceConfig{
+				"new": {Type: "json", File: "new.json"},
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		if len(pc.Sources) != 2 {
+			t.Fatalf("got %d sources, want 2", len(pc.Sources))
+		}
+		if _, ok := pc.Sources["existing"]; !ok {
+			t.Error("existing source should be preserved")
+		}
+		if _, ok := pc.Sources["new"]; !ok {
+			t.Error("new source should be added")
+		}
+	})
+
+	t.Run("frontmatter overrides same-name source", func(t *testing.T) {
+		pc := &PageConfig{
+			Sources: map[string]SourceConfig{
+				"users": {Type: "csv", File: "old.csv"},
+			},
+		}
+		fm := &Frontmatter{
+			Sources: map[string]SourceConfig{
+				"users": {Type: "json", File: "new.json"},
+			},
+		}
+
+		pc.MergeFromFrontmatter(fm)
+
+		if pc.Sources["users"].Type != "json" {
+			t.Errorf("users.Type = %q, want %q (frontmatter should override)", pc.Sources["users"].Type, "json")
+		}
+		if pc.Sources["users"].File != "new.json" {
+			t.Errorf("users.File = %q, want %q (frontmatter should override)", pc.Sources["users"].File, "new.json")
+		}
+	})
+}
