@@ -45,6 +45,7 @@ type BlocksConfig struct {
 // FeaturesConfig represents feature flags.
 type FeaturesConfig struct {
 	HotReload bool `yaml:"hot_reload"`
+	Sidebar   bool `yaml:"sidebar"` // Show navigation sidebar
 }
 
 // Frontmatter represents the YAML frontmatter at the top of a markdown file.
