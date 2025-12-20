@@ -22,7 +22,7 @@ import (
 // 3. The Refresh action re-fetches data
 func TestLvtSourceExec(t *testing.T) {
 	// Load config from test example
-	cfg, err := config.LoadFromDir("examples/lvt-source-test")
+	cfg, err := config.LoadFromDir("examples/lvt-source-exec-test")
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestLvtSourceExec(t *testing.T) {
 	t.Logf("Source config: type=%s, cmd=%s", userSource.Type, userSource.Cmd)
 
 	// Create test server
-	srv := server.NewWithConfig("examples/lvt-source-test", cfg)
+	srv := server.NewWithConfig("examples/lvt-source-exec-test", cfg)
 	if err := srv.Discover(); err != nil {
 		t.Fatalf("Failed to discover pages: %v", err)
 	}

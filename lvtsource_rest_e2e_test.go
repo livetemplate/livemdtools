@@ -76,10 +76,10 @@ title: "REST API Test"
         </thead>
         <tbody>
             {{range .Data}}
-            <tr data-user-id="{{.Id}}">
-                <td>{{.Id}}</td>
-                <td>{{.Name}}</td>
-                <td>{{.Email}}</td>
+            <tr data-user-id="{{.id}}">
+                <td>{{.id}}</td>
+                <td>{{.name}}</td>
+                <td>{{.email}}</td>
             </tr>
             {{end}}
         </tbody>

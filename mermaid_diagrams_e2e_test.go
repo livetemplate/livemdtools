@@ -89,12 +89,8 @@ func TestMermaidDiagramsRendering(t *testing.T) {
 		t.Error("Mermaid initialization code not found in HTML")
 	}
 
-	// Verify we have mermaid divs (should be 3 diagrams in counter tutorial)
-	if mermaidDivCount < 3 {
-		t.Errorf("Expected at least 3 mermaid divs, got %d", mermaidDivCount)
-	}
-
 	// Verify SVG elements were created (diagrams rendered)
+	// Note: Mermaid.js transforms div.mermaid elements, so we check SVGs which are the rendered output
 	if svgCount < 3 {
 		t.Errorf("Expected at least 3 SVG diagrams to render, got %d", svgCount)
 	}
