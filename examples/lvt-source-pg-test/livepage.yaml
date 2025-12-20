@@ -1,0 +1,6 @@
+title: "Users from PostgreSQL"
+
+sources:
+  users:
+    type: pg
+    query: "SELECT id, name, email FROM users ORDER BY id"

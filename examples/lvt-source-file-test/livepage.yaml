@@ -1,0 +1,9 @@
+title: "Data from Files"
+
+sources:
+  users:
+    type: json
+    file: users.json
+  products:
+    type: csv
+    file: products.csv

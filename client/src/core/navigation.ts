@@ -32,6 +32,12 @@ export class TutorialNavigation {
       return; // Site mode - navigation already rendered by server
     }
 
+    // Check if sidebar is disabled via config
+    const sidebarMeta = document.querySelector('meta[name="livepage-sidebar"]');
+    if (sidebarMeta && sidebarMeta.getAttribute('content') === 'false') {
+      return; // Sidebar disabled in config
+    }
+
     // Parse H2 headings as tutorial steps
     this.parseSteps();
 

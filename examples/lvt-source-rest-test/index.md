@@ -28,11 +28,11 @@ Test for `lvt-source` attribute that fetches data from a REST API.
         </thead>
         <tbody>
             {{range .Data}}
-            <tr data-user-id="{{.Id}}">
-                <td>{{.Id}}</td>
-                <td>{{.Name}}</td>
-                <td>{{.Email}}</td>
-                <td>{{if .Company}}{{.Company.name}}{{end}}</td>
+            <tr data-user-id="{{.id}}">
+                <td>{{.id}}</td>
+                <td>{{.name}}</td>
+                <td>{{.email}}</td>
+                <td>{{if .company}}{{.company.name}}{{end}}</td>
             </tr>
             {{end}}
         </tbody>

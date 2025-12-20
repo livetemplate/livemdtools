@@ -308,9 +308,9 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
 	// Render code blocks with metadata for client discovery
 	content := s.renderContent(page)
 
-	// Render navigation sidebar for site mode
+	// Render navigation sidebar if enabled in config
 	sidebar := ""
-	if s.siteManager != nil {
+	if s.siteManager != nil && s.config.Features.Sidebar {
 		sidebar = s.renderSidebar(currentPath)
 	}
 
@@ -342,6 +342,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="livepage-ws-url" content="%s">
     <meta name="livepage-debug" content="true">
+    <meta name="livepage-sidebar" content="%t">
     <title>%s</title>
     <!-- PicoCSS - Semantic/Classless CSS Framework -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
@@ -708,7 +709,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         /* Unified Page Toolbar */
         .page-toolbar {
             position: fixed;
-            bottom: 1.5rem;
+            top: 1rem;
             right: 1.5rem;
             z-index: 1000;
             display: flex;
@@ -1241,7 +1242,9 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         /* Adjust main content to make room for navigation */
         body:has(.livepage-nav-sidebar) {
             margin-left: 360px;
+            margin-right: 0;
             margin-bottom: 60px;
+            max-width: none;
         }
 
         /* Responsive Navigation */
@@ -1978,7 +1981,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         });
     </script>
 </body>
-</html>`, wsURL, page.Title, sidebar, contentWithNav)
+</html>`, wsURL, s.config.Features.Sidebar, page.Title, sidebar, contentWithNav)
 
 	return html
 }

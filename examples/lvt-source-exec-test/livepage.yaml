@@ -1,0 +1,6 @@
+title: "Users from External Source"
+
+sources:
+  users:
+    type: exec
+    cmd: ./get-users.sh
