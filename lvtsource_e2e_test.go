@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestLvtSourceExec tests the lvt-source functionality with exec type
@@ -29,7 +29,7 @@ func TestLvtSourceExec(t *testing.T) {
 
 	// Verify source is configured
 	if cfg.Sources == nil {
-		t.Fatal("No sources configured in livepage.yaml")
+		t.Fatal("No sources configured in livemdtools.yaml")
 	}
 	userSource, ok := cfg.Sources["users"]
 	if !ok {
@@ -80,7 +80,7 @@ func TestLvtSourceExec(t *testing.T) {
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
 		chromedp.Sleep(3*time.Second),
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
 		t.Fatalf("Failed to navigate: %v", err)

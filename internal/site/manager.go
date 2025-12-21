@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/livetemplate/livepage"
-	"github.com/livetemplate/livepage/internal/config"
+	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/livemdtools/internal/config"
 )
 
 // PageNode represents a page in the site structure
@@ -15,7 +15,7 @@ type PageNode struct {
 	Title    string      // Page title from frontmatter or config
 	Path     string      // URL path (e.g., "/getting-started/installation")
 	FilePath string      // Relative file path (e.g., "getting-started/installation.md")
-	Page     *livepage.Page // Parsed page content
+	Page     *livemdtools.Page // Parsed page content
 	IsHome   bool        // Whether this is the home page
 	Children []*PageNode // Child pages (for sections)
 }
@@ -70,7 +70,7 @@ func (m *Manager) discoverFromConfig() error {
 			absPath := filepath.Join(m.rootDir, filePath)
 
 			// Parse the page
-			parsed, err := livepage.ParseFile(absPath)
+			parsed, err := livemdtools.ParseFile(absPath)
 			if err != nil {
 				return fmt.Errorf("failed to parse %s: %w", filePath, err)
 			}
@@ -103,7 +103,7 @@ func (m *Manager) discoverFromConfig() error {
 		homePath := m.config.Site.Home
 		absPath := filepath.Join(m.rootDir, homePath)
 
-		parsed, err := livepage.ParseFile(absPath)
+		parsed, err := livemdtools.ParseFile(absPath)
 		if err != nil {
 			return fmt.Errorf("failed to parse home page %s: %w", homePath, err)
 		}
@@ -163,7 +163,7 @@ func (m *Manager) discoverFromFiles() error {
 		}
 
 		// Parse the page
-		parsed, err := livepage.ParseFile(path)
+		parsed, err := livemdtools.ParseFile(path)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", relPath, err)
 		}
@@ -389,7 +389,7 @@ func (m *Manager) Reload(filePath string) error {
 	}
 
 	// Re-parse the file
-	parsed, err := livepage.ParseFile(filePath)
+	parsed, err := livemdtools.ParseFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s: %w", relPath, err)
 	}
@@ -449,7 +449,7 @@ func (m *Manager) GenerateSearchIndex() []SearchEntry {
 }
 
 // extractTextContent extracts plain text from a page for search indexing
-func extractTextContent(page *livepage.Page) string {
+func extractTextContent(page *livemdtools.Page) string {
 	var content strings.Builder
 
 	// Add page title

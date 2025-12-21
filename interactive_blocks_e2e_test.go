@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -19,17 +19,17 @@ import (
 // 2. Interactive blocks are rendered
 // 3. User can interact (increment/decrement counter)
 func TestInteractiveBlocksE2E(t *testing.T) {
-	// Build livepage first
-	buildCmd := exec.Command("go", "build", "-o", "livepage-test", "./cmd/livepage")
-	buildCmd.Dir = "/Users/adnaan/code/livetemplate/livepage"
+	// Build livemdtools first
+	buildCmd := exec.Command("go", "build", "-o", "livemdtools-test", "./cmd/livemdtools")
+	buildCmd.Dir = "/Users/adnaan/code/livetemplate/livemdtools"
 	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build livepage: %v", err)
+		t.Fatalf("Failed to build livemdtools: %v", err)
 	}
-	defer os.Remove("/Users/adnaan/code/livetemplate/livepage/livepage-test")
+	defer os.Remove("/Users/adnaan/code/livetemplate/livemdtools/livemdtools-test")
 
 	// Start the server
-	serverCmd := exec.Command("/Users/adnaan/code/livetemplate/livepage/livepage-test", "serve", "examples/counter", "--debug")
-	serverCmd.Dir = "/Users/adnaan/code/livetemplate/livepage"
+	serverCmd := exec.Command("/Users/adnaan/code/livetemplate/livemdtools/livemdtools-test", "serve", "examples/counter", "--debug")
+	serverCmd.Dir = "/Users/adnaan/code/livetemplate/livemdtools"
 
 	// Capture server output
 	serverOut := &strings.Builder{}
@@ -124,7 +124,7 @@ func testPageInteraction(t *testing.T, pagePath string) {
 		chromedp.Sleep(5*time.Second), // Wait for page load and WebSocket
 
 		// Check for interactive block
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 
 		// Get initial counter value
 		chromedp.Evaluate(`(() => {

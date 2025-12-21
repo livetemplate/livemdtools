@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestFrontmatterSources tests that sources defined in markdown frontmatter work correctly
-// without requiring a livepage.yaml file.
+// without requiring a livemdtools.yaml file.
 func TestFrontmatterSources(t *testing.T) {
 	// Create test server - no config file needed, sources are in frontmatter
 	srv := server.New("examples/lvt-source-file-test")

@@ -1,8 +1,8 @@
-# Web Components Support for LivePage
+# Web Components Support for Livemdtools
 
 ## Summary
 
-Add zero-config Web Components support to LivePage using Shoelace as the built-in default library. Authors simply use `sl-*` elements in their markdown, and LivePage handles detection, loading, and server-state integration automatically.
+Add zero-config Web Components support to Livemdtools using Shoelace as the built-in default library. Authors simply use `sl-*` elements in their markdown, and Livemdtools handles detection, loading, and server-state integration automatically.
 
 ## Progress Tracker
 
@@ -48,7 +48,7 @@ func (s *State) SetName(ctx *livetemplate.Context) error {
 <sl-input lvt-action="setName" placeholder="Your name" value="{{.Name}}"></sl-input>
 ```
 
-No configuration required. LivePage:
+No configuration required. Livemdtools:
 1. Detects `sl-button` and `sl-input`
 2. Injects Shoelace CDN into page head
 3. Binds `lvt-action` to appropriate Shoelace events
@@ -214,7 +214,7 @@ examples/webcomponents-test/
 
 ## Optional Future Enhancements (not in scope)
 
-- `livepage.yaml` config for additional component libraries
+- `livemdtools.yaml` config for additional component libraries
 - Version pinning for Shoelace
 - Local component support with `app-*` prefix
 - Dark mode theme switching

@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config represents the livepage configuration
+// Config represents the livemdtools configuration
 type Config struct {
 	Title       string                  `yaml:"title"`
 	Description string                  `yaml:"description"`
@@ -151,10 +151,18 @@ func Load(configPath string) (*Config, error) {
 	return config, nil
 }
 
-// LoadFromDir looks for livepage.yaml in the given directory
-// If not found, returns the default configuration
+// LoadFromDir looks for lmt.yaml or livemdtools.yaml in the given directory
+// lmt.yaml is checked first (preferred short form), then livemdtools.yaml
+// If neither is found, returns the default configuration
 func LoadFromDir(dir string) (*Config, error) {
-	configPath := filepath.Join(dir, "livepage.yaml")
+	// Check for lmt.yaml first (short form)
+	lmtPath := filepath.Join(dir, "lmt.yaml")
+	if _, err := os.Stat(lmtPath); err == nil {
+		return Load(lmtPath)
+	}
+
+	// Check for livemdtools.yaml
+	configPath := filepath.Join(dir, "livemdtools.yaml")
 	return Load(configPath)
 }
 

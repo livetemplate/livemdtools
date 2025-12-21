@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/livetemplate/livepage/internal/config"
+	"github.com/livetemplate/livemdtools/internal/config"
 )
 
 // GenerateLvtSourceCode generates Go code for an lvt-source block.

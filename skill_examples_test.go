@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"os"
@@ -10,10 +10,10 @@ import (
 
 // TestSkillExamplesValidation runs the validation script on skill examples.
 // This is a golden file test - it ensures all skill examples remain valid
-// as the LivePage API evolves.
+// as the Livemdtools API evolves.
 func TestSkillExamplesValidation(t *testing.T) {
 	// Find the validation script
-	scriptPath := "skills/livepage/scripts/validate.sh"
+	scriptPath := "skills/livemdtools/scripts/validate.sh"
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		t.Skipf("Validation script not found at %s", scriptPath)
 	}
@@ -50,7 +50,7 @@ func TestSkillExamplesExist(t *testing.T) {
 		"10-status-page.md",
 	}
 
-	examplesDir := "skills/livepage/examples"
+	examplesDir := "skills/livemdtools/examples"
 
 	for _, example := range expectedExamples {
 		path := filepath.Join(examplesDir, example)
@@ -63,9 +63,9 @@ func TestSkillExamplesExist(t *testing.T) {
 // TestSkillFilesExist verifies all skill documentation files exist
 func TestSkillFilesExist(t *testing.T) {
 	requiredFiles := []string{
-		"skills/livepage/SKILL.md",
-		"skills/livepage/reference.md",
-		"skills/livepage/scripts/validate.sh",
+		"skills/livemdtools/SKILL.md",
+		"skills/livemdtools/reference.md",
+		"skills/livemdtools/scripts/validate.sh",
 	}
 
 	for _, file := range requiredFiles {
@@ -77,7 +77,7 @@ func TestSkillFilesExist(t *testing.T) {
 
 // TestSkillExampleStructure verifies each example has required elements
 func TestSkillExampleStructure(t *testing.T) {
-	examplesDir := "skills/livepage/examples"
+	examplesDir := "skills/livemdtools/examples"
 
 	files, err := os.ReadDir(examplesDir)
 	if err != nil {
@@ -145,7 +145,7 @@ func TestLLMSTxtExists(t *testing.T) {
 	contentStr := string(content)
 
 	requiredSections := []string{
-		"# LivePage",
+		"# Livemdtools",
 		"## Quick Start",
 		"## Key Attributes",
 		"lvt-submit",

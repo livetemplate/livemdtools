@@ -1,16 +1,16 @@
 ---
-title: "Introduction to LivePage"
+title: "Introduction to Livemdtools"
 ---
 
-# Introduction to LivePage
+# Introduction to Livemdtools
 
-LivePage is a revolutionary framework for building interactive documentation and tutorials.
+Livemdtools is a revolutionary framework for building interactive documentation and tutorials.
 
 ## Core Concepts
 
 ### Server-Side State
 
-Unlike traditional JavaScript frameworks, LivePage keeps all state on the server. This means:
+Unlike traditional JavaScript frameworks, Livemdtools keeps all state on the server. This means:
 
 - State cannot be manipulated by users
 - Business logic runs in a trusted environment
@@ -18,7 +18,7 @@ Unlike traditional JavaScript frameworks, LivePage keeps all state on the server
 
 ### Real-Time Updates
 
-LivePage uses WebSockets to push updates from server to client instantly. When state changes, the server re-renders the affected components and pushes the updates to all connected clients.
+Livemdtools uses WebSockets to push updates from server to client instantly. When state changes, the server re-renders the affected components and pushes the updates to all connected clients.
 
 ### Go Templates
 

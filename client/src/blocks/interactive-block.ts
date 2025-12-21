@@ -47,14 +47,14 @@ export class InteractiveBlock extends BaseBlock {
     }
 
     // Add CSS classes
-    this.element.classList.add("livepage-interactive-block");
+    this.element.classList.add("livemdtools-interactive-block");
     this.element.dataset.blockId = this.id;
     if (this.metadata.stateRef) {
       this.element.dataset.stateRef = this.metadata.stateRef;
     }
 
     // Initialize LiveTemplateClient for tree reconciliation
-    // We don't use WebSocket connection - livepage handles that
+    // We don't use WebSocket connection - livemdtools handles that
     // We only use the client's tree rendering capabilities
     this.client = new LiveTemplateClient();
 
@@ -129,7 +129,7 @@ export class InteractiveBlock extends BaseBlock {
   }
 
   /**
-   * Set the message sender (called by LivepageClient)
+   * Set the message sender (called by LivemdtoolsClient)
    */
   setMessageSender(sender: (blockID: string, action: string, data: any) => void): void {
     this.sendMessage = sender;

@@ -1,10 +1,10 @@
-# LivePage PMF: The One-File AI App Builder
+# Livemdtools PMF: The One-File AI App Builder
 
 ## Executive Summary
 
-LivePage is positioned to be the **only AI app builder that outputs working apps in a single markdown file with no build step**. While competitors like v0, Bolt.new, and Lovable generate complex React projects requiring npm/build pipelines, LivePage targets the 700M "code-generators" who want: **Type → Works**.
+Livemdtools is positioned to be the **only AI app builder that outputs working apps in a single markdown file with no build step**. While competitors like v0, Bolt.new, and Lovable generate complex React projects requiring npm/build pipelines, Livemdtools targets the 700M "code-generators" who want: **Type → Works**.
 
-**Tagline**: LivePage: AI builds tools in one file. No React. No build step. Just run.
+**Tagline**: Livemdtools: AI builds tools in one file. No React. No build step. Just run.
 
 ---
 
@@ -38,9 +38,9 @@ What Exists:  Prompt → AI → [React App (10+ files)] → npm install → buil
 What's Missing: Prompt → AI → [Single markdown file] → run → works
 ```
 
-### LivePage's Unique Position
+### Livemdtools's Unique Position
 
-| Factor | v0/Bolt/Lovable | LivePage |
+| Factor | v0/Bolt/Lovable | Livemdtools |
 |--------|-----------------|----------|
 | Output format | React (10+ files) | Single markdown file |
 | Build step | Required (npm) | None |
@@ -54,7 +54,7 @@ What's Missing: Prompt → AI → [Single markdown file] → run → works
 
 ## The Declarative Trifecta
 
-Why LivePage wins for LLMs:
+Why Livemdtools wins for LLMs:
 
 | Layer | What It Does | LLM Benefit |
 |-------|--------------|-------------|
@@ -65,7 +65,7 @@ Why LivePage wins for LLMs:
 **Result:**
 
 ```
-LivePage:    Prompt → LLM → [Component + Source declaration] → Works
+Livemdtools:    Prompt → LLM → [Component + Source declaration] → Works
 Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install → Build → Deploy → Works
 ```
 
@@ -124,7 +124,7 @@ Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install
 
 | Task | Effort |
 |------|--------|
-| Register component templates in LivePage template engine | Small |
+| Register component templates in Livemdtools template engine | Small |
 | Add component CSS to default styles | Small |
 | Wire component actions to server state | Medium |
 | Document component usage for LLMs | Small |
@@ -142,14 +142,14 @@ Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install
 
 **⚠️ SECURITY RULE: Never allow SQL/queries in HTML attributes.**
 
-All queries MUST be defined server-side in `livepage.yaml`. HTML only references sources by name.
+All queries MUST be defined server-side in `livemdtools.yaml`. HTML only references sources by name.
 
 ##### Mode 1: HTML Attributes (Simplest - No Go Template Knowledge)
 
 Pure HTML with `lvt-*` attributes. No Go template syntax required. Queries defined in YAML.
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: pg
@@ -169,7 +169,7 @@ sources:
 Define everything in YAML, reference by name in HTML with minimal Go template for iteration.
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: pg
@@ -207,7 +207,7 @@ For users comfortable with Go templates. Full control over component configurati
 Use Python, Bash, Node, or any language as a data source. Write a script that outputs JSON.
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   sales:
     type: exec
@@ -224,7 +224,7 @@ sources:
 </table>
 ```
 
-**Why Mode 4 is critical**: Python/Bash/Node developers can write a 10-line script to fetch data and use LivePage just for UI. They don't need to learn Go.
+**Why Mode 4 is critical**: Python/Bash/Node developers can write a 10-line script to fetch data and use Livemdtools just for UI. They don't need to learn Go.
 
 **Marketing angle**: "Build a UI for your Python/Bash scripts in 30 seconds."
 
@@ -252,7 +252,7 @@ type Source interface {
 
 ##### Real-Time Updates
 
-LivePage already has WebSocket infrastructure. Extend for sources:
+Livemdtools already has WebSocket infrastructure. Extend for sources:
 
 - **PostgreSQL**: `LISTEN/NOTIFY` - push when data changes
 - **REST API**: Webhooks or polling with `lvt-data-interval`
@@ -278,7 +278,7 @@ It stays "no build", just "read file at runtime".
 
 | Task | Description |
 |------|-------------|
-| LLM Testing | Test if Claude/GPT-4 can reliably generate LivePage markdown |
+| LLM Testing | Test if Claude/GPT-4 can reliably generate Livemdtools markdown |
 | Reference Doc | Create LLM reference doc (components + sources + lvt-* attributes) |
 | Prompt Library | Create 10 example prompts → working outputs ("Copy-Paste App Store") |
 
@@ -316,10 +316,10 @@ It stays "no build", just "read file at runtime".
 
 **Impact**: Critical for enterprise adoption. Removes biggest barrier to deploying internal tools safely.
 
-### 2. Compile to Binary (`livepage build`)
+### 2. Compile to Binary (`livemdtools build`)
 
 ```bash
-livepage build my-app.md -o my-app
+livemdtools build my-app.md -o my-app
 ```
 
 Send `my-app.exe` to a Product Manager. They double-click, it opens in browser. No installation.
@@ -346,10 +346,10 @@ Build UI, get API as side effect. Trigger from Slack bot or cron job.
 
 **Impact**: High. Unique differentiator vs Retool.
 
-### 5. LivePage Hub
+### 5. Livemdtools Hub
 
 ```bash
-livepage run github.com/user/repo/postgres-admin.md
+livemdtools run github.com/user/repo/postgres-admin.md
 ```
 
 Decentralized package manager. Developers maintain "dotfiles" repo of favorite tools.
@@ -377,7 +377,7 @@ Single-file apps become unmanageable at 500+ lines.
 **Mitigations**:
 
 1. **Seamless Partials**: `{{template "sidebar.md"}}` without build step
-2. **Eject Strategy**: Document how to convert LivePage to standard Go web server
+2. **Eject Strategy**: Document how to convert Livemdtools to standard Go web server
 
 ### Risk 2: Security Perception
 
@@ -406,8 +406,8 @@ Real-time preview like Markdown preview. Type on left, see app update on right. 
 ### 3. "Internal Tool Killer" Positioning
 
 - **Competitor**: Retool ($50/user, proprietary)
-- **LivePage**: Free, local, text-based (git-friendly)
-- **Wedge**: "Don't pay $50/user for Retool. Just write a LivePage."
+- **Livemdtools**: Free, local, text-based (git-friendly)
+- **Wedge**: "Don't pay $50/user for Retool. Just write a Livemdtools."
 
 ---
 

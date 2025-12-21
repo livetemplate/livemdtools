@@ -1,4 +1,4 @@
-package livepage
+package livemdtools
 
 import "github.com/livetemplate/livetemplate"
 

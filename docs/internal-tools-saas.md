@@ -1,4 +1,4 @@
-# LivePage for Internal Tools: Product Vision
+# Livemdtools for Internal Tools: Product Vision
 
 > **Core Insight**: Build internal tools in markdown + HTML. No Go code required for 99% of use cases.
 
@@ -16,7 +16,7 @@ No drag-and-drop. No JavaScript. No build step. Just files in your repo.
 
 ## The Unified Model: Snippets + UIs + Reusable Sources
 
-LivePage combines three capabilities that no single tool offers today:
+Livemdtools combines three capabilities that no single tool offers today:
 
 ### 1. Runnable Code Snippets (Like Runme)
 
@@ -36,7 +36,7 @@ psql -c "SELECT count(*) FROM pg_stat_activity;"
 
 **Value**: Fastest path from documentation to execution. Zero overhead.
 
-### 2. Rich Interactive UIs (LivePage's Differentiator)
+### 2. Rich Interactive UIs (Livemdtools's Differentiator)
 
 When you need more than a code block—forms, tables, buttons, real-time updates.
 
@@ -59,7 +59,7 @@ When you need more than a code block—forms, tables, buttons, real-time updates
 Pre-built, pre-approved integrations—community and company-specific.
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 integrations:
   # Community sources (shared, audited)
   - postgres
@@ -67,7 +67,7 @@ integrations:
   - kubernetes
 
   # Company sources (pre-approved workflows)
-  - git: git@github.com:acme/livepage-internal
+  - git: git@github.com:acme/livemdtools-internal
     ref: main
 ```
 
@@ -179,7 +179,7 @@ kubectl get pods -n production
 
 
 ```yaml
-# livepage.yaml (in your app)
+# livemdtools.yaml (in your app)
 sources:
   production_pods:
     integration: kubernetes
@@ -199,7 +199,7 @@ sources:
 
 ```yaml
 # Company integration package
-# git@github.com:acme/livepage-internal
+# git@github.com:acme/livemdtools-internal
 
 sources:
   # Pre-approved, audited queries
@@ -230,7 +230,7 @@ sources:
 ### Level 4: Community Sources (Shared)
 
 ```yaml
-# Official integration: github.com/livepage-integrations/slack
+# Official integration: github.com/livemdtools-integrations/slack
 integrations:
   - slack  # Uses community-maintained integration
 ```
@@ -262,7 +262,7 @@ integrations:
 Permissions are defined at three levels:
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 
 # Level 1: Global defaults
 permissions:
@@ -303,7 +303,7 @@ __Note__: `require_role` and `allowed_roles` are equivalent—use whichever read
 For sequential actions (Action A → Action B), define workflows in YAML. The server executes them atomically.
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 workflows:
   # Simple linear workflow
   kill_and_notify:
@@ -341,7 +341,7 @@ workflows:
 - Atomic execution with rollback support
 - Audit trail in one place
 - Reusable across pages
-- Aligns with LivePage's server-centric philosophy
+- Aligns with Livemdtools's server-centric philosophy
 
 **Conditional UI (reactive attributes)** - for showing success/error states:
 
@@ -414,7 +414,7 @@ psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database(
   <button lvt-click="kill_and_notify">Kill All Idle (5+ min)</button>
 </div>
 
-<!-- Workflow defined in livepage.yaml:
+<!-- Workflow defined in livemdtools.yaml:
 workflows:
   kill_and_notify:
     steps:
@@ -484,7 +484,7 @@ psql -c "SELECT count(*) FROM pg_stat_activity;"
 │  └─────────────┘  │ │  Source Hierarchy:                      │
 │                   │ │  ├── Level 4: Community (GitHub)        │
 │  Ad-hoc execution │ │  ├── Level 3: Organization (private Git)│
-│  User's shell env │ │  ├── Level 2: Local (livepage.yaml)     │
+│  User's shell env │ │  ├── Level 2: Local (livemdtools.yaml)     │
 │  (Level 1)        │ │  └── (Snippets are Level 1 - ad-hoc)    │
 └───────────────────┘ └─────────────────────────────────────────┘
             │                   │
@@ -521,8 +521,8 @@ psql -c "SELECT count(*) FROM pg_stat_activity;"
 | Key pain point | Developer friction, vendor lock-in, JSON blob diffs |
 
 ### Go-To-Market Strategy: "Apps vs Ops"
-*   **Don't fight Retool head-on initially**. Retool is for "Apps" (Customer Support Dashboard). LivePage is for "Ops" (Incident Response, Database Maintenance, Deployment scripts).
-*   **Target the "On-Call" Engineer**. The person waking up at 3 AM doesn't want a complex UI; they want a guided, safe runbook. LivePage is the "Executable Runbook" platform.
+*   **Don't fight Retool head-on initially**. Retool is for "Apps" (Customer Support Dashboard). Livemdtools is for "Ops" (Incident Response, Database Maintenance, Deployment scripts).
+*   **Target the "On-Call" Engineer**. The person waking up at 3 AM doesn't want a complex UI; they want a guided, safe runbook. Livemdtools is the "Executable Runbook" platform.
 
 ---
 
@@ -566,21 +566,21 @@ psql -c "SELECT count(*) FROM pg_stat_activity;"
 
 ### The "Blank Page" Problem
 *   **Issue**: Visual builders give you a canvas. Markdown gives you a blinking cursor.
-*   **Mitigation**: You need a `livepage new` command or a VS Code extension that scaffolds these patterns instantly.
+*   **Mitigation**: You need a `livemdtools new` command or a VS Code extension that scaffolds these patterns instantly.
 
 ## Feature Suggestions for SaaS Success
 
 ### AI as a First-Class Citizen
 Markdown is the native language of LLMs. You have a massive advantage over JSON-based builders here.
-*   **Feature**: "Generate Runbook from Alert". Paste a PagerDuty alert payload, and LivePage generates a draft runbook with the correct `kubectl` or `postgres` queries.
+*   **Feature**: "Generate Runbook from Alert". Paste a PagerDuty alert payload, and Livemdtools generates a draft runbook with the correct `kubectl` or `postgres` queries.
 *   **Feature**: "Natural Language Actions". Allow users to write `<!-- ai: create a table showing all pods with restart count > 5 -->` and have the CLI expand it into the correct HTML/Template syntax.
 
 ### The "Localhost" Experience
-*   **Feature**: A robust CLI (`livepage serve`) that renders the UI locally is critical. If I have to push to a server to see if my table renders correctly, the feedback loop is too slow.
+*   **Feature**: A robust CLI (`livemdtools serve`) that renders the UI locally is critical. If I have to push to a server to see if my table renders correctly, the feedback loop is too slow.
 *   **Feature**: VS Code Extension. Since you are targeting developers, a preview pane in VS Code that allows interaction (clicking buttons) would be a killer feature.
 
 ### "Approval Workflows" as a Native Primitive
-*   **Feature**: In `livepage.yaml`, define an approval gate.
+*   **Feature**: In `livemdtools.yaml`, define an approval gate.
     ```yaml
     actions:
       drop_table:
@@ -603,7 +603,7 @@ Markdown is the native language of LLMs. You have a massive advantage over JSON-
 
 ## Specific Use Cases
 
-| Use Case | Why LivePage Wins | What LivePage Offers | Competitor Gap |
+| Use Case | Why Livemdtools Wins | What Livemdtools Offers | Competitor Gap |
 |----------|-------------------|---------------------|----------------|
 | **Runbooks** | Already markdown; add snippets + UIs | Snippets for quick checks, UIs for dashboards | Runme = snippets only, Rundeck = $125/user, no Git |
 | **Pentest Reports** | PR-reviewable, version controlled | Snippets to re-run exploits, UIs for evidence tracking | Static PDF, no live testing |
@@ -617,13 +617,13 @@ Markdown is the native language of LLMs. You have a massive advantage over JSON-
 
 With the shutdown of **Airplane.dev** and **Interval**, there is a vacuum for "Code-first internal tools".
 **Evidence.dev** proved that "Markdown + SQL = BI" is a winning formula.
-**LivePage** is "Markdown + SQL + Actions = Admin Panels".
+**Livemdtools** is "Markdown + SQL + Actions = Admin Panels".
 
 **The Use Case: "The Lightweight Admin Panel"**
 *   **Scenario**: Product Manager needs to "Enable Beta Feature" for a specific Customer ID.
 *   **The Old Way**: PM asks Dev → Dev runs SQL `UPDATE features SET enabled=true WHERE user_id=123`.
 *   **The Retool Way**: Dev spends 2 days building a "Customer Admin" dashboard.
-*   **The LivePage Way**: Dev adds `admin/customers.md`:
+*   **The Livemdtools Way**: Dev adds `admin/customers.md`:
     ```markdown
     # Customer Admin
     <form lvt-action="enable_beta">
@@ -639,7 +639,7 @@ These are tasks that usually live in a `scripts/` folder and require an engineer
 
 #### 1. The "Reset 2FA" Ticket (Support)
 **The Pain**: Support agent gets a ticket "User lost phone". Agent pings Engineer. Engineer runs `python manage.py reset_2fa --user 123`.
-**The LivePage Fix**: `ops/user-support.md`
+**The Livemdtools Fix**: `ops/user-support.md`
 
 ```html
 <h3>Reset 2FA</h3>
@@ -659,7 +659,7 @@ These are tasks that usually live in a `scripts/` folder and require an engineer
 
 #### 2. The "Extend Trial" Request (Sales)
 **The Pain**: Sales rep wants to close a deal, needs 7 more days. Pings CTO. CTO runs SQL update.
-**The LivePage Fix**: `ops/sales-admin.md`
+**The Livemdtools Fix**: `ops/sales-admin.md`
 
 ```html
 <h3>Extend Trial</h3>
@@ -678,7 +678,7 @@ These are tasks that usually live in a `scripts/` folder and require an engineer
 
 #### 3. The "Manual Job Retry" (DevOps)
 **The Pain**: A background job fails. The fix is "just run it again with force=true".
-**The LivePage Fix**: `ops/jobs.md`
+**The Livemdtools Fix**: `ops/jobs.md`
 
 ```html
 <h3>Retry Dead Letter Job</h3>
@@ -704,35 +704,35 @@ While "Executable Runbooks" are great for adoption, the **Enterprise Value** lie
 2.  **The "Script" Trap**: Scripts on laptops are un-governed and hard to share.
 3.  **The "Retool" Trap**: Building full internal apps for every small operational task is too expensive (time-wise) and creates maintenance debt.
 
-**The Solution**: LivePage as the "Standard Library for Operational Actions".
+**The Solution**: Livemdtools as the "Standard Library for Operational Actions".
 *   **Correctness**: Actions are defined in code (Go/SQL), reviewed in PRs.
 *   **Safety**: RBAC is declarative.
 *   **Audit**: Every click is a commit or a log entry.
-*   **LLM Synergy**: LLMs write the *Markdown* and the *SQL*. LivePage provides the *Safe Runtime*.
+*   **LLM Synergy**: LLMs write the *Markdown* and the *SQL*. Livemdtools provides the *Safe Runtime*.
 
 ### The Killer App: "The Living Compliance Document"
 
-Imagine a "Quarterly Access Review" or "Production Change Log". Instead of a static PDF or a Jira ticket, it's a LivePage.
+Imagine a "Quarterly Access Review" or "Production Change Log". Instead of a static PDF or a Jira ticket, it's a Livemdtools.
 
 #### 1. Just-in-Time (JIT) Access & Break-Glass Workflows
 **The Pain**: Dev needs prod access to debug. They request it. Manager approves. Access granted for 1 hour. Audit log generated.
-**The LivePage Fix**: `ops/request-access.md`
+**The Livemdtools Fix**: `ops/request-access.md`
 *   User fills form.
 *   Slack notification.
 *   Manager approves.
-*   LivePage executes the grant.
+*   Livemdtools executes the grant.
 
 #### 2. "Customer Ops" for B2B SaaS
 **The Pain**: Onboarding complex enterprise customers often requires manual DB tweaks, config setting, provisioning.
-**The LivePage Fix**: `ops/customer-onboarding.md`
+**The Livemdtools Fix**: `ops/customer-onboarding.md`
 *   Core devs don't want to build a UI for them (waste of time).
 *   Core devs don't want to give them SQL access (dangerous).
-*   LivePage unblocks Sales/Support without distracting Engineering.
+*   Livemdtools unblocks Sales/Support without distracting Engineering.
 
 ### Why this beats LLMs alone
 *   LLM generates the *code*, but it cannot provide the *trust*.
 *   You don't trust an LLM to "run this python script to refund the user" without a sandbox.
-*   LivePage is the sandbox.
+*   Livemdtools is the sandbox.
 
 ### Why this beats Retool
 *   **Auditability**: The *entire UI* is code. You can `git blame` the "Refund" button to see who added it and who approved the PR. You can't do that easily in Retool.
@@ -745,7 +745,7 @@ Imagine a "Quarterly Access Review" or "Production Change Log". Instead of a sta
 ### 1. Runbook: Database Connection Pool Exhausted
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   pg_connections:
     integration: postgres
@@ -918,7 +918,7 @@ After killing connections, wait 30 seconds and check the count again:
 ### 2. Pentest Report: SQL Injection Finding
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   finding_history:
     integration: postgres
@@ -962,7 +962,7 @@ package sources
 import (
     "context"
     "net/http"
-    "github.com/livepage/sdk"
+    "github.com/livemdtools/sdk"
 )
 
 func init() {
@@ -1129,7 +1129,7 @@ Authorization: Bearer eyJ...
 ### 3. Onboarding: New Engineer Day 1
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   onboarding_progress:
     integration: postgres
@@ -1183,7 +1183,7 @@ package sources
 
 import (
     "context"
-    "github.com/livepage/sdk"
+    "github.com/livemdtools/sdk"
     "github.com/google/go-github/v50/github"
 )
 
@@ -1403,7 +1403,7 @@ You have **{{sub 6 $completed}} steps remaining**. Take your time!
 ### 4. Ops Dashboard: Service Health
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   service_health:
     type: code
@@ -1445,7 +1445,7 @@ package sources
 
 import (
     "context"
-    "github.com/livepage/sdk"
+    "github.com/livemdtools/sdk"
 )
 
 type ServiceHealth struct {
@@ -1625,7 +1625,7 @@ func GetServiceHealth(ctx context.Context, params sdk.Params) (any, error) {
 ### 5. Compliance: SOC2 Access Review
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   admin_users:
     type: code
@@ -1688,7 +1688,7 @@ package sources
 
 import (
     "context"
-    "github.com/livepage/sdk"
+    "github.com/livemdtools/sdk"
 )
 
 type AdminUser struct {
@@ -1968,10 +1968,10 @@ func ExportEvidence(ctx context.Context, params sdk.Params) (any, error) {
 
 **Solution**: Define data sources and actions in YAML, reference by name in HTML.
 
-### Defining Data Sources (in `livepage.yaml` or `queries.yaml`)
+### Defining Data Sources (in `livemdtools.yaml` or `queries.yaml`)
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   # Simple query
   open_tickets:
@@ -2167,7 +2167,7 @@ package sources
 
 import (
     "context"
-    "github.com/livepage/sdk"
+    "github.com/livemdtools/sdk"
 )
 
 func init() {
@@ -2223,7 +2223,7 @@ func EscalateTicket(ctx context.Context, params sdk.Params) error {
 
 ```typescript
 // sources/analytics.ts
-import { registerSource, registerAction, Params, Context } from '@livepage/sdk';
+import { registerSource, registerAction, Params, Context } from '@livemdtools/sdk';
 
 registerSource('dashboard_metrics', async (ctx: Context, params: Params) => {
   const timeRange = params.string('range', '7d');
@@ -2255,7 +2255,7 @@ registerAction('sync_to_warehouse', async (ctx: Context, params: Params) => {
 
 ```python
 # sources/ml_predictions.py
-from livepage import register_source, register_action
+from livemdtools import register_source, register_action
 import pandas as pd
 
 @register_source("churn_predictions")
@@ -2283,10 +2283,10 @@ def trigger_retention(ctx, params):
             customer_id, template.name)
 ```
 
-#### Registration in `livepage.yaml`
+#### Registration in `livemdtools.yaml`
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   # YAML-defined (simple)
   open_tickets:
@@ -2387,7 +2387,7 @@ actions:
 ### Structure (No compiled code, just YAML)
 
 ```ini
-github.com/livepage-integrations/slack/
+github.com/livemdtools-integrations/slack/
 ├── integration.yaml      # Declarative definition
 ├── README.md            # Usage docs
 ├── examples/
@@ -2441,7 +2441,7 @@ actions:
 ### Distribution (Git-based)
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 integrations:
   # Official (short syntax)
   - postgres
@@ -2449,11 +2449,11 @@ integrations:
   - github
 
   # Community (Git URL)
-  - git: https://github.com/someone/livepage-jira
+  - git: https://github.com/someone/livemdtools-jira
     version: v1.2.0
 
   # Private/company
-  - git: git@github.com:company/livepage-internal-api
+  - git: git@github.com:company/livemdtools-internal-api
     ref: main
 
   # Local development
@@ -2467,7 +2467,7 @@ integrations:
 ### User Authentication: OIDC-First
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 auth:
   provider: oidc
   issuer: https://company.okta.com
@@ -2510,7 +2510,7 @@ secrets:
 secrets:
   provider: vault
   address: https://vault.internal:8200
-  path: secret/livepage/prod
+  path: secret/livemdtools/prod
 ```
 
 ---
@@ -2568,9 +2568,9 @@ MongoDB, Redis, Jira, Linear, Datadog, Grafana, Notion, Airtable, Google Sheets,
 
 ### The Unique Value Proposition
 
-LivePage is the **only tool** that combines:
+Livemdtools is the **only tool** that combines:
 
-| Capability | Runme | Retool | LivePage |
+| Capability | Runme | Retool | Livemdtools |
 |------------|-------|--------|----------|
 | Runnable code snippets | ✅ | ❌ | ✅ |
 | Rich interactive UIs | ❌ | ✅ | ✅ |
@@ -2591,19 +2591,19 @@ LivePage is the **only tool** that combines:
 
 **Elevator pitch**:
 
-> LivePage is runnable documentation meets internal tools. Start with a simple bash snippet—like Runme. Need a richer interface? Add HTML with data bindings—no React, no build step. Share reusable integrations across your org via Git. It's the docs-as-code approach applied to operations.
+> Livemdtools is runnable documentation meets internal tools. Start with a simple bash snippet—like Runme. Need a richer interface? Add HTML with data bindings—no React, no build step. Share reusable integrations across your org via Git. It's the docs-as-code approach applied to operations.
 
 ### The Journey
 
 ```sh
 Runme (snippets only)
          ↓
-LivePage (snippets + UIs + sources)
+Livemdtools (snippets + UIs + sources)
          ↓
 Retool (UIs only, drag-and-drop)
 ```
 
-**LivePage occupies the middle ground** that doesn't exist today:
+**Livemdtools occupies the middle ground** that doesn't exist today:
 
 - More powerful than pure documentation tools
 - Simpler than full low-code platforms

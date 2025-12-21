@@ -5,7 +5,7 @@
 
 ## Overview
 
-A LivePage markdown file can store its own data in native markdown formats within the document body. The file becomes both the application AND its database. Targeted at personal micro-tools (todo lists, bookmarks, habit trackers) with < 100 items.
+A Livemdtools markdown file can store its own data in native markdown formats within the document body. The file becomes both the application AND its database. Targeted at personal micro-tools (todo lists, bookmarks, habit trackers) with < 100 items.
 
 ## Design Decisions
 
@@ -123,7 +123,7 @@ pageSize: 20
 
 **Run it:**
 ```bash
-livepage serve bookmarks.md
+livemdtools serve bookmarks.md
 ```
 
 ## Key Properties

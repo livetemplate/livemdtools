@@ -1,0 +1,504 @@
+# Livemdtools Reference
+
+Complete API reference for building Livemdtools applications.
+
+## File Structure
+
+A Livemdtools app is a markdown file with:
+
+```markdown
+---
+title: "App Title"
+---
+
+# Heading
+
+Regular markdown content...
+
+\`\`\`lvt
+<!-- Interactive HTML with lvt-* attributes -->
+<div>
+    <form lvt-submit="save" lvt-persist="items">
+        <input type="text" name="title">
+        <button type="submit">Add</button>
+    </form>
+</div>
+\`\`\`
+```
+
+### Frontmatter Options
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Page title (appears in browser tab) |
+| `type` | string | Page type: `page`, `tutorial` |
+| `persist` | string | Storage type: `localstorage` (default: SQLite) |
+| `sources` | object | Data sources for `lvt-source` (see below) |
+| `styling` | object | Theme configuration (theme, primary_color, font) |
+| `blocks` | object | Code block settings (auto_id, id_format, show_line_numbers) |
+| `features` | object | Feature flags (hot_reload) |
+
+### Frontmatter Sources (New!)
+
+You can define data sources directly in the frontmatter, making `livemdtools.yaml` optional for single-file apps:
+
+```yaml
+---
+title: "My App"
+sources:
+  users:
+    type: json
+    file: users.json
+  products:
+    type: csv
+    file: products.csv
+  api_data:
+    type: rest
+    url: https://api.example.com/data
+  db_users:
+    type: pg
+    query: "SELECT * FROM users"
+  shell_data:
+    type: exec
+    cmd: ./get-data.sh
+---
+```
+
+**Source Types:**
+- `json` - JSON file (requires `file`)
+- `csv` - CSV file (requires `file`)
+- `rest` - REST API (requires `url`)
+- `pg` - PostgreSQL query (requires `query`, needs `DATABASE_URL` env var)
+- `exec` - Shell command (requires `cmd`)
+
+Frontmatter sources take precedence over `livemdtools.yaml` sources if both define the same name.
+
+## lvt-* Attributes
+
+### Form Handling
+
+#### `lvt-submit`
+
+Handle form submission. Used with `lvt-persist` for auto-CRUD.
+
+```html
+<form lvt-submit="save" lvt-persist="contacts">
+    <input type="text" name="name" required>
+    <input type="email" name="email" required>
+    <button type="submit">Submit</button>
+</form>
+```
+
+The form data is automatically:
+1. Parsed from form fields
+2. Saved to SQLite table (created automatically)
+3. Available in template as `.Contacts`
+
+**Supported field types:**
+- `text`, `email`, `url`, `tel` → string
+- `number`, `range` → integer
+- `checkbox` → boolean
+- `textarea` → string
+- `date`, `datetime-local` → timestamp
+
+### Click Actions
+
+#### `lvt-click`
+
+Trigger a server action on click.
+
+```html
+<button lvt-click="Delete" lvt-data-id="{{.Id}}">Delete</button>
+<button lvt-click="ToggleComplete" lvt-data-id="{{.Id}}">Toggle</button>
+<button lvt-click="Refresh">Refresh Data</button>
+```
+
+The action name (e.g., `Delete`) maps to a method on your Controller. With `lvt-persist`, common actions are auto-generated.
+
+### Data Attributes
+
+#### `lvt-data-*`
+
+Pass data with click actions. The `*` becomes the parameter name.
+
+```html
+<!-- Single value -->
+<button lvt-click="Delete" lvt-data-id="{{.Id}}">Delete</button>
+
+<!-- Multiple values -->
+<button lvt-click="Move"
+        lvt-data-id="{{.Id}}"
+        lvt-data-target="archive">
+    Archive
+</button>
+```
+
+Access in controller:
+- `ctx.GetInt("id")` - Get integer value
+- `ctx.GetString("target")` - Get string value
+
+### Auto-Persistence
+
+#### `lvt-persist`
+
+Automatically create a SQLite table and generate CRUD operations.
+
+```html
+<form lvt-submit="save" lvt-persist="todos">
+    <input type="text" name="title" required>
+    <input type="checkbox" name="completed">
+    <button type="submit">Add Todo</button>
+</form>
+```
+
+This auto-generates:
+- SQLite table `todos` with columns: `id`, `title`, `completed`, `created_at`
+- State struct with `Todos []Todo`
+- `Save` action (insert)
+- `Delete` action (with `lvt-data-id`)
+
+**Template access:**
+```html
+{{range .Todos}}
+    <li>{{.Title}} - {{if .Completed}}Done{{end}}</li>
+{{end}}
+```
+
+### Data Sources
+
+#### `lvt-source`
+
+Connect to external data. Source must be defined in `livemdtools.yaml`.
+
+```html
+<div lvt-source="users">
+    <table>
+        {{range .Data}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Email}}</td>
+        </tr>
+        {{end}}
+    </table>
+</div>
+```
+
+**Smart Table Auto-Generation:**
+
+```html
+<!-- Auto-generates table headers and rows -->
+<table lvt-source="users" lvt-columns="name:Name,email:Email">
+</table>
+```
+
+**Smart Select Auto-Generation:**
+
+```html
+<!-- Auto-generates options -->
+<select lvt-source="countries" lvt-value="code" lvt-label="name">
+</select>
+```
+
+## Source Configuration (livemdtools.yaml)
+
+### Exec Source (Run Scripts)
+
+Execute any script that outputs JSON.
+
+```yaml
+sources:
+  users:
+    type: exec
+    cmd: ./get-users.sh
+```
+
+Script should output JSON array:
+```json
+[
+  {"id": 1, "name": "Alice", "email": "alice@example.com"},
+  {"id": 2, "name": "Bob", "email": "bob@example.com"}
+]
+```
+
+### PostgreSQL Source
+
+Query a PostgreSQL database.
+
+```yaml
+sources:
+  users:
+    type: pg
+    query: SELECT id, name, email FROM users ORDER BY id
+```
+
+Requires `DATABASE_URL` environment variable.
+
+### REST API Source
+
+Fetch data from HTTP endpoints.
+
+```yaml
+sources:
+  posts:
+    type: rest
+    url: https://jsonplaceholder.typicode.com/posts
+```
+
+With headers:
+```yaml
+sources:
+  github_issues:
+    type: rest
+    url: https://api.github.com/repos/myorg/myrepo/issues
+    headers:
+      Authorization: Bearer ${GITHUB_TOKEN}
+```
+
+### JSON File Source
+
+Load data from a JSON file.
+
+```yaml
+sources:
+  config:
+    type: json
+    file: data/config.json
+```
+
+### CSV File Source
+
+Load data from a CSV file.
+
+```yaml
+sources:
+  sales:
+    type: csv
+    file: data/sales.csv
+```
+
+CSV is automatically parsed with headers as field names.
+
+## Template Syntax
+
+Livemdtools uses Go templates.
+
+### Variables
+
+```html
+{{.Title}}          <!-- Access field -->
+{{.User.Name}}      <!-- Nested field -->
+{{.Items}}          <!-- Array/slice -->
+```
+
+### Conditionals
+
+```html
+{{if .Items}}
+    <ul>...</ul>
+{{else}}
+    <p>No items</p>
+{{end}}
+
+{{if eq .Status "active"}}Active{{end}}
+{{if ne .Count 0}}Has items{{end}}
+{{if gt .Count 5}}Many items{{end}}
+```
+
+### Loops
+
+```html
+{{range .Items}}
+    <li>{{.Title}} by {{.Author}}</li>
+{{end}}
+
+<!-- With index -->
+{{range $i, $item := .Items}}
+    <li>{{$i}}: {{$item.Title}}</li>
+{{end}}
+```
+
+### Built-in Functions
+
+| Function | Example | Description |
+|----------|---------|-------------|
+| `eq` | `{{if eq .Status "done"}}` | Equal |
+| `ne` | `{{if ne .Count 0}}` | Not equal |
+| `lt` | `{{if lt .Count 10}}` | Less than |
+| `gt` | `{{if gt .Count 5}}` | Greater than |
+| `and` | `{{if and .Active .Visible}}` | Logical AND |
+| `or` | `{{if or .Admin .Moderator}}` | Logical OR |
+| `not` | `{{if not .Deleted}}` | Logical NOT |
+| `len` | `{{len .Items}}` | Length of array/string |
+
+## Styling
+
+### Inline Styles
+
+Include `<style>` in your `lvt` block:
+
+```html
+\`\`\`lvt
+<div class="container">
+    <h1>My App</h1>
+</div>
+
+<style>
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+</style>
+\`\`\`
+```
+
+### Tailwind CSS
+
+Tailwind CSS is included automatically. Use utility classes:
+
+```html
+<div class="max-w-xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-gray-800">My App</h1>
+    <button class="bg-blue-500 text-white px-4 py-2 rounded">
+        Submit
+    </button>
+</div>
+```
+
+## Components
+
+### Datatable
+
+Use the `lvt-columns` attribute for smart table generation:
+
+```html
+<table lvt-source="users" lvt-columns="name:Name,email:Email,role:Role">
+</table>
+```
+
+Features:
+- Sortable columns (click headers)
+- Pagination (auto-enabled)
+- Filtering (add `lvt-filter` attribute)
+
+### Select Dropdown
+
+Auto-generate options from a data source:
+
+```html
+<select lvt-source="countries" lvt-value="code" lvt-label="name">
+</select>
+```
+
+| Attribute | Description |
+|-----------|-------------|
+| `lvt-source` | Name of data source |
+| `lvt-value` | Field to use as option value |
+| `lvt-label` | Field to use as option label |
+
+## Partials
+
+Break large files into reusable components:
+
+```html
+{{partial "_header.md"}}
+
+<main>
+    <!-- Page content -->
+</main>
+
+{{partial "_footer.md"}}
+```
+
+Create `_header.md`:
+```markdown
+---
+---
+
+\`\`\`lvt
+<header class="bg-gray-800 text-white p-4">
+    <h1>My App</h1>
+    <nav>...</nav>
+</header>
+\`\`\`
+```
+
+## CLI Reference
+
+### Serve
+
+Run a Livemdtools application:
+
+```bash
+livemdtools serve myapp.md           # Serve single file
+livemdtools serve ./myapp/           # Serve directory
+livemdtools serve . --port 8080      # Custom port
+```
+
+### Build (Coming Soon)
+
+Compile to standalone binary:
+
+```bash
+livemdtools build myapp.md -o myapp
+```
+
+## Common Patterns
+
+### CRUD List
+
+```html
+<form lvt-submit="save" lvt-persist="items">
+    <input type="text" name="title" required>
+    <button type="submit">Add</button>
+</form>
+
+{{range .Items}}
+<div>
+    {{.Title}}
+    <button lvt-click="Delete" lvt-data-id="{{.Id}}">Delete</button>
+</div>
+{{end}}
+```
+
+### Data Table from API
+
+```yaml
+# livemdtools.yaml
+sources:
+  users:
+    type: rest
+    url: https://api.example.com/users
+```
+
+```html
+<table lvt-source="users" lvt-columns="name:Name,email:Email">
+</table>
+```
+
+### Form with Validation
+
+```html
+<form lvt-submit="save" lvt-persist="contacts">
+    <input type="text" name="name" required minlength="2">
+    <input type="email" name="email" required>
+    <input type="tel" name="phone" pattern="[0-9]{10}">
+    <button type="submit">Submit</button>
+</form>
+```
+
+HTML5 validation is built-in. Add `required`, `minlength`, `pattern`, etc.
+
+### Conditional Rendering
+
+```html
+{{if .Error}}
+    <div class="error">{{.Error}}</div>
+{{end}}
+
+{{if .Items}}
+    <ul>{{range .Items}}<li>{{.Title}}</li>{{end}}</ul>
+{{else}}
+    <p class="empty">No items yet. Add one above!</p>
+{{end}}
+```

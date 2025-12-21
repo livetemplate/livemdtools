@@ -4,11 +4,11 @@ title: "Creating Pages"
 
 # Creating Pages
 
-Learn how to create and structure your LivePage content.
+Learn how to create and structure your Livemdtools content.
 
 ## Basic Page Structure
 
-Every LivePage document is a Markdown file with optional frontmatter:
+Every Livemdtools document is a Markdown file with optional frontmatter:
 
 ```markdown
 ---
@@ -47,7 +47,7 @@ Use ## for major sections, ### for subsections.
 
 \`\`\`go
 func main() {
-    fmt.Println("Hello, LivePage!")
+    fmt.Println("Hello, Livemdtools!")
 }
 \`\`\`
 ```

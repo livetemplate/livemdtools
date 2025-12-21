@@ -16,7 +16,7 @@ export class RunButton {
 
   private createButton(label: string): HTMLButtonElement {
     const button = document.createElement("button");
-    button.className = "livepage-run-button";
+    button.className = "livemdtools-run-button";
     button.textContent = label;
     button.addEventListener("click", () => this.handleClick());
     return button;

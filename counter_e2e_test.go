@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -17,15 +17,15 @@ import (
 
 // TestCounterTutorial tests the interactive counter tutorial end-to-end
 func TestCounterTutorial(t *testing.T) {
-	// Build livepage first
-	buildCmd := exec.Command("go", "build", "-o", "livepage-test", "./cmd/livepage")
+	// Build livemdtools first
+	buildCmd := exec.Command("go", "build", "-o", "livemdtools-test", "./cmd/livemdtools")
 	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build livepage: %v", err)
+		t.Fatalf("Failed to build livemdtools: %v", err)
 	}
-	defer os.Remove("livepage-test")
+	defer os.Remove("livemdtools-test")
 
 	// Start the server
-	serverCmd := exec.Command("./livepage-test", "serve", "examples/counter")
+	serverCmd := exec.Command("./livemdtools-test", "serve", "examples/counter")
 
 	// Capture server output
 	serverOut := &strings.Builder{}
@@ -102,10 +102,10 @@ func TestCounterTutorial(t *testing.T) {
 		chromedp.OuterHTML("body", &htmlContent),
 
 		// Check if interactive block exists
-		chromedp.Evaluate(`document.querySelector('[data-livepage-block][data-block-type="lvt"]') !== null`, &interactiveBlockExists),
+		chromedp.Evaluate(`document.querySelector('[data-livemdtools-block][data-block-type="lvt"]') !== null`, &interactiveBlockExists),
 
 		// Check block content
-		chromedp.Text(`[data-livepage-block][data-block-type="lvt"]`, &blockContent),
+		chromedp.Text(`[data-livemdtools-block][data-block-type="lvt"]`, &blockContent),
 	); err != nil {
 		t.Fatalf("Failed to navigate: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestCounterTutorial(t *testing.T) {
 	t.Logf("Block content: %s", blockContent)
 
 	// Dump HTML for debugging
-	htmlFile := "/tmp/livepage-test.html"
+	htmlFile := "/tmp/livemdtools-test.html"
 	if err := os.WriteFile(htmlFile, []byte(htmlContent), 0644); err != nil {
 		t.Logf("Warning: Failed to write HTML: %v", err)
 	} else {
@@ -135,10 +135,10 @@ func TestCounterTutorial(t *testing.T) {
 
 	if err := chromedp.Run(ctx,
 		// Re-read content after WebSocket updates
-		chromedp.Text(`[data-livepage-block][data-block-type="lvt"]`, &counterText),
+		chromedp.Text(`[data-livemdtools-block][data-block-type="lvt"]`, &counterText),
 
 		// Check for increment button
-		chromedp.Evaluate(`document.querySelector('[data-livepage-block][data-block-type="lvt"] button[lvt-click="increment"]') !== null`, &hasButtons),
+		chromedp.Evaluate(`document.querySelector('[data-livemdtools-block][data-block-type="lvt"] button[lvt-click="increment"]') !== null`, &hasButtons),
 	); err != nil {
 		t.Fatalf("Failed to check buttons: %v", err)
 	}
@@ -152,9 +152,9 @@ func TestCounterTutorial(t *testing.T) {
 
 	// Test button interaction - Click increment
 	if err := chromedp.Run(ctx,
-		chromedp.Click(`[data-livepage-block][data-block-type="lvt"] button[lvt-click="increment"]`, chromedp.ByQuery),
+		chromedp.Click(`[data-livemdtools-block][data-block-type="lvt"] button[lvt-click="increment"]`, chromedp.ByQuery),
 		chromedp.Sleep(1*time.Second), // Wait for WebSocket update
-		chromedp.Text(`[data-livepage-block][data-block-type="lvt"]`, &counterText),
+		chromedp.Text(`[data-livemdtools-block][data-block-type="lvt"]`, &counterText),
 	); err != nil {
 		t.Fatalf("Failed to click increment: %v", err)
 	}

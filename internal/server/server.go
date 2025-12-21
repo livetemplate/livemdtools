@@ -11,20 +11,20 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/livetemplate/livepage"
-	"github.com/livetemplate/livepage/internal/assets"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/site"
+	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/livemdtools/internal/assets"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/site"
 )
 
 // Route represents a discovered page route.
 type Route struct {
 	Pattern  string         // URL pattern (e.g., "/counter")
 	FilePath string         // Relative file path (e.g., "counter.md")
-	Page     *livepage.Page // Parsed page
+	Page     *livemdtools.Page // Parsed page
 }
 
-// Server is the livepage development server.
+// Server is the livemdtools development server.
 type Server struct {
 	rootDir     string
 	config      *config.Config
@@ -133,7 +133,7 @@ func (s *Server) Discover() error {
 		pattern := mdToPattern(relPath)
 
 		// Parse the page
-		page, err := livepage.ParseFile(path)
+		page, err := livemdtools.ParseFile(path)
 		if err != nil {
 			log.Printf("Warning: Failed to parse %s: %v", relPath, err)
 			return nil // Continue with other files
@@ -244,7 +244,7 @@ func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/assets/")
 
 	// Serve client JS
-	if path == "livepage-client.js" {
+	if path == "livemdtools-client.js" {
 		js, err := assets.GetClientJS()
 		if err != nil {
 			http.Error(w, "Asset not found", http.StatusNotFound)
@@ -256,7 +256,7 @@ func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Serve client CSS
-	if path == "livepage-client.css" {
+	if path == "livemdtools-client.css" {
 		css, err := assets.GetClientCSS()
 		if err != nil {
 			http.Error(w, "Asset not found", http.StatusNotFound)
@@ -304,7 +304,7 @@ func (s *Server) servePage(w http.ResponseWriter, r *http.Request, route *Route)
 }
 
 // renderPage renders a page to HTML.
-func (s *Server) renderPage(page *livepage.Page, currentPath string, host string) string {
+func (s *Server) renderPage(page *livemdtools.Page, currentPath string, host string) string {
 	// Render code blocks with metadata for client discovery
 	content := s.renderContent(page)
 
@@ -340,13 +340,13 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="livepage-ws-url" content="%s">
-    <meta name="livepage-debug" content="true">
-    <meta name="livepage-sidebar" content="%t">
+    <meta name="livemdtools-ws-url" content="%s">
+    <meta name="livemdtools-debug" content="true">
+    <meta name="livemdtools-sidebar" content="%t">
     <title>%s</title>
     <!-- PicoCSS - Semantic/Classless CSS Framework -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-    <link rel="stylesheet" href="/assets/livepage-client.css">
+    <link rel="stylesheet" href="/assets/livemdtools-client.css">
     <style>
         /* Theme Variables */
         :root {
@@ -568,8 +568,8 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         }
 
         /* Interactive blocks */
-        .livepage-wasm-block,
-        .livepage-interactive-block {
+        .livemdtools-wasm-block,
+        .livemdtools-interactive-block {
             margin: 2rem calc((800px - 100%%) / 2 * -1);
             max-width: 1000px;
             padding: 1.5rem;
@@ -580,8 +580,8 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .livepage-wasm-block:hover,
-        .livepage-interactive-block:hover {
+        .livemdtools-wasm-block:hover,
+        .livemdtools-interactive-block:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px var(--card-shadow);
         }
@@ -658,8 +658,8 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
                 font-weight: 700 !important;
             }
 
-            .livepage-wasm-block,
-            .livepage-interactive-block {
+            .livemdtools-wasm-block,
+            .livemdtools-interactive-block {
                 padding: 1rem;
                 border-radius: 10px;
             }
@@ -690,8 +690,8 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
                 font-weight: 700 !important;
             }
 
-            .livepage-wasm-block,
-            .livepage-interactive-block {
+            .livemdtools-wasm-block,
+            .livemdtools-interactive-block {
                 padding: 1rem;
                 margin: 1rem 0;
             }
@@ -822,11 +822,11 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
             padding: 0 !important;
         }
 
-        body.presentation-mode .livepage-nav-sidebar {
+        body.presentation-mode .livemdtools-nav-sidebar {
             display: none;
         }
 
-        body.presentation-mode .livepage-nav-bottom {
+        body.presentation-mode .livemdtools-nav-bottom {
             left: 0;
             width: 100%%;
         }
@@ -888,7 +888,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         }
 
         /* Tutorial Navigation - Sidebar TOC */
-        .livepage-nav-sidebar {
+        .livemdtools-nav-sidebar {
             position: fixed;
             left: 0;
             top: 0;
@@ -1172,7 +1172,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         }
 
         /* Tutorial Navigation - Bottom Bar */
-        .livepage-nav-bottom {
+        .livemdtools-nav-bottom {
             position: fixed;
             bottom: 0;
             left: 360px;
@@ -1240,7 +1240,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         }
 
         /* Adjust main content to make room for navigation */
-        body:has(.livepage-nav-sidebar) {
+        body:has(.livemdtools-nav-sidebar) {
             margin-left: 360px;
             margin-right: 0;
             margin-bottom: 60px;
@@ -1249,36 +1249,36 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
 
         /* Responsive Navigation */
         @media (max-width: 1024px) {
-            .livepage-nav-sidebar {
+            .livemdtools-nav-sidebar {
                 width: 320px;
             }
 
-            .livepage-nav-bottom {
+            .livemdtools-nav-bottom {
                 left: 320px;
             }
 
-            body:has(.livepage-nav-sidebar) {
+            body:has(.livemdtools-nav-sidebar) {
                 margin-left: 320px;
             }
         }
 
         @media (max-width: 768px) {
             /* Hide sidebar on mobile, show hamburger menu */
-            .livepage-nav-sidebar {
+            .livemdtools-nav-sidebar {
                 transform: translateX(-100%%);
                 transition: transform 0.3s ease;
             }
 
-            .livepage-nav-sidebar.open {
+            .livemdtools-nav-sidebar.open {
                 transform: translateX(0);
             }
 
-            .livepage-nav-bottom {
+            .livemdtools-nav-bottom {
                 left: 0;
                 padding: 0 1rem;
             }
 
-            body:has(.livepage-nav-sidebar) {
+            body:has(.livemdtools-nav-sidebar) {
                 margin-left: 0;
             }
 
@@ -1301,12 +1301,12 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         }
 
         @media (max-width: 480px) {
-            .livepage-nav-bottom {
+            .livemdtools-nav-bottom {
                 height: 60px;
                 padding: 0 0.75rem;
             }
 
-            body:has(.livepage-nav-sidebar) {
+            body:has(.livemdtools-nav-sidebar) {
                 margin-bottom: 60px;
             }
 
@@ -1614,7 +1614,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
     <script>
         // Theme management
         (function() {
-            const STORAGE_KEY = 'livepage-theme';
+            const STORAGE_KEY = -livemdtools-theme';
             const html = document.documentElement;
 
             // Get current theme from localStorage or default to 'auto'
@@ -1680,7 +1680,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         // Move toolbar into sidebar footer when sidebar exists
         (function() {
             function moveToolbarToSidebar() {
-                const sidebar = document.querySelector('.livepage-nav-sidebar');
+                const sidebar = document.querySelector('.livemdtools-nav-sidebar');
                 const toolbar = document.querySelector('.page-toolbar');
 
                 if (sidebar && toolbar) {
@@ -1708,7 +1708,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
             const observer = new MutationObserver((mutations) => {
                 for (const mutation of mutations) {
                     for (const node of mutation.addedNodes) {
-                        if (node.nodeType === 1 && node.classList?.contains('livepage-nav-sidebar')) {
+                        if (node.nodeType === 1 && node.classList?.contains(-livemdtools-nav-sidebar')) {
                             moveToolbarToSidebar();
                             return;
                         }
@@ -1725,7 +1725,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
             let sections = [];
 
             // Expose presentation mode state globally so other scripts can check it
-            window.livepagePresentationMode = {
+            window.livemdtoolsPresentationMode = {
                 isActive: () => presentationMode
             };
 
@@ -1901,7 +1901,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
         })();
     </script>
 
-    <script src="/assets/livepage-client.js"></script>
+    <script src="/assets/livemdtools-client.js"></script>
 
     <!-- Prism.js for syntax highlighting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -1987,7 +1987,7 @@ func (s *Server) renderPage(page *livepage.Page, currentPath string, host string
 }
 
 // renderContent renders the page content with code blocks
-func (s *Server) renderContent(page *livepage.Page) string {
+func (s *Server) renderContent(page *livemdtools.Page) string {
 	content := page.StaticHTML
 
 	// TODO: Enhance markdown parser to add data attributes to code blocks
@@ -2152,7 +2152,7 @@ func (s *Server) renderSidebar(currentPath string) string {
 	}
 
 	var html strings.Builder
-	html.WriteString(`<nav class="livepage-nav-sidebar">`)
+	html.WriteString(`<nav class="livemdtools-nav-sidebar">`)
 
 	// Site title/logo
 	if s.config.Site != nil && s.config.Title != "" {

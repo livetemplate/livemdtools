@@ -1,7 +1,7 @@
-// Package state provides state management for livepage.
+// Package state provides state management for livemdtools.
 package state
 
-// PageState manages the runtime state of a livepage.
+// PageState manages the runtime state of a livemdtools.
 type PageState struct {
 	CurrentStep    int
 	CodeEdits      map[string]string

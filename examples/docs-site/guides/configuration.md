@@ -4,11 +4,11 @@ title: "Configuration"
 
 # Configuration
 
-Configure your LivePage site using `livepage.yaml`.
+Configure your Livemdtools site using `livemdtools.yaml`.
 
 ## Configuration File
 
-Create a `livepage.yaml` file in your project root:
+Create a `livemdtools.yaml` file in your project root:
 
 ```yaml
 title: "My Documentation"

@@ -1,5 +1,5 @@
 /**
- * Core types for Livepage Client
+ * Core types for Livemdtools Client
  */
 
 export type BlockType = "server" | "wasm" | "interactive" | "lvt";
@@ -28,7 +28,7 @@ export interface MessageEnvelope {
   execMeta?: ExecMeta;
 }
 
-export interface LivepageClientOptions {
+export interface LivemdtoolsClientOptions {
   wsUrl: string;
   debug?: boolean;
   persistence?: boolean;

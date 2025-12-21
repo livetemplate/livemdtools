@@ -15,9 +15,9 @@ import (
 	"github.com/livetemplate/components/base"
 	"github.com/livetemplate/components/datatable"
 	"github.com/livetemplate/livetemplate"
-	"github.com/livetemplate/livepage"
-	"github.com/livetemplate/livepage/internal/compiler"
-	"github.com/livetemplate/livepage/internal/config"
+	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/livemdtools/internal/compiler"
+	"github.com/livetemplate/livemdtools/internal/config"
 )
 
 var upgrader = websocket.Upgrader{
@@ -45,7 +45,7 @@ type ExecMeta struct {
 
 // WebSocketHandler handles WebSocket connections for interactive blocks.
 type WebSocketHandler struct {
-	page       *livepage.Page
+	page       *livemdtools.Page
 	mu         sync.RWMutex
 	instances  map[string]*BlockInstance // blockID -> instance
 	debug      bool
@@ -66,7 +66,7 @@ type BlockInstance struct {
 }
 
 // NewWebSocketHandler creates a new WebSocket handler for a page.
-func NewWebSocketHandler(page *livepage.Page, server *Server, debug bool, rootDir string, cfg *config.Config) *WebSocketHandler {
+func NewWebSocketHandler(page *livemdtools.Page, server *Server, debug bool, rootDir string, cfg *config.Config) *WebSocketHandler {
 	if debug {
 		log.Printf("[WS] Creating WebSocket handler for page: %s", page.ID)
 		log.Printf("[WS] Page has %d server blocks", len(page.ServerBlocks))
@@ -139,10 +139,10 @@ func (h *WebSocketHandler) compileServerBlocks() {
 		// Check if this is an lvt-source block (takes precedence if both are present)
 		if sourceName := block.Metadata["lvt-source"]; sourceName != "" {
 			// lvt-source block - generate code to fetch from source
-			// Check page-level sources first (from frontmatter), then site-level (from livepage.yaml)
+			// Check page-level sources first (from frontmatter), then site-level (from livemdtools.yaml)
 			sourceCfg, found := h.getEffectiveSource(sourceName)
 			if !found {
-				log.Printf("[WS] Source %q not found (checked frontmatter and livepage.yaml) for block %s", sourceName, blockID)
+				log.Printf("[WS] Source %q not found (checked frontmatter and livemdtools.yaml) for block %s", sourceName, blockID)
 				continue
 			}
 			if h.debug {
@@ -184,12 +184,12 @@ func (h *WebSocketHandler) compileServerBlocks() {
 }
 
 // getEffectiveSource looks up a source by name, checking page-level sources first
-// (from frontmatter), then falling back to site-level sources (from livepage.yaml).
+// (from frontmatter), then falling back to site-level sources (from livemdtools.yaml).
 func (h *WebSocketHandler) getEffectiveSource(name string) (config.SourceConfig, bool) {
 	// Check page-level sources first (from frontmatter)
 	if h.page != nil && h.page.Config.Sources != nil {
 		if src, ok := h.page.Config.Sources[name]; ok {
-			// Convert livepage.SourceConfig to config.SourceConfig
+			// Convert livemdtools.SourceConfig to config.SourceConfig
 			return config.SourceConfig{
 				Type:    src.Type,
 				Cmd:     src.Cmd,
@@ -202,7 +202,7 @@ func (h *WebSocketHandler) getEffectiveSource(name string) (config.SourceConfig,
 		}
 	}
 
-	// Fall back to site-level sources (from livepage.yaml)
+	// Fall back to site-level sources (from livemdtools.yaml)
 	if h.config != nil && h.config.Sources != nil {
 		if src, ok := h.config.Sources[name]; ok {
 			return src, true

@@ -1,4 +1,4 @@
-// Package markdown provides markdown parsing functionality for livepage.
+// Package markdown provides markdown parsing functionality for livemdtools.
 package markdown
 
 // Parser parses markdown files into structured Page objects.

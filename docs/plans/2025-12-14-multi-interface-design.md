@@ -1,11 +1,11 @@
-# Multi-Interface LivePage Design
+# Multi-Interface Livemdtools Design
 
 **Date:** 2025-12-14
 **Status:** Design Complete
 
 ## Overview
 
-Extend LivePage so the same markdown file can power multiple interfaces beyond the web browser: CLI, HTTP API, and future chat bots (Slack, Discord, GitHub, Telegram).
+Extend Livemdtools so the same markdown file can power multiple interfaces beyond the web browser: CLI, HTTP API, and future chat bots (Slack, Discord, GitHub, Telegram).
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -56,7 +56,7 @@ Extend LivePage so the same markdown file can power multiple interfaces beyond t
 ```
 myapp/
   app.md              # State + Actions + Web View (required)
-  livepage.yaml       # Config: sources, auth, etc. (optional)
+  livemdtools.yaml       # Config: sources, auth, etc. (optional)
 ```
 
 ### With interface overrides (optional)
@@ -66,7 +66,7 @@ myapp/
   app.md              # State + Actions + Web View
   app.cli.md          # CLI-specific output formatting (optional)
   app.slack.md        # Slack Block Kit templates (optional)
-  livepage.yaml
+  livemdtools.yaml
 ```
 
 Override files contain **only view logic**, not state/actions:
@@ -84,7 +84,7 @@ Override files contain **only view logic**, not state/actions:
   delete <id>        Delete a todo
 ```
 
-When no override exists, LivePage **auto-generates** CLI output using conventions.
+When no override exists, Livemdtools **auto-generates** CLI output using conventions.
 
 ---
 
@@ -137,11 +137,11 @@ curl -H "Authorization: Bearer <token>" ...
 ### Configuration
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 api:
   enabled: true
   auth: none | token | custom
-  token: ${LIVEPAGE_API_TOKEN}
+  token: ${LIVEMDTOOLS_API_TOKEN}
 ```
 
 ---
@@ -152,16 +152,16 @@ api:
 
 ```bash
 # One-shot commands (transient - default)
-livepage cli app.md todos              # List state
-livepage cli app.md add "Buy milk"     # Execute action
-livepage cli app.md delete --id=1      # Action with named arg
+livemdtools cli app.md todos              # List state
+livemdtools cli app.md add "Buy milk"     # Execute action
+livemdtools cli app.md delete --id=1      # Action with named arg
 
 # One-shot connected to running server
-livepage cli app.md todos --server     # Fetches from localhost:8080
-livepage cli app.md todos --server=:9000  # Custom port
+livemdtools cli app.md todos --server     # Fetches from localhost:8080
+livemdtools cli app.md todos --server=:9000  # Custom port
 
 # Interactive REPL
-livepage cli app.md --interactive
+livemdtools cli app.md --interactive
 > todos
   ID  Title       Done
   1   Buy milk    [ ]
@@ -175,8 +175,8 @@ livepage cli app.md --interactive
 ### Help output (grouped)
 
 ```bash
-$ livepage cli app.md --help
-Usage: livepage cli app.md [command] [args]
+$ livemdtools cli app.md --help
+Usage: livemdtools cli app.md [command] [args]
 
 State (read-only):
   todos              List all todos
@@ -201,7 +201,7 @@ Flags:
 ### Transient mode (default for CLI)
 
 ```
-livepage cli app.md add "Buy milk"
+livemdtools cli app.md add "Buy milk"
 
 1. Parse app.md
 2. Load state from SQLite (app.db)
@@ -214,7 +214,7 @@ livepage cli app.md add "Buy milk"
 ### Server mode (web UI, API, connected CLI)
 
 ```
-livepage serve app.md
+livemdtools serve app.md
 
 Persistent process:
 - Web UI on :8080
@@ -228,8 +228,8 @@ Connected clients share the same live state.
 ### Headless API-only mode
 
 ```bash
-livepage api app.md          # HTTP API without web UI
-livepage api app.md --port=9000
+livemdtools api app.md          # HTTP API without web UI
+livemdtools api app.md --port=9000
 ```
 
 ---
@@ -239,14 +239,14 @@ livepage api app.md --port=9000
 ### Build standalone executable
 
 ```bash
-livepage build app.md -o myapp
+livemdtools build app.md -o myapp
 # Produces: ./myapp (or myapp.exe on Windows)
 ```
 
 The compiled binary embeds:
 - The app.md file (and any override files)
-- livepage.yaml config
-- LivePage runtime
+- livemdtools.yaml config
+- Livemdtools runtime
 
 ### Usage after build
 
@@ -265,7 +265,7 @@ The compiled binary embeds:
 
 ```bash
 # Cross-compile for colleague on Windows
-GOOS=windows livepage build app.md -o myapp.exe
+GOOS=windows livemdtools build app.md -o myapp.exe
 ```
 
 ---
@@ -325,7 +325,7 @@ Slack/Discord/Telegram message
          ▼
 ┌─────────────────┐
 │  HTTP API       │  POST /api/action/Add
-│  livepage api   │  {"NewTitle": "Buy milk"}
+│  livemdtools api   │  {"NewTitle": "Buy milk"}
 └────────┬────────┘
          │
          ▼
@@ -339,7 +339,7 @@ Slack/Discord/Telegram message
 ### Configuration
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 bots:
   slack:
     enabled: true
@@ -352,8 +352,8 @@ bots:
 ### Run with bot enabled
 
 ```bash
-livepage serve app.md --bots    # Web UI + API + Slack bot
-livepage bot app.md             # Bot only (no web UI)
+livemdtools serve app.md --bots    # Web UI + API + Slack bot
+livemdtools bot app.md             # Bot only (no web UI)
 ```
 
 ---
@@ -366,7 +366,7 @@ livepage bot app.md             # Bot only (no web UI)
 | **2. CLI Core** | One-shot commands, transient mode, state persistence | High |
 | **3. CLI Polish** | REPL mode, `--server` flag, grouped help | Medium |
 | **4. Convention Inference** | Auto-generate CLI from `lvt-*` attributes | Medium |
-| **5. Build Command** | `livepage build` to produce standalone binary | Medium |
+| **5. Build Command** | `livemdtools build` to produce standalone binary | Medium |
 | **6. Bot Adapters** | Slack, Discord, GitHub, Telegram | Future |
 
 ---
@@ -382,7 +382,7 @@ livepage bot app.md             # Bot only (no web UI)
 | Implement `/api/action/<name>` | ⏳ TODO | |
 | Add configurable auth | ⏳ TODO | |
 | **Phase 2: CLI Core** | | |
-| Add `livepage cli` subcommand | ⏳ TODO | |
+| Add `livemdtools cli` subcommand | ⏳ TODO | |
 | Implement transient mode | ⏳ TODO | |
 | State persistence (SQLite) | ⏳ TODO | |
 | **Phase 3: CLI Polish** | | |
@@ -393,6 +393,6 @@ livepage bot app.md             # Bot only (no web UI)
 | Parse `lvt-*` for CLI hints | ⏳ TODO | |
 | Generate help from HTML | ⏳ TODO | |
 | **Phase 5: Build Command** | | |
-| `livepage build` command | ⏳ TODO | |
+| `livemdtools build` command | ⏳ TODO | |
 | Embed app.md in binary | ⏳ TODO | |
 | Cross-compilation support | ⏳ TODO | |

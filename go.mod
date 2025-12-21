@@ -1,4 +1,4 @@
-module github.com/livetemplate/livepage
+module github.com/livetemplate/livemdtools
 
 go 1.25.3
 
@@ -8,6 +8,8 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/go-plugin v1.7.0
+	github.com/lib/pq v1.10.9
+	github.com/livetemplate/components v0.0.0-20251208230528-4aa686d20754
 	github.com/livetemplate/livetemplate v0.7.0
 	github.com/yuin/goldmark v1.7.13
 	gopkg.in/yaml.v3 v3.0.1
@@ -50,7 +52,6 @@ require (
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oklog/run v1.1.0 // indirect

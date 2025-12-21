@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestSearchFunctionality tests the complete search feature in site mode
@@ -66,7 +66,7 @@ func TestSearchFunctionality(t *testing.T) {
 
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
-		chromedp.WaitVisible(".livepage-nav-sidebar", chromedp.ByQuery),
+		chromedp.WaitVisible(".livemdtools-nav-sidebar", chromedp.ByQuery),
 		chromedp.Sleep(500*time.Millisecond), // Wait for client to initialize
 		chromedp.OuterHTML("html", &htmlContent),
 
@@ -85,11 +85,11 @@ func TestSearchFunctionality(t *testing.T) {
 	}
 	t.Log("✓ Search button exists in sidebar")
 
-	// Test 2: Verify /search-index.json endpoint by checking window.livepageSearch loaded the index
+	// Test 2: Verify /search-index.json endpoint by checking window.livemdtoolsSearch loaded the index
 	var searchIndexLength int
 	err = chromedp.Run(ctx,
 		chromedp.Sleep(1*time.Second), // Wait for search to initialize
-		chromedp.Evaluate(`window.livepageSearch ? window.livepageSearch.searchIndex.length : 0`, &searchIndexLength),
+		chromedp.Evaluate(`window.livemdtoolsSearch ? window.livemdtoolsSearch.searchIndex.length : 0`, &searchIndexLength),
 	)
 
 	if err != nil {
@@ -112,7 +112,7 @@ func TestSearchFunctionality(t *testing.T) {
 
 		// Debug: Check if button exists and search instance is available
 		chromedp.Evaluate(`document.querySelector('.search-button') !== null`, &buttonExists),
-		chromedp.Evaluate(`window.livepageSearch !== undefined`, &searchInstanceExists),
+		chromedp.Evaluate(`window.livemdtoolsSearch !== undefined`, &searchInstanceExists),
 
 		// Use JavaScript click instead of chromedp Click
 		chromedp.Evaluate(`document.querySelector('.search-button').click()`, nil),
@@ -159,7 +159,7 @@ func TestSearchFunctionality(t *testing.T) {
 	var resultsCount int
 
 	err = chromedp.Run(ctx,
-		chromedp.SendKeys(".search-input", "livepage", chromedp.ByQuery),
+		chromedp.SendKeys(".search-input", "livemdtools", chromedp.ByQuery),
 		chromedp.Sleep(500*time.Millisecond), // Wait for search to execute
 		chromedp.Evaluate(`document.querySelectorAll('.search-result').length`, &resultsCount),
 		chromedp.OuterHTML(".search-results", &resultsHTML),
@@ -171,7 +171,7 @@ func TestSearchFunctionality(t *testing.T) {
 
 	if resultsCount == 0 {
 		t.Logf("Results HTML: %s", resultsHTML)
-		t.Fatal("No search results found for 'livepage'")
+		t.Fatal("No search results found for 'livemdtools'")
 	}
 
 	t.Logf("✓ Search returned %d results", resultsCount)

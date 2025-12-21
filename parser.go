@@ -1,4 +1,4 @@
-package livepage
+package livemdtools
 
 import (
 	"bytes"
@@ -56,7 +56,7 @@ type Frontmatter struct {
 	Persist PersistMode `yaml:"persist"` // none, localstorage, server
 	Steps   int         `yaml:"steps"`
 
-	// Config options (can override livepage.yaml)
+	// Config options (can override livemdtools.yaml)
 	Sources  map[string]SourceConfig `yaml:"sources,omitempty"`
 	Styling  *StylingConfig          `yaml:"styling,omitempty"`
 	Blocks   *BlocksConfig           `yaml:"blocks,omitempty"`
@@ -92,12 +92,12 @@ func ParseMarkdown(content []byte) (*Frontmatter, []*CodeBlock, string, error) {
 	reader := text.NewReader(remaining)
 	doc := md.Parser().Parse(reader)
 
-	// Extract and collect livepage code blocks (but don't remove from AST)
+	// Extract and collect livemdtools code blocks (but don't remove from AST)
 	var codeBlocks []*CodeBlock
 	blockMap := make(map[ast.Node]*CodeBlock) // Map AST nodes to CodeBlocks
 	lineOffset := bytes.Count(content[:len(content)-len(remaining)], []byte("\n"))
 
-	// Walk AST and identify livepage code blocks
+	// Walk AST and identify livemdtools code blocks
 	err = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
@@ -109,7 +109,7 @@ func ParseMarkdown(content []byte) (*Frontmatter, []*CodeBlock, string, error) {
 				return ast.WalkStop, parseErr
 			}
 			if block != nil {
-				// This is a livepage block - collect it and map it to AST node
+				// This is a livemdtools block - collect it and map it to AST node
 				codeBlocks = append(codeBlocks, block)
 				blockMap[n] = block
 			}
@@ -128,7 +128,7 @@ func ParseMarkdown(content []byte) (*Frontmatter, []*CodeBlock, string, error) {
 		return nil, nil, "", fmt.Errorf("failed to render HTML: %w", err)
 	}
 
-	// Post-process HTML to add data attributes to livepage blocks
+	// Post-process HTML to add data attributes to livemdtools blocks
 	html := htmlBuf.String()
 	html = injectBlockAttributes(html, codeBlocks, frontmatter.Sources)
 
@@ -171,9 +171,9 @@ func extractFrontmatter(content []byte) (*Frontmatter, []byte, error) {
 	return &fm, remaining, nil
 }
 
-// injectBlockAttributes post-processes HTML to wrap livepage code blocks with data attributes.
+// injectBlockAttributes post-processes HTML to wrap livemdtools code blocks with data attributes.
 func injectBlockAttributes(html string, blocks []*CodeBlock, sources map[string]SourceConfig) string {
-	// For each livepage block, find its HTML representation and wrap it
+	// For each livemdtools block, find its HTML representation and wrap it
 	for i, block := range blocks {
 		// Determine readonly/editable
 		readonly := containsFlag(block.Flags, "readonly")
@@ -198,7 +198,7 @@ func injectBlockAttributes(html string, blocks []*CodeBlock, sources map[string]
 		if block.Type == "lvt" {
 			// Build container div with data attributes
 			container := fmt.Sprintf(
-				`<div class="livepage-interactive-block" data-livepage-block data-block-id="%s" data-block-type="lvt" data-language="lvt"`,
+				`<div class="livemdtools-interactive-block" data-livemdtools-block data-block-id="%s" data-block-type="lvt" data-language="lvt"`,
 				escapeHTML(blockID),
 			)
 
@@ -240,7 +240,7 @@ func injectBlockAttributes(html string, blocks []*CodeBlock, sources map[string]
 
 		// For server/wasm blocks, wrap the existing <pre><code> with attributes
 		wrapper := fmt.Sprintf(
-			`<div data-livepage-block data-block-id="%s" data-block-type="%s" data-language="%s"`,
+			`<div data-livemdtools-block data-block-id="%s" data-block-type="%s" data-language="%s"`,
 			escapeHTML(blockID),
 			escapeHTML(block.Type),
 			escapeHTML(block.Language),
@@ -295,7 +295,7 @@ func escapeHTML(s string) string {
 	return html.EscapeString(s)
 }
 
-// parseCodeBlock parses a fenced code block and extracts livepage metadata.
+// parseCodeBlock parses a fenced code block and extracts livemdtools metadata.
 // Code block info string format: "go server readonly id=counter"
 func parseCodeBlock(fenced *ast.FencedCodeBlock, source []byte, lineOffset int) (*CodeBlock, error) {
 	// Handle fenced code blocks without language info
@@ -307,14 +307,14 @@ func parseCodeBlock(fenced *ast.FencedCodeBlock, source []byte, lineOffset int) 
 	parts := strings.Fields(info)
 
 	if len(parts) == 0 {
-		// Not a livepage code block, skip
+		// Not a livemdtools code block, skip
 		return nil, nil
 	}
 
 	language := parts[0]
 	remaining := parts[1:]
 
-	// Check for livepage block types
+	// Check for livemdtools block types
 	blockType := ""
 	flags := []string{}
 	metadata := make(map[string]string)
@@ -348,7 +348,7 @@ func parseCodeBlock(fenced *ast.FencedCodeBlock, source []byte, lineOffset int) 
 	}
 
 	if blockType == "" {
-		// Not a livepage block (just regular code block)
+		// Not a livemdtools block (just regular code block)
 		return nil, nil
 	}
 
@@ -475,7 +475,7 @@ func ParseMarkdownWithPartials(content []byte, baseDir string) (*Frontmatter, []
 	reader := text.NewReader(processed)
 	doc := md.Parser().Parse(reader)
 
-	// Extract and collect livepage code blocks
+	// Extract and collect livemdtools code blocks
 	var codeBlocks []*CodeBlock
 	blockMap := make(map[ast.Node]*CodeBlock)
 	lineOffset := bytes.Count(content[:len(content)-len(remaining)], []byte("\n"))

@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestAutoPersistDeleteWithLvtDataID tests the lvt-data-* functionality
@@ -66,11 +66,11 @@ func TestAutoPersistDeleteWithLvtDataID(t *testing.T) {
 	var hasInteractiveBlock bool
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
-		// Wait for livepage client to initialize and WebSocket to connect
+		// Wait for livemdtools client to initialize and WebSocket to connect
 		// Plugin compilation can take ~10 seconds on first run
 		chromedp.Sleep(12*time.Second),
 		// Wait for interactive block to exist (it should be rendered by goldmark parser)
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
 		t.Fatalf("Failed to navigate: %v", err)

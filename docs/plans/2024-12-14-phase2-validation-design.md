@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document defines the implementation plan for Phase 2 of the LivePage PMF strategy. The goal is to validate that LLMs can reliably generate working LivePage applications by creating comprehensive documentation and a "Copy-Paste App Store" of 10 example prompts.
+This document defines the implementation plan for Phase 2 of the Livemdtools PMF strategy. The goal is to validate that LLMs can reliably generate working Livemdtools applications by creating comprehensive documentation and a "Copy-Paste App Store" of 10 example prompts.
 
 ## Design Decisions
 
@@ -17,11 +17,11 @@ This document defines the implementation plan for Phase 2 of the LivePage PMF st
 
 ### 1. Agent Skill for Claude Code
 
-Create a `livepage` skill following Anthropic's Agent Skills format that both Anthropic and OpenAI are adopting.
+Create a `livemdtools` skill following Anthropic's Agent Skills format that both Anthropic and OpenAI are adopting.
 
 **Directory structure:**
 ```
-skills/livepage/
+skills/livemdtools/
 ├── SKILL.md           # Entry point with name, description, triggers
 ├── reference.md       # API reference (components, sources, lvt-* attributes)
 ├── examples/
@@ -46,7 +46,7 @@ Create `docs/llms.txt` following the emerging LLMS.txt standard for AI-readable 
 ### 3. Golden File Tests
 
 Each example in `examples/` serves as a golden file:
-- Examples are complete, runnable LivePage apps
+- Examples are complete, runnable Livemdtools apps
 - Validation script compiles each example and verifies it serves HTTP
 - CI runs validation on every commit
 
@@ -55,7 +55,7 @@ Each example in `examples/` serves as a golden file:
 ### Task 1: Create Skill Directory Structure
 
 ```
-skills/livepage/
+skills/livemdtools/
 ├── SKILL.md
 ├── reference.md
 └── examples/
@@ -67,22 +67,22 @@ Entry point that Claude Code loads when skill is triggered.
 
 ```markdown
 ---
-name: livepage
-description: Build single-file web apps with LivePage
+name: livemdtools
+description: Build single-file web apps with Livemdtools
 triggers:
-  - livepage
+  - livemdtools
   - single-file app
   - markdown app
   - no-build app
 ---
 
-# LivePage Skill
+# Livemdtools Skill
 
-LivePage is an AI app builder that outputs working apps in a single markdown file with no build step.
+Livemdtools is an AI app builder that outputs working apps in a single markdown file with no build step.
 
 ## When to Use
 
-Use LivePage when building:
+Use Livemdtools when building:
 - Internal tools
 - Admin dashboards
 - Data viewers
@@ -92,7 +92,7 @@ Use LivePage when building:
 ## Quick Start
 
 1. Create a `.md` file with frontmatter and server block
-2. Run `livepage serve myapp.md`
+2. Run `livemdtools serve myapp.md`
 3. Open in browser
 
 ## Reference
@@ -135,7 +135,7 @@ Comprehensive API reference covering:
 Create `docs/llms.txt` for broader AI tool compatibility:
 
 ```
-# LivePage - One-File AI App Builder
+# Livemdtools - One-File AI App Builder
 
 > Build working web apps in a single markdown file. No React. No build step.
 
@@ -154,9 +154,9 @@ Create `docs/llms.txt` for broader AI tool compatibility:
 
 ### Task 6: Create Validation Script
 
-`skills/livepage/scripts/validate.sh`:
+`skills/livemdtools/scripts/validate.sh`:
 - Iterate through each example
-- Run `livepage serve` in background
+- Run `livemdtools serve` in background
 - Verify HTTP 200 response
 - Check for JavaScript errors (optional: headless browser)
 - Report pass/fail
@@ -191,7 +191,7 @@ Create `docs/llms.txt` for broader AI tool compatibility:
 
 ## Success Criteria
 
-1. Claude Code can use the livepage skill to generate valid apps
+1. Claude Code can use the livemdtools skill to generate valid apps
 2. All 10 examples compile and serve without errors
 3. Golden file tests pass in CI
 4. LLMS.txt provides sufficient context for other AI tools

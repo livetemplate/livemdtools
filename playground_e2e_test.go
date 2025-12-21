@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestPlaygroundPageLoads tests that the playground page loads correctly.
@@ -43,7 +43,7 @@ func TestPlaygroundPageLoads(t *testing.T) {
 	bodyStr := string(body)
 
 	// Verify key elements are present
-	if !strings.Contains(bodyStr, "LivePage Playground") {
+	if !strings.Contains(bodyStr, "Livemdtools Playground") {
 		t.Fatal("Playground page missing title")
 	}
 	if !strings.Contains(bodyStr, "editor") {
@@ -136,15 +136,15 @@ title: "Test App"
 	if !strings.Contains(previewStr, "Test App") {
 		t.Fatal("Preview missing page title")
 	}
-	if !strings.Contains(previewStr, "livepage-interactive-block") {
+	if !strings.Contains(previewStr, "livemdtools-interactive-block") {
 		t.Fatal("Preview missing interactive block container")
 	}
-	// Check that PicoCSS and LivePage client are included
+	// Check that PicoCSS and Livemdtools client are included
 	if !strings.Contains(previewStr, "picocss") {
 		t.Fatal("Preview missing PicoCSS")
 	}
-	if !strings.Contains(previewStr, "livepage-client.js") {
-		t.Fatal("Preview missing LivePage client JS")
+	if !strings.Contains(previewStr, "livemdtools-client.js") {
+		t.Fatal("Preview missing Livemdtools client JS")
 	}
 
 	t.Log("✓ Preview renders correctly")

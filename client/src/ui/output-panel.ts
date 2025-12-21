@@ -25,7 +25,7 @@ export class OutputPanel {
 
   private createPanel(): HTMLElement {
     const panel = document.createElement("div");
-    panel.className = "livepage-output-panel";
+    panel.className = "livemdtools-output-panel";
     panel.innerHTML = `
       <div class="output-header">
         <span class="output-title">Output</span>

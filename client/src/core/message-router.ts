@@ -93,13 +93,13 @@ export class MessageRouter {
    * Show reload notification overlay
    */
   private showReloadNotification(filePath: string): void {
-    const existing = document.getElementById("livepage-reload-notification");
+    const existing = document.getElementById("livemdtools-reload-notification");
     if (existing) {
       existing.remove();
     }
 
     const notification = document.createElement("div");
-    notification.id = "livepage-reload-notification";
+    notification.id = "livemdtools-reload-notification";
     notification.innerHTML = `
       <div style="
         position: fixed;

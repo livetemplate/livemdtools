@@ -1,9 +1,9 @@
 /**
- * Livepage Client - Interactive documentation runtime
- * @module @livetemplate/livepage-client
+ * Livemdtools Client - Interactive documentation runtime
+ * @module @livetemplate/livemdtools-client
  */
 
-export { LivepageClient } from "./livepage-client";
+export { LivemdtoolsClient } from "./livemdtools-client";
 export { MessageRouter } from "./core/message-router";
 export { PersistenceManager } from "./core/persistence-manager";
 export { BaseBlock } from "./blocks/base-block";
@@ -20,7 +20,7 @@ export type {
   BlockType,
   BlockMetadata,
   MessageEnvelope,
-  LivepageClientOptions,
+  LivemdtoolsClientOptions,
   BlockConfig,
   WasmExecutionResult,
   EditorOptions,

@@ -1,10 +1,10 @@
 ---
-title: "Welcome to LivePage"
+title: "Welcome to Livemdtools"
 ---
 
-# Welcome to LivePage
+# Welcome to Livemdtools
 
-LivePage is a framework for building interactive documentation and tutorials with server-side state management.
+Livemdtools is a framework for building interactive documentation and tutorials with server-side state management.
 
 ## Features
 
@@ -17,6 +17,6 @@ LivePage is a framework for building interactive documentation and tutorials wit
 
 Check out our [Introduction](/getting-started/intro) to learn the basics, or jump straight to [Installation](/getting-started/installation) to get set up.
 
-## Why LivePage?
+## Why Livemdtools?
 
-Traditional JavaScript frameworks keep state in the browser. LivePage flips this around - state lives on the server, making your applications more secure and reliable.
+Traditional JavaScript frameworks keep state in the browser. Livemdtools flips this around - state lives on the server, making your applications more secure and reliable.

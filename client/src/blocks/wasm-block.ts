@@ -64,7 +64,7 @@ export class WasmBlock extends BaseBlock {
   private createBlockStructure(): void {
     // Wrap existing element or create new structure
     this.containerElement = document.createElement("div");
-    this.containerElement.className = "livepage-wasm-block";
+    this.containerElement.className = "livemdtools-wasm-block";
     this.containerElement.dataset.blockId = this.id;
 
     // Editor container
@@ -125,7 +125,7 @@ export class WasmBlock extends BaseBlock {
 
     // Reset button
     const resetButton = document.createElement("button");
-    resetButton.className = "livepage-reset-button";
+    resetButton.className = "livemdtools-reset-button";
     resetButton.textContent = "Reset";
     resetButton.addEventListener("click", () => this.resetCode());
     buttonContainer.appendChild(resetButton);

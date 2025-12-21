@@ -1,4 +1,4 @@
-# LivePage
+# Livemdtools
 
 ## AI builds tools in one file. No React. No build step. Just run.
 
@@ -26,7 +26,7 @@ Now you need to `npm install`, configure your environment, set up hosting, and d
 
 ### The Solution
 
-**LivePage outputs a single markdown file that just works.**
+**Livemdtools outputs a single markdown file that just works.**
 
 ```markdown
 # Todo App
@@ -46,7 +46,7 @@ Now you need to `npm install`, configure your environment, set up hosting, and d
 **One file. 12 lines. Run it:**
 
 ```bash
-livepage serve todo.md
+livemdtools serve todo.md
 ```
 
 **That's it.** No npm. No build. No deploy. It just works.
@@ -55,7 +55,7 @@ livepage serve todo.md
 
 ### How It Works
 
-| You Write | LivePage Handles |
+| You Write | Livemdtools Handles |
 |-----------|------------------|
 | `lvt-persist="todos"` | Database table, CRUD operations, persistence |
 | `lvt-source="pg:users"` | PostgreSQL queries, real-time updates |
@@ -70,25 +70,25 @@ livepage serve todo.md
 
 ---
 
-### Why LivePage?
+### Why Livemdtools?
 
-| | React Builders | LivePage |
+| | React Builders | Livemdtools |
 |--|----------------|----------|
 | **Output** | 10+ files | 1 file |
 | **Build step** | Required | None |
 | **Hosting** | Required | Single binary |
 | **Time to working app** | Minutes | Seconds |
-| **Self-hosted** | Complex | `./livepage serve` |
+| **Self-hosted** | Complex | `./livemdtools serve` |
 | **Cost** | $25-50/mo | Free & open source |
 
 ---
 
 ### Use Any Language
 
-Don't know Go? No problem. LivePage's "polyglot" mode lets you use **any language** as a data source:
+Don't know Go? No problem. Livemdtools's "polyglot" mode lets you use **any language** as a data source:
 
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   sales:
     type: exec
@@ -120,7 +120,7 @@ sources:
 
 ```bash
 # Install
-go install github.com/livetemplate/livepage@latest
+go install github.com/livetemplate/livemdtools@latest
 
 # Create your first app
 echo '# Hello World
@@ -134,7 +134,7 @@ echo '# Hello World
 ```' > hello.md
 
 # Run it
-livepage serve hello.md
+livemdtools serve hello.md
 ```
 
 Open `http://localhost:8080` and you have a working app.
@@ -143,12 +143,12 @@ Open `http://localhost:8080` and you have a working app.
 
 ### Links
 
-- **GitHub**: github.com/livetemplate/livepage
-- **Docs**: livepage.dev/docs
-- **Examples**: livepage.dev/examples
+- **GitHub**: github.com/livetemplate/livemdtools
+- **Docs**: livemdtools.dev/docs
+- **Examples**: livemdtools.dev/examples
 
 ---
 
-*LivePage is open source (Apache 2.0). Built with Go.*
+*Livemdtools is open source (Apache 2.0). Built with Go.*
 
-**Stop building React apps for simple tools. Just write a LivePage.**
+**Stop building React apps for simple tools. Just write a Livemdtools.**

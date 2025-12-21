@@ -1,4 +1,4 @@
-package livepage
+package livemdtools
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// PageState manages the runtime state of a livepage session.
+// PageState manages the runtime state of a livemdtools session.
 type PageState struct {
 	mu sync.RWMutex
 

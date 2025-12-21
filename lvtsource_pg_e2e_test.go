@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestLvtSourcePostgres tests the lvt-source functionality with PostgreSQL
@@ -56,7 +56,7 @@ func TestLvtSourcePostgres(t *testing.T) {
 
 	// Verify source is configured
 	if cfg.Sources == nil {
-		t.Fatal("No sources configured in livepage.yaml")
+		t.Fatal("No sources configured in livemdtools.yaml")
 	}
 	userSource, ok := cfg.Sources["users"]
 	if !ok {
@@ -107,7 +107,7 @@ func TestLvtSourcePostgres(t *testing.T) {
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
 		chromedp.Sleep(3*time.Second),
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
 		t.Fatalf("Failed to navigate: %v", err)
@@ -233,7 +233,7 @@ func startPostgresContainer(t *testing.T) (string, string) {
 	t.Helper()
 
 	// Use a unique container name based on test name
-	containerName := fmt.Sprintf("livepage-pg-test-%d", time.Now().UnixNano())
+	containerName := fmt.Sprintf("livemdtools-pg-test-%d", time.Now().UnixNano())
 
 	// Start PostgreSQL container
 	cmd := exec.Command("docker", "run", "-d",

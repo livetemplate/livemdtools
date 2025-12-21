@@ -1,4 +1,4 @@
-# LivePage PMF Implementation Plan
+# Livemdtools PMF Implementation Plan
 
 ## Summary
 
@@ -39,10 +39,10 @@ This plan implements the "One-File AI App Builder" vision. See `docs/pmf-one-fil
 | Prompt library (10) | ⏳ TODO | Copy-Paste App Store |
 | **Phase 3: Future Features** | | |
 | `<lvt-auth>` | ⏳ TODO | Critical for enterprise |
-| `livepage build` | ⏳ TODO | Compile to binary |
+| `livemdtools build` | ⏳ TODO | Compile to binary |
 | Headless API | ⏳ TODO | Auto-generated API |
 | `lvt-ai` components | ⏳ TODO | AI-native UI |
-| LivePage Hub | ⏳ TODO | Decentralized package manager |
+| Livemdtools Hub | ⏳ TODO | Decentralized package manager |
 
 ## Implementation Details
 
@@ -63,8 +63,8 @@ This plan implements the "One-File AI App Builder" vision. See `docs/pmf-one-fil
 |------|--------|--------|
 | `livetemplate/action.go:120-135` | `GetIntOk()` now parses strings using `strconv.Atoi` | ✅ Done |
 | `livetemplate/action.go:155-166` | `GetFloatOk()` now parses strings using `strconv.ParseFloat` | ✅ Done |
-| `livepage/autopersist_e2e_test.go` | E2E test: delete button with `lvt-data-id` | ✅ Done |
-| `livepage/examples/autopersist-test/index.md` | Test example using `.Id` (JSON key capitalization) | ✅ Done |
+| `livemdtools/autopersist_e2e_test.go` | E2E test: delete button with `lvt-data-id` | ✅ Done |
+| `livemdtools/examples/autopersist-test/index.md` | Test example using `.Id` (JSON key capitalization) | ✅ Done |
 
 ### Phase 1.2: Component Library - PARTIALLY COMPLETE
 
@@ -186,7 +186,7 @@ The datatable component:
 
 **Usage:**
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: pg
@@ -226,7 +226,7 @@ Set `DATABASE_URL` environment variable or add `dsn` in options.
 
 **Usage:**
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: rest
@@ -268,7 +268,7 @@ URLs and header values support `$ENV_VAR` expansion.
 
 **Usage:**
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: json
@@ -298,13 +298,13 @@ Files are resolved relative to the site directory.
 
 **⚠️ SECURITY RULE: Never allow SQL/queries in HTML attributes.**
 
-All queries MUST be defined server-side in `livepage.yaml`. HTML only references sources by name. Non-SQL display params (columns, page-size) are allowed in HTML.
+All queries MUST be defined server-side in `livemdtools.yaml`. HTML only references sources by name. Non-SQL display params (columns, page-size) are allowed in HTML.
 
 **Configuration modes** (ordered by simplicity):
 
 **Mode 1: HTML Attributes (Simplest - No Go Template Knowledge)**
 ```yaml
-# livepage.yaml
+# livemdtools.yaml
 sources:
   users:
     type: pg
@@ -384,7 +384,7 @@ Paths are resolved relative to the including file's directory. Partials can have
 
 #### 2.1 LLM Testing
 
-Test if Claude/GPT-4 can reliably generate LivePage markdown:
+Test if Claude/GPT-4 can reliably generate Livemdtools markdown:
 - Create test prompts for common use cases (admin panel, dashboard, form)
 - Verify generated output runs without errors
 - Measure success rate and identify failure patterns
@@ -428,10 +428,10 @@ Create 10 example prompts with working outputs:
 
 **Impact**: Critical for enterprise adoption.
 
-#### 3.2 Compile to Binary (`livepage build`)
+#### 3.2 Compile to Binary (`livemdtools build`)
 
 ```bash
-livepage build my-app.md -o my-app
+livemdtools build my-app.md -o my-app
 ```
 
 Embed markdown + assets into single executable. Double-click to run.
@@ -457,12 +457,12 @@ func (s *State) Refund(ctx Context) → POST /api/action/Refund
 
 **Impact**: High - unique differentiator vs Retool.
 
-#### 3.5 LivePage Hub
+#### 3.5 Livemdtools Hub
 
 ```bash
-livepage run github.com/user/repo/postgres-admin.md
+livemdtools run github.com/user/repo/postgres-admin.md
 ```
 
-Decentralized package manager for LivePage apps.
+Decentralized package manager for Livemdtools apps.
 
 **Impact**: High - drives viral growth.

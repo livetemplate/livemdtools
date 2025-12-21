@@ -23,7 +23,7 @@ export abstract class BaseBlock {
   }
 
   /**
-   * Initialize the block (called by LivepageClient)
+   * Initialize the block (called by LivemdtoolsClient)
    */
   abstract initialize(): void;
 
@@ -102,7 +102,7 @@ export abstract class BaseBlock {
    */
   protected createBlockWrapper(): HTMLElement {
     const wrapper = document.createElement("div");
-    wrapper.className = `livepage-block livepage-block-${this.type}`;
+    wrapper.className = `livemdtools-block livemdtools-block-${this.type}`;
     wrapper.dataset.blockId = this.id;
     wrapper.dataset.blockType = this.type;
     return wrapper;

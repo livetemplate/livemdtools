@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestUXEnhancements verifies the Phase 4 UX improvements
@@ -50,7 +50,7 @@ func TestUXEnhancements(t *testing.T) {
 	})
 
 	t.Run("GzipCompressionEnabled", func(t *testing.T) {
-		req, err := http.NewRequest("GET", ts.URL+"/assets/livepage-client.js", nil)
+		req, err := http.NewRequest("GET", ts.URL+"/assets/livemdtools-client.js", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -88,7 +88,7 @@ func TestUXEnhancements(t *testing.T) {
 
 			// Check if sidebar exists and get its width
 			chromedp.Evaluate(`
-				const sidebar = document.querySelector('.livepage-nav-sidebar');
+				const sidebar = document.querySelector('.livemdtools-nav-sidebar');
 				sidebar ? window.getComputedStyle(sidebar).width : 'none';
 			`, &sidebarWidth),
 		)
@@ -150,7 +150,7 @@ func TestUXEnhancements(t *testing.T) {
 
 	t.Run("CompressionRatio", func(t *testing.T) {
 		// Test without compression
-		respNoComp, err := http.Get(ts.URL + "/assets/livepage-client.js")
+		respNoComp, err := http.Get(ts.URL + "/assets/livemdtools-client.js")
 		if err != nil {
 			t.Fatalf("Failed to fetch asset: %v", err)
 		}
@@ -167,7 +167,7 @@ func TestUXEnhancements(t *testing.T) {
 		}
 
 		// Test with compression
-		req, err := http.NewRequest("GET", ts.URL+"/assets/livepage-client.js", nil)
+		req, err := http.NewRequest("GET", ts.URL+"/assets/livemdtools-client.js", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -247,7 +247,7 @@ func TestResponsiveLayout(t *testing.T) {
 
 				chromedp.Evaluate(`document.body.offsetWidth > 0`, &bodyVisible),
 				chromedp.Evaluate(`
-					const sidebar = document.querySelector('.livepage-nav-sidebar');
+					const sidebar = document.querySelector('.livemdtools-nav-sidebar');
 					sidebar && window.getComputedStyle(sidebar).display !== 'none';
 				`, &sidebarVisible),
 			)
@@ -278,7 +278,7 @@ func BenchmarkCompression(b *testing.B) {
 	defer ts.Close()
 
 	b.Run("WithCompression", func(b *testing.B) {
-		req, _ := http.NewRequest("GET", ts.URL+"/assets/livepage-client.js", nil)
+		req, _ := http.NewRequest("GET", ts.URL+"/assets/livemdtools-client.js", nil)
 		req.Header.Set("Accept-Encoding", "gzip")
 
 		b.ResetTimer()
@@ -294,7 +294,7 @@ func BenchmarkCompression(b *testing.B) {
 	b.Run("WithoutCompression", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			resp, err := http.Get(fmt.Sprintf("%s/assets/livepage-client.js", ts.URL))
+			resp, err := http.Get(fmt.Sprintf("%s/assets/livemdtools-client.js", ts.URL))
 			if err != nil {
 				b.Fatal(err)
 			}

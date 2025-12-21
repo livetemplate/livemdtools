@@ -28,12 +28,12 @@ export class TutorialNavigation {
 
   private init() {
     // Skip tutorial navigation if site navigation exists
-    if (document.querySelector('.livepage-nav-sidebar')) {
+    if (document.querySelector('.livemdtools-nav-sidebar')) {
       return; // Site mode - navigation already rendered by server
     }
 
     // Check if sidebar is disabled via config
-    const sidebarMeta = document.querySelector('meta[name="livepage-sidebar"]');
+    const sidebarMeta = document.querySelector('meta[name="livemdtools-sidebar"]');
     if (sidebarMeta && sidebarMeta.getAttribute('content') === 'false') {
       return; // Sidebar disabled in config
     }
@@ -90,7 +90,7 @@ export class TutorialNavigation {
   private createSidebar() {
     // Create sidebar container
     this.sidebar = document.createElement('nav');
-    this.sidebar.className = 'livepage-nav-sidebar';
+    this.sidebar.className = 'livemdtools-nav-sidebar';
     this.sidebar.innerHTML = `
       <div class="nav-sidebar-header">
         <h3>Contents</h3>
@@ -120,7 +120,7 @@ export class TutorialNavigation {
 
   private createBottomNav() {
     this.bottomNav = document.createElement('nav');
-    this.bottomNav.className = 'livepage-nav-bottom';
+    this.bottomNav.className = 'livemdtools-nav-bottom';
     this.bottomNav.innerHTML = `
       <button class="nav-btn nav-prev" ${this.currentStepIndex === 0 ? 'disabled' : ''}>
         <span class="nav-arrow">←</span>

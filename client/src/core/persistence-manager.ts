@@ -9,7 +9,7 @@ export class PersistenceManager {
   private enabled: boolean;
   private debug: boolean;
 
-  constructor(storageKey = "livepage:persistence", enabled = true, debug = false) {
+  constructor(storageKey = "livemdtools:persistence", enabled = true, debug = false) {
     this.storageKey = storageKey;
     this.enabled = enabled && this.isLocalStorageAvailable();
     this.debug = debug;

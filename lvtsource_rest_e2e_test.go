@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/server"
 	"gopkg.in/yaml.v3"
 )
 
@@ -42,7 +42,7 @@ func TestLvtSourceRest(t *testing.T) {
 	// Create temporary directory with test config
 	tmpDir := t.TempDir()
 
-	// Write livepage.yaml with mock API URL
+	// Write livemdtools.yaml with mock API URL
 	configContent := fmt.Sprintf(`title: "REST API Test"
 sources:
   users:
@@ -50,7 +50,7 @@ sources:
     url: %s/users
 `, mockAPI.URL)
 
-	if err := os.WriteFile(tmpDir+"/livepage.yaml", []byte(configContent), 0644); err != nil {
+	if err := os.WriteFile(tmpDir+"/livemdtools.yaml", []byte(configContent), 0644); err != nil {
 		t.Fatalf("Failed to write config: %v", err)
 	}
 
@@ -94,7 +94,7 @@ title: "REST API Test"
 	}
 
 	// Load config
-	cfgContent, err := os.ReadFile(tmpDir + "/livepage.yaml")
+	cfgContent, err := os.ReadFile(tmpDir + "/livemdtools.yaml")
 	if err != nil {
 		t.Fatalf("Failed to read config: %v", err)
 	}
@@ -156,7 +156,7 @@ title: "REST API Test"
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
 		chromedp.Sleep(3*time.Second),
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
 		t.Fatalf("Failed to navigate: %v", err)

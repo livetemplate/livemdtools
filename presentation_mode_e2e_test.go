@@ -1,4 +1,4 @@
-package livepage
+package livemdtools
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 // TestPresentationMode verifies that presentation mode works correctly
 func TestPresentationMode(t *testing.T) {
 	// Start the server
-	serverCmd := exec.Command("./livepage", "serve", "examples/counter", "--port", "8080")
+	serverCmd := exec.Command("./livemdtools", "serve", "examples/counter", "--port", "8080")
 	serverCmd.Stdout = os.Stdout
 	serverCmd.Stderr = os.Stderr
 
@@ -93,7 +93,7 @@ func TestPresentationMode(t *testing.T) {
 
 		// Check sidebar is hidden
 		chromedp.Evaluate(`
-			var sidebar = document.querySelector('.livepage-nav-sidebar');
+			var sidebar = document.querySelector('.livemdtools-nav-sidebar');
 			sidebar ? window.getComputedStyle(sidebar).display === 'none' : true;
 		`, &sidebarVisible),
 
@@ -232,7 +232,7 @@ func TestPresentationMode(t *testing.T) {
 // This is a regression test for the nested .content-wrapper bug reported by the user
 func TestPresentationModeDocsSite(t *testing.T) {
 	// Start the server for docs-site
-	serverCmd := exec.Command("./livepage", "serve", "examples/docs-site", "--port", "9191")
+	serverCmd := exec.Command("./livemdtools", "serve", "examples/docs-site", "--port", "9191")
 	serverCmd.Stdout = os.Stdout
 	serverCmd.Stderr = os.Stderr
 

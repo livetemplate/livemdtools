@@ -20,7 +20,7 @@ export class ServerBlock extends BaseBlock {
     this.codeElement = this.element.querySelector("code") || this.element;
 
     // Add CSS classes for styling
-    this.element.classList.add("livepage-server-block");
+    this.element.classList.add("livemdtools-server-block");
     if (this.metadata.readonly) {
       this.element.classList.add("readonly");
     }
@@ -50,7 +50,7 @@ export class ServerBlock extends BaseBlock {
     if (!this.codeElement) return;
 
     // Simply display the code (syntax highlighting handled by existing pre/code elements)
-    // The server already rendered this, we're just marking it as a livepage block
+    // The server already rendered this, we're just marking it as a livemdtools block
     this.log("Rendered server block");
   }
 }

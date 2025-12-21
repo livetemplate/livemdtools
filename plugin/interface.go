@@ -8,7 +8,7 @@ import (
 )
 
 // StatePlugin is the interface that we're exposing as a plugin.
-// This will be implemented by server block plugins and consumed by livepage.
+// This will be implemented by server block plugins and consumed by livemdtools.
 type StatePlugin interface {
 	// Change executes an action on the state
 	Change(action string, data map[string]interface{}) error
@@ -20,7 +20,7 @@ type StatePlugin interface {
 // Handshake is a common handshake that is shared between plugin and host.
 var Handshake = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "LIVEPAGE_PLUGIN",
+	MagicCookieKey:   "LIVEMDTOOLS_PLUGIN",
 	MagicCookieValue: "state",
 }
 

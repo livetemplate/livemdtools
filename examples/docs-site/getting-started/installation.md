@@ -4,7 +4,7 @@ title: "Installation"
 
 # Installation
 
-Get LivePage up and running on your machine.
+Get Livemdtools up and running on your machine.
 
 ## Prerequisites
 
@@ -14,17 +14,17 @@ Get LivePage up and running on your machine.
 ## Install from Source
 
 ```bash
-git clone https://github.com/livetemplate/livepage
-cd livepage
-go install ./cmd/livepage
+git clone https://github.com/livetemplate/livemdtools
+cd livemdtools
+go install ./cmd/livemdtools
 ```
 
 ## Verify Installation
 
-Check that LivePage is installed correctly:
+Check that Livemdtools is installed correctly:
 
 ```bash
-livepage --version
+livemdtools --version
 ```
 
 ## Create Your First Page
@@ -34,17 +34,17 @@ Create a new directory and a simple markdown file:
 ```bash
 mkdir my-tutorial
 cd my-tutorial
-echo "# Hello LivePage" > index.md
+echo "# Hello Livemdtools" > index.md
 ```
 
 Start the development server:
 
 ```bash
-livepage serve .
+livemdtools serve .
 ```
 
 Open your browser to `http://localhost:8080` and you should see your page!
 
 ## Next Steps
 
-Now that you have LivePage installed, learn how to [create pages](/guides/creating-pages).
+Now that you have Livemdtools installed, learn how to [create pages](/guides/creating-pages).

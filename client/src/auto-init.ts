@@ -2,7 +2,7 @@
  * Auto-initialization for browser builds
  */
 
-import { LivepageClient } from "./livepage-client";
+import { LivemdtoolsClient } from "./livemdtools-client";
 import { TutorialNavigation } from "./core/navigation";
 import { SiteSearch } from "./core/search";
 import { CodeCopy } from "./core/code-copy";
@@ -12,35 +12,35 @@ import { hasEditableBlocks, preloadMonaco } from "./editor/monaco-loader";
 /**
  * Auto-initialization function
  */
-function initializeLivepage(): void {
+function initializeLivemdtools(): void {
   // Check if auto-init is disabled
-  if ((window as any).LIVEPAGE_DISABLE_AUTO_INIT) {
-    console.log("[Livepage] Auto-initialization disabled");
+  if ((window as any).LIVEMDTOOLS_DISABLE_AUTO_INIT) {
+    console.log("[Livemdtools] Auto-initialization disabled");
     return;
   }
 
   // Get WebSocket URL from meta tag or default
-  const wsMeta = document.querySelector<HTMLMetaElement>('meta[name="livepage-ws-url"]');
+  const wsMeta = document.querySelector<HTMLMetaElement>('meta[name="livemdtools-ws-url"]');
   const wsUrl = wsMeta?.content || `ws://${window.location.host}/ws`;
 
   // Get debug flag from meta tag
-  const debugMeta = document.querySelector<HTMLMetaElement>('meta[name="livepage-debug"]');
+  const debugMeta = document.querySelector<HTMLMetaElement>('meta[name="livemdtools-debug"]');
   const debug = debugMeta?.content === "true";
 
   // Preload Monaco if page has WASM blocks (lazy load in background)
   if (hasEditableBlocks()) {
-    console.log("[Livepage] Preloading Monaco Editor for WASM blocks...");
+    console.log("[Livemdtools] Preloading Monaco Editor for WASM blocks...");
     preloadMonaco();
   }
 
   // Create and initialize client
-  const client = new LivepageClient({
+  const client = new LivemdtoolsClient({
     wsUrl,
     debug,
     persistence: true,
-    onConnect: () => console.log("[Livepage] Connected"),
-    onDisconnect: () => console.log("[Livepage] Disconnected"),
-    onError: (error: Error) => console.error("[Livepage] Error:", error),
+    onConnect: () => console.log("[Livemdtools] Connected"),
+    onDisconnect: () => console.log("[Livemdtools] Disconnected"),
+    onError: (error: Error) => console.error("[Livemdtools] Error:", error),
   });
 
   // Discover blocks
@@ -57,35 +57,35 @@ function initializeLivepage(): void {
   }
 
   // Expose client globally for debugging
-  (window as any).livepageClient = client;
+  (window as any).livemdtoolsClient = client;
 
   // Initialize tutorial navigation (if H2 headings exist)
   const nav = new TutorialNavigation();
-  (window as any).livepageNavigation = nav;
+  (window as any).livemdtoolsNavigation = nav;
 
   // Initialize page TOC (for site-mode pages with H2 sections)
   const pageTOC = new PageTOC();
-  (window as any).livepagePageTOC = pageTOC;
+  (window as any).livemdtoolsPageTOC = pageTOC;
 
   // Initialize site search (if in site mode)
   const search = new SiteSearch();
-  (window as any).livepageSearch = search;
+  (window as any).livemdtoolsSearch = search;
 
   // Initialize code copy buttons
   const codeCopy = new CodeCopy();
-  (window as any).livepageCodeCopy = codeCopy;
+  (window as any).livemdtoolsCodeCopy = codeCopy;
 
-  console.log(`[Livepage] Initialized with ${client.getBlockIds().length} blocks`);
+  console.log(`[Livemdtools] Initialized with ${client.getBlockIds().length} blocks`);
 }
 
 /**
- * Initialize Livepage client automatically when script loads
+ * Initialize Livemdtools client automatically when script loads
  */
 if (typeof window !== "undefined") {
   // Auto-initialize on DOMContentLoaded
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeLivepage);
+    document.addEventListener("DOMContentLoaded", initializeLivemdtools);
   } else {
-    initializeLivepage();
+    initializeLivemdtools();
   }
 }

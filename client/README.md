@@ -1,6 +1,6 @@
-# Livepage Client
+# Livemdtools Client
 
-Client runtime for interactive Livepage documentation.
+Client runtime for interactive Livemdtools documentation.
 
 ## Features
 
@@ -13,7 +13,7 @@ Client runtime for interactive Livepage documentation.
 ## Installation
 
 ```bash
-npm install @livetemplate/livepage-client
+npm install @livetemplate/livemdtools-client
 ```
 
 ## Usage
@@ -23,22 +23,22 @@ npm install @livetemplate/livepage-client
 The client auto-initializes when the script loads. Just include it in your HTML:
 
 ```html
-<script src="/assets/livepage-client.browser.js"></script>
+<script src="/assets/livemdtools-client.browser.js"></script>
 ```
 
 Configure via meta tags:
 
 ```html
-<meta name="livepage-ws-url" content="ws://localhost:8080/ws">
-<meta name="livepage-debug" content="true">
+<meta name="livemdtools-ws-url" content="ws://localhost:8080/ws">
+<meta name="livemdtools-debug" content="true">
 ```
 
 ### Manual initialization
 
 ```typescript
-import { LivepageClient } from '@livetemplate/livepage-client';
+import { LivemdtoolsClient } from '@livetemplate/livemdtools-client';
 
-const client = new LivepageClient({
+const client = new LivemdtoolsClient({
   wsUrl: 'ws://localhost:8080/ws',
   debug: true,
   persistence: true,
@@ -60,7 +60,7 @@ client.connect();
 Read-only code display (server-side code):
 
 ```html
-<div data-livepage-block
+<div data-livemdtools-block
      data-block-id="counter-state"
      data-block-type="server"
      data-language="go"
@@ -74,7 +74,7 @@ Read-only code display (server-side code):
 Live reactive UI:
 
 ```html
-<div data-livepage-block
+<div data-livemdtools-block
      data-block-id="counter-demo"
      data-block-type="interactive"
      data-state-ref="counter-state">
@@ -87,7 +87,7 @@ Live reactive UI:
 Editable code with execution:
 
 ```html
-<div data-livepage-block
+<div data-livemdtools-block
      data-block-id="playground"
      data-block-type="wasm"
      data-language="go"

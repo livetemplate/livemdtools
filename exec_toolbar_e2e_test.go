@@ -1,4 +1,4 @@
-package livepage_test
+package livemdtools_test
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livepage/internal/config"
-	"github.com/livetemplate/livepage/internal/server"
+	"github.com/livetemplate/livemdtools/internal/config"
+	"github.com/livetemplate/livemdtools/internal/server"
 )
 
 // TestExecToolbarManualMode tests the exec toolbar functionality with manual mode.
@@ -30,7 +30,7 @@ func TestExecToolbarManualMode(t *testing.T) {
 
 	// Verify source is configured with manual: true
 	if cfg.Sources == nil {
-		t.Fatal("No sources configured in livepage.yaml")
+		t.Fatal("No sources configured in livemdtools.yaml")
 	}
 	source, ok := cfg.Sources["system-info"]
 	if !ok {
@@ -84,7 +84,7 @@ func TestExecToolbarManualMode(t *testing.T) {
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
 		chromedp.Sleep(3*time.Second),
-		chromedp.Evaluate(`document.querySelector('.livepage-interactive-block') !== null`, &hasInteractiveBlock),
+		chromedp.Evaluate(`document.querySelector('.livemdtools-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
 		t.Fatalf("Failed to navigate: %v", err)
@@ -167,13 +167,13 @@ func TestExecToolbarManualMode(t *testing.T) {
 	t.Log("Initial status is 'Ready'")
 
 	// Wait for WebSocket connection before clicking Run
-	// The livepage client logs "[Livepage] Connected" when ready
+	// The livemdtools client logs "[Livemdtools] Connected" when ready
 	var isConnected bool
 	for i := 0; i < 20; i++ {
 		chromedp.Run(ctx, chromedp.Evaluate(`
 			(() => {
 				// Check if any console log contains 'Connected'
-				return window.livepage && window.livepage._client && window.livepage._client.isConnected ? true : false;
+				return window.livemdtools && window.livemdtools._client && window.livemdtools._client.isConnected ? true : false;
 			})()
 		`, &isConnected))
 		if isConnected {
@@ -184,7 +184,7 @@ func TestExecToolbarManualMode(t *testing.T) {
 	if !isConnected {
 		// Fallback: check console logs for connection
 		for _, log := range consoleLogs {
-			if strings.Contains(log, "[Livepage] Connected") {
+			if strings.Contains(log, "[Livemdtools] Connected") {
 				isConnected = true
 				break
 			}

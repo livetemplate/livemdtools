@@ -6,7 +6,7 @@ package source
 import (
 	"context"
 
-	"github.com/livetemplate/livepage/internal/config"
+	"github.com/livetemplate/livemdtools/internal/config"
 )
 
 // Source is the interface for data providers.

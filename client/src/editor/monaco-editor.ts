@@ -28,7 +28,7 @@ export class MonacoEditor {
   private async initialize(): Promise<void> {
     // Show loading indicator
     const loadingDiv = document.createElement("div");
-    loadingDiv.className = "livepage-monaco-loading";
+    loadingDiv.className = "livemdtools-monaco-loading";
     loadingDiv.style.padding = "2rem";
     loadingDiv.style.textAlign = "center";
     loadingDiv.style.color = "#999";
@@ -44,7 +44,7 @@ export class MonacoEditor {
 
       // Create editor container
       this.editorDiv = document.createElement("div");
-      this.editorDiv.className = "livepage-monaco-editor";
+      this.editorDiv.className = "livemdtools-monaco-editor";
       this.editorDiv.style.height = "300px"; // Default height
       this.editorDiv.style.width = "100%";
       this.container.appendChild(this.editorDiv);
