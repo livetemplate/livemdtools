@@ -36,3 +36,7 @@ testdata/tmp/
 # Git worktrees
 .worktrees/
 *.sqlite
+.worktrees/
+
+livemdtools
+livemdtools-test
