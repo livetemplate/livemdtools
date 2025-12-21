@@ -1063,16 +1063,13 @@ func generateDatatableSourceCode(sourceName string, sourceCfg config.SourceConfi
 	code.WriteString("\treturn nil\n")
 	code.WriteString("}\n\n")
 
-	// toTitleCase helper function
-	code.WriteString("// toTitleCase converts a string to title case, handling underscores\n")
+	// toTitleCase helper function - simple first-letter cap
+	code.WriteString("// toTitleCase converts first letter to uppercase: \"name\" -> \"Name\"\n")
 	code.WriteString("func toTitleCase(s string) string {\n")
-	code.WriteString("\tparts := strings.Split(s, \"_\")\n")
-	code.WriteString("\tfor i, p := range parts {\n")
-	code.WriteString("\t\tif len(p) > 0 {\n")
-	code.WriteString("\t\t\tparts[i] = strings.ToUpper(string(p[0])) + strings.ToLower(p[1:])\n")
-	code.WriteString("\t\t}\n")
+	code.WriteString("\tif len(s) == 0 {\n")
+	code.WriteString("\t\treturn s\n")
 	code.WriteString("\t}\n")
-	code.WriteString("\treturn strings.Join(parts, \"\")\n")
+	code.WriteString("\treturn strings.ToUpper(s[:1]) + s[1:]\n")
 	code.WriteString("}\n")
 
 	return code.String(), nil

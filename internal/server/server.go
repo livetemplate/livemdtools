@@ -1614,7 +1614,7 @@ func (s *Server) renderPage(page *livemdtools.Page, currentPath string, host str
     <script>
         // Theme management
         (function() {
-            const STORAGE_KEY = -livemdtools-theme';
+            const STORAGE_KEY = 'livemdtools-theme';
             const html = document.documentElement;
 
             // Get current theme from localStorage or default to 'auto'
@@ -1708,7 +1708,7 @@ func (s *Server) renderPage(page *livemdtools.Page, currentPath string, host str
             const observer = new MutationObserver((mutations) => {
                 for (const mutation of mutations) {
                     for (const node of mutation.addedNodes) {
-                        if (node.nodeType === 1 && node.classList?.contains(-livemdtools-nav-sidebar')) {
+                        if (node.nodeType === 1 && node.classList?.contains('livemdtools-nav-sidebar')) {
                             moveToolbarToSidebar();
                             return;
                         }
