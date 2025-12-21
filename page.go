@@ -382,20 +382,15 @@ func autoGenerateTableTemplate(content string) string {
 	return tableRegex.ReplaceAllLiteralString(content, generated.String())
 }
 
-// titleCase converts a string to title case (first letter uppercase)
+// titleCase converts a string to title case (first letter uppercase only)
+// This is a simple transformation: "name" -> "Name", "created_at" -> "Created_at"
+// Note: With dual-key hydration, templates can use either case, but generated
+// templates use titlecase for consistency with Go naming conventions.
 func titleCase(s string) string {
-	if s == "" {
+	if len(s) == 0 {
 		return s
 	}
-	// Handle snake_case by converting underscores to spaces and capitalizing each word
-	s = strings.ReplaceAll(s, "_", " ")
-	words := strings.Fields(s)
-	for i, word := range words {
-		if len(word) > 0 {
-			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
-		}
-	}
-	return strings.Join(words, "")
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 // autoGenerateSelectTemplate transforms <select lvt-source="..."> into a full template
@@ -416,14 +411,16 @@ func autoGenerateSelectTemplate(content string) string {
 		return content
 	}
 
-	// Parse lvt-value="fieldName" - defaults to "id"
+	// Parse lvt-value="fieldName" - defaults to "Id"
+	// Use titleCase since processMapValues titlecases all nested keys for Go template access
 	valueField := "Id"
 	valueMatch := regexp.MustCompile(`lvt-value="([^"]+)"`).FindStringSubmatch(attrs)
 	if valueMatch != nil {
 		valueField = titleCase(valueMatch[1])
 	}
 
-	// Parse lvt-label="fieldName" - defaults to "name"
+	// Parse lvt-label="fieldName" - defaults to "Name"
+	// Use titleCase since processMapValues titlecases all nested keys for Go template access
 	labelField := "Name"
 	labelMatch := regexp.MustCompile(`lvt-label="([^"]+)"`).FindStringSubmatch(attrs)
 	if labelMatch != nil {

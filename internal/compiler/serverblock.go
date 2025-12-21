@@ -663,20 +663,18 @@ func (a *rpcStoreAdapter) GetStateAsInterface() (interface{}, error) {
 }
 
 // processStateMap processes the top-level State map to:
-// 1. Capitalize top-level keys to match Go struct field names (Status, Data, Command, etc.)
-// 2. Keep nested data keys (within Data array) as-is from JSON
+// 1. Keep original keys AND add titlecased keys for flexible template access
+//    (allows both {{.status}} and {{.Status}}, {{.data}} and {{.Data}})
+// 2. Process nested data with processMapValues for same dual-key behavior
 // 3. Convert float64 to int where appropriate
 func processStateMap(m map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	for k, v := range m {
-		// Capitalize first letter of top-level keys to match Go struct field names
-		// e.g., "status" -> "Status", "data" -> "Data"
-		newKey := strings.ToUpper(k[:1]) + k[1:]
+		var processedValue interface{}
 
-		// Process values but DON'T capitalize nested keys
 		switch val := v.(type) {
 		case map[string]interface{}:
-			result[newKey] = processMapValues(val)
+			processedValue = processMapValues(val)
 		case []interface{}:
 			newSlice := make([]interface{}, len(val))
 			for i, item := range val {
@@ -686,24 +684,40 @@ func processStateMap(m map[string]interface{}) map[string]interface{} {
 					newSlice[i] = convertNumber(item)
 				}
 			}
-			result[newKey] = newSlice
+			processedValue = newSlice
 		case float64:
-			result[newKey] = convertNumber(val)
+			processedValue = convertNumber(val)
 		default:
-			result[newKey] = v
+			processedValue = v
+		}
+
+		// Keep original key (e.g., "status", "data", "items")
+		result[k] = processedValue
+
+		// Also add titlecased key if different (e.g., "Status", "Data", "Items")
+		// This allows templates to use either {{.status}} or {{.Status}}
+		if len(k) > 0 {
+			titleKey := strings.ToUpper(k[:1]) + k[1:]
+			if titleKey != k {
+				result[titleKey] = processedValue
+			}
 		}
 	}
 	return result
 }
 
-// processMapValues recursively processes map values to convert float64 to int
-// Map keys are preserved exactly as they appear in JSON
+// processMapValues recursively processes map values to:
+// 1. Keep original keys AND add titlecased keys for flexible template access
+//    (allows both {{.title}} and {{.Title}})
+// 2. Convert float64 to int where appropriate
 func processMapValues(m map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	for k, v := range m {
+		var processedValue interface{}
+
 		switch val := v.(type) {
 		case map[string]interface{}:
-			result[k] = processMapValues(val)
+			processedValue = processMapValues(val)
 		case []interface{}:
 			newSlice := make([]interface{}, len(val))
 			for i, item := range val {
@@ -713,11 +727,23 @@ func processMapValues(m map[string]interface{}) map[string]interface{} {
 					newSlice[i] = convertNumber(item)
 				}
 			}
-			result[k] = newSlice
+			processedValue = newSlice
 		case float64:
-			result[k] = convertNumber(val)
+			processedValue = convertNumber(val)
 		default:
-			result[k] = v
+			processedValue = v
+		}
+
+		// Keep original key (e.g., "title", "created_at")
+		result[k] = processedValue
+
+		// Also add titlecased key if different (e.g., "Title", "Created_at")
+		// This allows templates to use either {{.title}} or {{.Title}}
+		if len(k) > 0 {
+			titleKey := strings.ToUpper(k[:1]) + k[1:]
+			if titleKey != k {
+				result[titleKey] = processedValue
+			}
 		}
 	}
 	return result

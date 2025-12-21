@@ -27,10 +27,10 @@ Test for `lvt-source` attribute that fetches data from an external command.
         </thead>
         <tbody>
             {{range .Data}}
-            <tr data-user-id="{{.id}}">
-                <td>{{.id}}</td>
-                <td>{{.name}}</td>
-                <td>{{.email}}</td>
+            <tr data-user-id="{{.Id}}">
+                <td>{{.Id}}</td>
+                <td>{{.Name}}</td>
+                <td>{{.Email}}</td>
             </tr>
             {{end}}
         </tbody>

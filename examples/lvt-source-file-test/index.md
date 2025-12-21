@@ -32,9 +32,9 @@ Test for `lvt-source` with JSON and CSV files.
         <tbody>
             {{range .Data}}
             <tr>
-                <td>{{.id}}</td>
-                <td>{{.name}}</td>
-                <td>{{.email}}</td>
+                <td>{{.Id}}</td>
+                <td>{{.Name}}</td>
+                <td>{{.Email}}</td>
             </tr>
             {{end}}
         </tbody>
@@ -63,9 +63,9 @@ Test for `lvt-source` with JSON and CSV files.
         <tbody>
             {{range .Data}}
             <tr>
-                <td>{{.id}}</td>
-                <td>{{.name}}</td>
-                <td>${{.price}}</td>
+                <td>{{.Id}}</td>
+                <td>{{.Name}}</td>
+                <td>${{.Price}}</td>
             </tr>
             {{end}}
         </tbody>
