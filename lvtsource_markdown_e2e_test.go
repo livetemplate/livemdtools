@@ -304,13 +304,10 @@ func TestLvtSourceMarkdownTaskList(t *testing.T) {
 }
 
 // TestLvtSourceMarkdownToggle tests toggling a task's done state
-// KNOWN ISSUE: This test fails due to a livetemplate library bug where tree diffs
-// for updates in range loops don't correctly send the full updated row data.
-// The server correctly updates the file, but the DOM doesn't reflect the change
-// because the tree diff only sends [["u","task1"]] without the new state values.
-// TODO: Fix in livetemplate library's tree diff algorithm for range loop updates.
+// PENDING: Waiting for livetemplate PR #77 to be merged and released.
+// See: https://github.com/livetemplate/livetemplate/pull/77
 func TestLvtSourceMarkdownToggle(t *testing.T) {
-	t.Skip("KNOWN ISSUE: livetemplate tree diff doesn't correctly update range items")
+	t.Skip("PENDING: waiting for livetemplate PR #77 - fix for non-TreeNode to TreeNode transitions")
 	// Create temp example
 	tempDir, cleanup := createTempMarkdownExample(t)
 	defer cleanup()
