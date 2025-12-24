@@ -304,10 +304,7 @@ func TestLvtSourceMarkdownTaskList(t *testing.T) {
 }
 
 // TestLvtSourceMarkdownToggle tests toggling a task's done state
-// PENDING: Waiting for livetemplate PR #77 to be merged and released.
-// See: https://github.com/livetemplate/livetemplate/pull/77
 func TestLvtSourceMarkdownToggle(t *testing.T) {
-	t.Skip("PENDING: waiting for livetemplate PR #77 - fix for non-TreeNode to TreeNode transitions")
 	// Create temp example
 	tempDir, cleanup := createTempMarkdownExample(t)
 	defer cleanup()
