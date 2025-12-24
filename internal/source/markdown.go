@@ -302,13 +302,301 @@ func (s *MarkdownSource) GetAnchor() string {
 }
 
 // WriteItem adds, updates, or deletes an item in the markdown source
-// This will be implemented in Phase 2
+// Supported actions: add, toggle, delete, update
 func (s *MarkdownSource) WriteItem(ctx context.Context, action string, data map[string]interface{}) error {
 	if s.readonly {
 		return fmt.Errorf("markdown source %q is read-only", s.name)
 	}
-	// TODO: Implement in Phase 2
-	return fmt.Errorf("write operations not yet implemented")
+
+	path := s.resolvePath()
+
+	// Read current content
+	contentBytes, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+	content := string(contentBytes)
+
+	// Find section boundaries
+	sectionStart, sectionEnd, headerLevel, err := s.findSectionBoundaries(content)
+	if err != nil {
+		return err
+	}
+
+	sectionContent := content[sectionStart:sectionEnd]
+
+	// Detect format
+	format := s.detectFormat(sectionContent)
+
+	// Perform action
+	var newSectionContent string
+	switch action {
+	case "add":
+		newSectionContent, err = s.addItem(sectionContent, format, data)
+	case "toggle":
+		newSectionContent, err = s.toggleItem(sectionContent, format, data)
+	case "delete":
+		newSectionContent, err = s.deleteItem(sectionContent, format, data)
+	case "update":
+		newSectionContent, err = s.updateItem(sectionContent, format, data)
+	default:
+		return fmt.Errorf("unknown action: %s", action)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// Reconstruct file content
+	newContent := content[:sectionStart] + newSectionContent + content[sectionEnd:]
+
+	// Write back to file
+	if err := os.WriteFile(path, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	_ = headerLevel // Used in section boundary detection
+	return nil
+}
+
+// findSectionBoundaries finds where the section starts and ends
+func (s *MarkdownSource) findSectionBoundaries(content string) (start, end, headerLevel int, err error) {
+	anchorName := strings.TrimPrefix(s.anchor, "#")
+	headerPattern := regexp.MustCompile(`(?m)^(#{1,6})\s+(.+?)\s*\{#` + regexp.QuoteMeta(anchorName) + `\}\s*$`)
+
+	matches := headerPattern.FindStringSubmatchIndex(content)
+	if matches == nil {
+		return 0, 0, 0, fmt.Errorf("section %q not found", s.anchor)
+	}
+
+	start = matches[1] // End of header line
+	headerLevel = len(content[matches[2]:matches[3]])
+
+	end = len(content)
+	nextHeaderPattern := regexp.MustCompile(`(?m)^#{1,` + fmt.Sprintf("%d", headerLevel) + `}\s+`)
+	if loc := nextHeaderPattern.FindStringIndex(content[start:]); loc != nil {
+		end = start + loc[0]
+	}
+
+	return start, end, headerLevel, nil
+}
+
+// detectFormat returns the format type: "task", "bullet", or "table"
+func (s *MarkdownSource) detectFormat(content string) string {
+	lines := strings.Split(content, "\n")
+
+	taskListPattern := regexp.MustCompile(`^\s*-\s+\[([ xX])\]\s+`)
+	bulletListPattern := regexp.MustCompile(`^\s*-\s+[^\[]`)
+	tablePattern := regexp.MustCompile(`^\s*\|.+\|`)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if taskListPattern.MatchString(line) {
+			return "task"
+		}
+		if tablePattern.MatchString(line) {
+			return "table"
+		}
+		if bulletListPattern.MatchString(line) {
+			return "bullet"
+		}
+	}
+	return "unknown"
+}
+
+// addItem adds a new item to the section
+func (s *MarkdownSource) addItem(sectionContent, format string, data map[string]interface{}) (string, error) {
+	id := generateID()
+
+	var newLine string
+	switch format {
+	case "task":
+		text, _ := data["text"].(string)
+		done, _ := data["done"].(bool)
+		checkbox := "[ ]"
+		if done {
+			checkbox = "[x]"
+		}
+		newLine = fmt.Sprintf("- %s %s <!-- id:%s -->", checkbox, text, id)
+
+	case "bullet":
+		text, _ := data["text"].(string)
+		newLine = fmt.Sprintf("- %s <!-- id:%s -->", text, id)
+
+	case "table":
+		// For tables, we need to find the headers first
+		headers := s.extractTableHeaders(sectionContent)
+		if len(headers) == 0 {
+			return "", fmt.Errorf("cannot add to table: no headers found")
+		}
+		var cells []string
+		for _, h := range headers {
+			val := ""
+			if v, ok := data[h]; ok {
+				val = fmt.Sprintf("%v", v)
+			}
+			cells = append(cells, val)
+		}
+		newLine = "| " + strings.Join(cells, " | ") + " | <!-- id:" + id + " -->"
+
+	default:
+		return "", fmt.Errorf("cannot add item: unknown format")
+	}
+
+	// Append to the end of section (before trailing newlines)
+	trimmed := strings.TrimRight(sectionContent, "\n")
+	return trimmed + "\n" + newLine + "\n", nil
+}
+
+// toggleItem toggles the done state of a task list item
+func (s *MarkdownSource) toggleItem(sectionContent, format string, data map[string]interface{}) (string, error) {
+	if format != "task" {
+		return "", fmt.Errorf("toggle action only supported for task lists")
+	}
+
+	id, _ := data["id"].(string)
+	if id == "" {
+		return "", fmt.Errorf("toggle action requires 'id' field")
+	}
+
+	// Find the line with this ID and toggle it
+	lines := strings.Split(sectionContent, "\n")
+	found := false
+	for i, line := range lines {
+		if strings.Contains(line, "<!-- id:"+id+" -->") {
+			// Toggle the checkbox
+			if strings.Contains(line, "[ ]") {
+				lines[i] = strings.Replace(line, "[ ]", "[x]", 1)
+			} else if strings.Contains(line, "[x]") {
+				lines[i] = strings.Replace(line, "[x]", "[ ]", 1)
+			} else if strings.Contains(line, "[X]") {
+				lines[i] = strings.Replace(line, "[X]", "[ ]", 1)
+			}
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return "", fmt.Errorf("item with id %q not found", id)
+	}
+
+	return strings.Join(lines, "\n"), nil
+}
+
+// deleteItem removes an item from the section
+func (s *MarkdownSource) deleteItem(sectionContent, format string, data map[string]interface{}) (string, error) {
+	id, _ := data["id"].(string)
+	if id == "" {
+		return "", fmt.Errorf("delete action requires 'id' field")
+	}
+
+	lines := strings.Split(sectionContent, "\n")
+	var newLines []string
+	found := false
+
+	for _, line := range lines {
+		if strings.Contains(line, "<!-- id:"+id+" -->") {
+			found = true
+			continue // Skip this line (delete it)
+		}
+		newLines = append(newLines, line)
+	}
+
+	if !found {
+		return "", fmt.Errorf("item with id %q not found", id)
+	}
+
+	return strings.Join(newLines, "\n"), nil
+}
+
+// updateItem updates fields of an existing item
+func (s *MarkdownSource) updateItem(sectionContent, format string, data map[string]interface{}) (string, error) {
+	id, _ := data["id"].(string)
+	if id == "" {
+		return "", fmt.Errorf("update action requires 'id' field")
+	}
+
+	lines := strings.Split(sectionContent, "\n")
+	found := false
+
+	for i, line := range lines {
+		if !strings.Contains(line, "<!-- id:"+id+" -->") {
+			continue
+		}
+		found = true
+
+		switch format {
+		case "task":
+			// Update text and/or done state
+			if text, ok := data["text"].(string); ok {
+				// Replace text between checkbox and ID comment
+				taskPattern := regexp.MustCompile(`^(\s*-\s+\[[ xX]\]\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
+				lines[i] = taskPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+			}
+			if done, ok := data["done"].(bool); ok {
+				if done {
+					lines[i] = strings.Replace(lines[i], "[ ]", "[x]", 1)
+				} else {
+					lines[i] = strings.Replace(lines[i], "[x]", "[ ]", 1)
+					lines[i] = strings.Replace(lines[i], "[X]", "[ ]", 1)
+				}
+			}
+
+		case "bullet":
+			// Update text
+			if text, ok := data["text"].(string); ok {
+				bulletPattern := regexp.MustCompile(`^(\s*-\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
+				lines[i] = bulletPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+			}
+
+		case "table":
+			// Update table cells by header name
+			headers := s.extractTableHeaders(sectionContent)
+			cells := s.parseTableCells(line)
+
+			// Rebuild cells with updates
+			for j, h := range headers {
+				if val, ok := data[h]; ok && j < len(cells) {
+					cells[j] = fmt.Sprintf("%v", val)
+				}
+			}
+
+			// Reconstruct line
+			lines[i] = "| " + strings.Join(cells, " | ") + " | <!-- id:" + id + " -->"
+		}
+		break
+	}
+
+	if !found {
+		return "", fmt.Errorf("item with id %q not found", id)
+	}
+
+	return strings.Join(lines, "\n"), nil
+}
+
+// extractTableHeaders extracts column headers from a table section
+func (s *MarkdownSource) extractTableHeaders(content string) []string {
+	lines := strings.Split(content, "\n")
+	tableRowPattern := regexp.MustCompile(`^\s*\|(.+)\|`)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Skip separator rows
+		if regexp.MustCompile(`^\s*\|[\s\-:|]+\|`).MatchString(line) {
+			continue
+		}
+		if matches := tableRowPattern.FindStringSubmatch(line); matches != nil {
+			return s.parseTableCells(matches[1])
+		}
+	}
+	return nil
 }
 
 // MarkdownSourceParser provides utilities for parsing markdown data sections

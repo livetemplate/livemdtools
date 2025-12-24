@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -631,5 +632,384 @@ func TestBulletListSkipsTaskItems(t *testing.T) {
 	}
 	if results[0]["text"] != "Regular bullet item" {
 		t.Errorf("text = %q, want %q", results[0]["text"], "Regular bullet item")
+	}
+}
+
+// ============ Phase 2: Write Operation Tests ============
+
+func TestWriteItemAddTask(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Existing task 1 <!-- id:t1 -->
+- [x] Existing task 2 <!-- id:t2 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Add a new task
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "New task 3",
+		"done": false,
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(add) error = %v", err)
+	}
+
+	// Verify the new task was added
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 tasks after add, got %d", len(results))
+	}
+
+	lastTask := results[2]
+	if lastTask["text"] != "New task 3" {
+		t.Errorf("new task text = %q, want %q", lastTask["text"], "New task 3")
+	}
+	if lastTask["done"] != false {
+		t.Errorf("new task done = %v, want false", lastTask["done"])
+	}
+}
+
+func TestWriteItemToggleTask(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task to toggle <!-- id:toggle1 -->
+- [x] Already done <!-- id:toggle2 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Toggle the first task (unchecked -> checked)
+	err = src.WriteItem(context.Background(), "toggle", map[string]interface{}{
+		"id": "toggle1",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(toggle) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if results[0]["done"] != true {
+		t.Errorf("task 0 done after toggle = %v, want true", results[0]["done"])
+	}
+
+	// Toggle again (checked -> unchecked)
+	err = src.WriteItem(context.Background(), "toggle", map[string]interface{}{
+		"id": "toggle1",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(toggle again) error = %v", err)
+	}
+
+	results, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if results[0]["done"] != false {
+		t.Errorf("task 0 done after second toggle = %v, want false", results[0]["done"])
+	}
+}
+
+func TestWriteItemDeleteTask(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:del1 -->
+- [ ] Task 2 (to delete) <!-- id:del2 -->
+- [ ] Task 3 <!-- id:del3 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Delete the middle task
+	err = src.WriteItem(context.Background(), "delete", map[string]interface{}{
+		"id": "del2",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(delete) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 tasks after delete, got %d", len(results))
+	}
+
+	// Verify correct tasks remain
+	if results[0]["id"] != "del1" {
+		t.Errorf("task 0 id = %q, want %q", results[0]["id"], "del1")
+	}
+	if results[1]["id"] != "del3" {
+		t.Errorf("task 1 id = %q, want %q", results[1]["id"], "del3")
+	}
+}
+
+func TestWriteItemUpdateTask(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Original text <!-- id:upd1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Update the task text and done state
+	err = src.WriteItem(context.Background(), "update", map[string]interface{}{
+		"id":   "upd1",
+		"text": "Updated text",
+		"done": true,
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(update) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if results[0]["text"] != "Updated text" {
+		t.Errorf("task text = %q, want %q", results[0]["text"], "Updated text")
+	}
+	if results[0]["done"] != true {
+		t.Errorf("task done = %v, want true", results[0]["done"])
+	}
+}
+
+func TestWriteItemAddBullet(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Items {#items}
+
+- Item 1 <!-- id:b1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("items", "", "#items", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "Item 2",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(add) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(results))
+	}
+	if results[1]["text"] != "Item 2" {
+		t.Errorf("new item text = %q, want %q", results[1]["text"], "Item 2")
+	}
+}
+
+func TestWriteItemAddTableRow(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Products {#products}
+
+| Name | Price |
+|------|-------|
+| Widget | $10 | <!-- id:p1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("products", "", "#products", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"Name":  "Gadget",
+		"Price": "$20",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(add) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 products, got %d", len(results))
+	}
+	if results[1]["Name"] != "Gadget" {
+		t.Errorf("new product Name = %q, want %q", results[1]["Name"], "Gadget")
+	}
+	if results[1]["Price"] != "$20" {
+		t.Errorf("new product Price = %q, want %q", results[1]["Price"], "$20")
+	}
+}
+
+func TestWriteItemDeleteTableRow(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Products {#products}
+
+| Name | Price |
+|------|-------|
+| Widget | $10 | <!-- id:p1 -->
+| Gadget | $20 | <!-- id:p2 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("products", "", "#products", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	err = src.WriteItem(context.Background(), "delete", map[string]interface{}{
+		"id": "p1",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(delete) error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 product after delete, got %d", len(results))
+	}
+	if results[0]["Name"] != "Gadget" {
+		t.Errorf("remaining product Name = %q, want %q", results[0]["Name"], "Gadget")
+	}
+}
+
+func TestWriteItemNotFoundError(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Try to toggle non-existent item
+	err = src.WriteItem(context.Background(), "toggle", map[string]interface{}{
+		"id": "nonexistent",
+	})
+	if err == nil {
+		t.Error("expected error for non-existent item")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error should contain 'not found', got: %v", err)
+	}
+}
+
+func TestWriteItemUnknownAction(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	err = src.WriteItem(context.Background(), "invalid_action", map[string]interface{}{})
+	if err == nil {
+		t.Error("expected error for unknown action")
+	}
+	if !strings.Contains(err.Error(), "unknown action") {
+		t.Errorf("error should contain 'unknown action', got: %v", err)
+	}
+}
+
+func TestWriteItemToggleOnlyForTasks(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Items {#items}
+
+- Bullet item <!-- id:b1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("items", "", "#items", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	err = src.WriteItem(context.Background(), "toggle", map[string]interface{}{
+		"id": "b1",
+	})
+	if err == nil {
+		t.Error("expected error when toggling non-task list item")
+	}
+	if !strings.Contains(err.Error(), "only supported for task lists") {
+		t.Errorf("error should mention task lists, got: %v", err)
 	}
 }
