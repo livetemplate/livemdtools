@@ -619,46 +619,764 @@ func TestLvtSourceMarkdownDelete(t *testing.T) {
 	t.Log("Delete test passed!")
 }
 
+// createTempBulletListExample creates a temp directory with bullet list markdown
+func createTempBulletListExample(t *testing.T) (string, func()) {
+	t.Helper()
+
+	tempDir, err := os.MkdirTemp("", "bullet-list-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	indexContent := `---
+title: "Bullet List Test"
+sources:
+  items:
+    type: markdown
+    anchor: "#items-section"
+    readonly: false
+---
+
+# Bullet List Test
+
+` + "```lvt" + `
+<main lvt-source="items">
+    <h3>My Items</h3>
+    {{if .Error}}
+    <p class="error">Error: {{.Error}}</p>
+    {{else}}
+    <ul>
+        {{range .Data}}
+        <li data-item-id="{{.Id}}">
+            <span>{{.Text}}</span>
+            <button lvt-click="Delete" lvt-data-id="{{.Id}}">x</button>
+        </li>
+        {{end}}
+    </ul>
+    <p><small>Total: {{len .Data}} items</small></p>
+    {{end}}
+
+    <form lvt-submit="Add">
+        <input type="text" name="text" placeholder="Add item..." required>
+        <button type="submit">Add</button>
+    </form>
+</main>
+` + "```" + `
+
+---
+
+## Items Section {#items-section}
+
+- First item <!-- id:item1 -->
+- Second item <!-- id:item2 -->
+- Third item <!-- id:item3 -->
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	return tempDir, func() { os.RemoveAll(tempDir) }
+}
+
 // TestLvtSourceMarkdownBulletList tests the lvt-source functionality with markdown bullet lists
 func TestLvtSourceMarkdownBulletList(t *testing.T) {
-	// Create a temporary example for bullet list testing
-	// First, let's verify we can parse bullet lists using the existing infrastructure
+	tempDir, cleanup := createTempBulletListExample(t)
+	defer cleanup()
 
-	cfg := &config.Config{
-		Title: "Bullet List Test",
-		Sources: map[string]config.SourceConfig{
-			"items": {
-				Type:   "markdown",
-				Anchor: "#items",
-			},
-		},
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasItemList bool
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelector('[lvt-source="items"] ul') !== null`, &hasItemList),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
 	}
 
-	// Verify config is correctly structured
-	if cfg.Sources["items"].Type != "markdown" {
-		t.Fatalf("Expected markdown source type")
+	if !hasItemList {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Item list was not rendered")
+	}
+	t.Log("Bullet list rendered")
+
+	// Verify 3 items are shown
+	var itemCount int
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="items"] li').length`, &itemCount),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get item count: %v", err)
 	}
 
-	t.Log("Markdown bullet list config test passed!")
+	if itemCount != 3 {
+		t.Fatalf("Expected 3 items, got %d", itemCount)
+	}
+	t.Logf("Found %d items", itemCount)
+
+	// Verify item text is rendered
+	var hasFirstItem bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.body.textContent.includes('First item')`, &hasFirstItem),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check item text: %v", err)
+	}
+
+	if !hasFirstItem {
+		t.Fatal("First item text not found")
+	}
+
+	t.Log("Markdown bullet list E2E test passed!")
+}
+
+// createTempTableExample creates a temp directory with table markdown
+func createTempTableExample(t *testing.T) (string, func()) {
+	t.Helper()
+
+	tempDir, err := os.MkdirTemp("", "table-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	indexContent := `---
+title: "Table Test"
+sources:
+  products:
+    type: markdown
+    anchor: "#products-section"
+    readonly: false
+---
+
+# Table Test
+
+` + "```lvt" + `
+<main lvt-source="products">
+    <h3>Products</h3>
+    {{if .Error}}
+    <p class="error">Error: {{.Error}}</p>
+    {{else}}
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Price</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {{range .Data}}
+            <tr data-product-id="{{.Id}}">
+                <td class="product-name">{{.Name}}</td>
+                <td class="product-price">{{.Price}}</td>
+                <td><button lvt-click="Delete" lvt-data-id="{{.Id}}">x</button></td>
+            </tr>
+        {{end}}
+        </tbody>
+    </table>
+    <p><small>Total: {{len .Data}} products</small></p>
+    {{end}}
+
+    <form lvt-submit="Add">
+        <input type="text" name="name" placeholder="Product name" required>
+        <input type="text" name="price" placeholder="Price" required>
+        <button type="submit">Add</button>
+    </form>
+</main>
+` + "```" + `
+
+---
+
+## Products Section {#products-section}
+
+| Name | Price |
+|------|-------|
+| Widget | $10 | <!-- id:prod1 -->
+| Gadget | $25 | <!-- id:prod2 -->
+| Gizmo | $15 | <!-- id:prod3 -->
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	return tempDir, func() { os.RemoveAll(tempDir) }
 }
 
 // TestLvtSourceMarkdownTable tests the lvt-source functionality with markdown tables
 func TestLvtSourceMarkdownTable(t *testing.T) {
-	// Verify config structure for table source
-	cfg := &config.Config{
-		Title: "Table Test",
-		Sources: map[string]config.SourceConfig{
-			"products": {
-				Type:   "markdown",
-				Anchor: "#products",
-			},
-		},
+	tempDir, cleanup := createTempTableExample(t)
+	defer cleanup()
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasTable bool
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelector('[lvt-source="products"] table') !== null`, &hasTable),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
 	}
 
-	// Verify config is correctly structured
-	if cfg.Sources["products"].Type != "markdown" {
-		t.Fatalf("Expected markdown source type")
+	if !hasTable {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Table was not rendered")
+	}
+	t.Log("Table rendered")
+
+	// Verify 3 rows are shown (excluding header)
+	var rowCount int
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="products"] tbody tr').length`, &rowCount),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get row count: %v", err)
 	}
 
-	t.Log("Markdown table config test passed!")
+	if rowCount != 3 {
+		t.Fatalf("Expected 3 rows, got %d", rowCount)
+	}
+	t.Logf("Found %d table rows", rowCount)
+
+	// Verify product data is rendered
+	var hasWidget bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.body.textContent.includes('Widget')`, &hasWidget),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check product text: %v", err)
+	}
+
+	if !hasWidget {
+		t.Fatal("Widget product not found")
+	}
+
+	// Verify price is rendered
+	var hasPrice bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.body.textContent.includes('$10')`, &hasPrice),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check price: %v", err)
+	}
+
+	if !hasPrice {
+		t.Fatal("Price not found")
+	}
+
+	t.Log("Markdown table E2E test passed!")
+}
+
+// createTempExternalFileExample creates a temp directory with external file reference
+func createTempExternalFileExample(t *testing.T) (string, func()) {
+	t.Helper()
+
+	tempDir, err := os.MkdirTemp("", "external-file-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	// Create main index.md that references external data file
+	indexContent := `---
+title: "External File Test"
+sources:
+  notes:
+    type: markdown
+    file: "./data/notes.md"
+    anchor: "#notes-section"
+    readonly: false
+---
+
+# External File Test
+
+` + "```lvt" + `
+<main lvt-source="notes">
+    <h3>Notes from External File</h3>
+    {{if .Error}}
+    <p class="error">Error: {{.Error}}</p>
+    {{else}}
+    <ul>
+        {{range .Data}}
+        <li data-note-id="{{.Id}}">{{.Text}}</li>
+        {{end}}
+    </ul>
+    <p><small>Total: {{len .Data}} notes</small></p>
+    {{end}}
+</main>
+` + "```" + `
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	// Create data subdirectory
+	dataDir := filepath.Join(tempDir, "data")
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to create data dir: %v", err)
+	}
+
+	// Create external notes.md file
+	notesContent := `# Notes
+
+## Notes Section {#notes-section}
+
+- Note from external file <!-- id:note1 -->
+- Another external note <!-- id:note2 -->
+`
+
+	notesPath := filepath.Join(dataDir, "notes.md")
+	if err := os.WriteFile(notesPath, []byte(notesContent), 0644); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to write notes.md: %v", err)
+	}
+
+	return tempDir, func() { os.RemoveAll(tempDir) }
+}
+
+// TestLvtSourceMarkdownExternalFile tests reading data from an external markdown file
+func TestLvtSourceMarkdownExternalFile(t *testing.T) {
+	tempDir, cleanup := createTempExternalFileExample(t)
+	defer cleanup()
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasNoteList bool
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelector('[lvt-source="notes"] ul') !== null`, &hasNoteList),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	if !hasNoteList {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Note list was not rendered")
+	}
+	t.Log("External file data rendered")
+
+	// Verify 2 notes are shown
+	var noteCount int
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="notes"] li').length`, &noteCount),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get note count: %v", err)
+	}
+
+	if noteCount != 2 {
+		t.Fatalf("Expected 2 notes, got %d", noteCount)
+	}
+	t.Logf("Found %d notes from external file", noteCount)
+
+	// Verify note text from external file
+	var hasExternalNote bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.body.textContent.includes('Note from external file')`, &hasExternalNote),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check note text: %v", err)
+	}
+
+	if !hasExternalNote {
+		t.Fatal("External file note text not found")
+	}
+
+	t.Log("Markdown external file E2E test passed!")
+}
+
+// createTempMissingAnchorExample creates a temp directory with missing anchor
+func createTempMissingAnchorExample(t *testing.T) (string, func()) {
+	t.Helper()
+
+	tempDir, err := os.MkdirTemp("", "missing-anchor-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	// Create index.md that references non-existent anchor
+	indexContent := `---
+title: "Missing Anchor Test"
+sources:
+  items:
+    type: markdown
+    anchor: "#nonexistent-section"
+---
+
+# Missing Anchor Test
+
+` + "```lvt" + `
+<main lvt-source="items">
+    <h3>Items</h3>
+    {{if .Error}}
+    <p class="error" id="error-message">Error: {{.Error}}</p>
+    {{else if not .Data}}
+    <p id="empty-message">No items found</p>
+    {{else}}
+    <ul>
+        {{range .Data}}
+        <li>{{.Text}}</li>
+        {{end}}
+    </ul>
+    {{end}}
+</main>
+` + "```" + `
+
+## Some Other Section {#other-section}
+
+- This is a different section
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		os.RemoveAll(tempDir)
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	return tempDir, func() { os.RemoveAll(tempDir) }
+}
+
+// TestLvtSourceMarkdownMissingAnchor tests behavior when anchor doesn't exist
+func TestLvtSourceMarkdownMissingAnchor(t *testing.T) {
+	tempDir, cleanup := createTempMissingAnchorExample(t)
+	defer cleanup()
+
+	ts, ctx, cancel, _ := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasEmptyMessage bool
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelector('#empty-message') !== null`, &hasEmptyMessage),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	// Should show empty message (no data found for missing anchor)
+	if !hasEmptyMessage {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		// This is acceptable - the page loaded but section wasn't found
+		t.Log("Empty message not shown, checking for graceful handling...")
+	}
+
+	// Verify no items were rendered (empty data)
+	var itemCount int
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="items"] li').length`, &itemCount),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get item count: %v", err)
+	}
+
+	if itemCount != 0 {
+		t.Fatalf("Expected 0 items for missing anchor, got %d", itemCount)
+	}
+
+	t.Log("Markdown missing anchor E2E test passed - graceful empty data handling!")
+}
+
+// TestLvtSourceMarkdownUpdate tests updating an item's text
+func TestLvtSourceMarkdownUpdate(t *testing.T) {
+	tempDir, cleanup := createTempMarkdownExample(t)
+	defer cleanup()
+
+	// Modify index.md to include an update form
+	indexContent, err := os.ReadFile(filepath.Join(tempDir, "index.md"))
+	if err != nil {
+		t.Fatalf("Failed to read index.md: %v", err)
+	}
+
+	// Add update functionality to the template
+	updatedContent := strings.Replace(string(indexContent),
+		`<button lvt-click="Delete" lvt-data-id="{{.Id}}" class="delete-btn"`,
+		`<button lvt-click="Delete" lvt-data-id="{{.Id}}" class="delete-btn"
+                    style="margin-left: auto; padding: 2px 8px; color: red; border: 1px solid red; background: transparent; border-radius: 4px; cursor: pointer;">
+                x
+            </button>
+            <button lvt-click="Update" lvt-data-id="{{.Id}}" lvt-data-text="Updated task text" class="update-btn"`,
+		1)
+
+	if err := os.WriteFile(filepath.Join(tempDir, "index.md"), []byte(updatedContent), 0644); err != nil {
+		t.Fatalf("Failed to write updated index.md: %v", err)
+	}
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasUpdateBtn bool
+	err = chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelector('.update-btn') !== null`, &hasUpdateBtn),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	if !hasUpdateBtn {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Update button not found")
+	}
+	t.Log("Update button rendered")
+
+	// Click update button for first task
+	err = chromedp.Run(ctx,
+		chromedp.Click(`.update-btn`, chromedp.ByQuery),
+		chromedp.Sleep(2*time.Second),
+	)
+	if err != nil {
+		t.Fatalf("Failed to click update: %v", err)
+	}
+	t.Log("Update button clicked")
+
+	// Verify file was updated
+	content, err := os.ReadFile(filepath.Join(tempDir, "index.md"))
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+
+	if !strings.Contains(string(content), "Updated task text") {
+		t.Logf("File content:\n%s", string(content))
+		t.Fatal("File should contain updated task text")
+	}
+
+	t.Log("Markdown update E2E test passed!")
+}
+
+// TestLvtSourceMarkdownMissingID tests that items without IDs get IDs assigned
+func TestLvtSourceMarkdownMissingID(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "missing-id-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create index.md with items that have NO IDs
+	indexContent := `---
+title: "Missing ID Test"
+sources:
+  tasks:
+    type: markdown
+    anchor: "#tasks-section"
+    readonly: false
+---
+
+# Missing ID Test
+
+` + "```lvt" + `
+<main lvt-source="tasks">
+    <ul>
+        {{range .Data}}
+        <li data-task-id="{{.Id}}">
+            <span>{{.Text}}</span>
+        </li>
+        {{end}}
+    </ul>
+    <p><small>Total: {{len .Data}} tasks</small></p>
+</main>
+` + "```" + `
+
+---
+
+## Tasks Section {#tasks-section}
+
+- [ ] Task without ID
+- [x] Another task without ID
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasTasks bool
+	err = chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="tasks"] li').length > 0`, &hasTasks),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	if !hasTasks {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Tasks not rendered")
+	}
+	t.Log("Tasks rendered")
+
+	// Verify IDs were assigned (data-task-id should not be empty)
+	var hasValidIDs bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`
+			(() => {
+				const items = document.querySelectorAll('[lvt-source="tasks"] li[data-task-id]');
+				for (const item of items) {
+					const id = item.getAttribute('data-task-id');
+					if (!id || id === '') return false;
+				}
+				return items.length > 0;
+			})()
+		`, &hasValidIDs),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check IDs: %v", err)
+	}
+
+	if !hasValidIDs {
+		t.Fatal("Items should have IDs assigned")
+	}
+
+	t.Log("Markdown missing ID E2E test passed - IDs auto-generated!")
+}
+
+// TestLvtSourceMarkdownSpecialChars tests handling of special characters
+func TestLvtSourceMarkdownSpecialChars(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "special-chars-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create index.md with special characters in data
+	indexContent := `---
+title: "Special Chars Test"
+sources:
+  items:
+    type: markdown
+    anchor: "#items-section"
+    readonly: false
+---
+
+# Special Chars Test
+
+` + "```lvt" + `
+<main lvt-source="items">
+    <ul>
+        {{range .Data}}
+        <li data-item-id="{{.Id}}">
+            <span class="item-text">{{.Text}}</span>
+        </li>
+        {{end}}
+    </ul>
+</main>
+` + "```" + `
+
+---
+
+## Items Section {#items-section}
+
+- Item with <angle> brackets <!-- id:special1 -->
+- Item with "quotes" and 'apostrophes' <!-- id:special2 -->
+- Item with & ampersand <!-- id:special3 -->
+`
+
+	indexPath := filepath.Join(tempDir, "index.md")
+	if err := os.WriteFile(indexPath, []byte(indexContent), 0644); err != nil {
+		t.Fatalf("Failed to write index.md: %v", err)
+	}
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+
+	// Navigate and wait for content
+	var hasItems bool
+	err = chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second),
+		chromedp.Evaluate(`document.querySelectorAll('[lvt-source="items"] li').length > 0`, &hasItems),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	if !hasItems {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Items not rendered")
+	}
+	t.Log("Items with special chars rendered")
+
+	// Verify special characters are properly escaped/rendered
+	var hasAngleBrackets, hasQuotes, hasAmpersand bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`document.body.textContent.includes('<angle>')`, &hasAngleBrackets),
+		chromedp.Evaluate(`document.body.textContent.includes('"quotes"')`, &hasQuotes),
+		chromedp.Evaluate(`document.body.textContent.includes('& ampersand')`, &hasAmpersand),
+	)
+	if err != nil {
+		t.Fatalf("Failed to check special chars: %v", err)
+	}
+
+	if !hasAngleBrackets {
+		t.Error("Angle brackets not properly rendered")
+	}
+	if !hasQuotes {
+		t.Error("Quotes not properly rendered")
+	}
+	if !hasAmpersand {
+		t.Error("Ampersand not properly rendered")
+	}
+
+	if hasAngleBrackets && hasQuotes && hasAmpersand {
+		t.Log("All special characters properly handled!")
+	}
+
+	t.Log("Markdown special chars E2E test passed!")
 }
