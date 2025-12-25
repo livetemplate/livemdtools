@@ -4,6 +4,7 @@ sources:
   tasks:
     type: markdown
     anchor: "#data-section"
+    readonly: false
 ---
 
 # Todo List from Markdown

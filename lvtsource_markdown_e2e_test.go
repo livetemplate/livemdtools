@@ -13,7 +13,6 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/config"
 	"github.com/livetemplate/livemdtools/internal/server"
 )
 
@@ -115,14 +114,8 @@ func setupMarkdownTestWithWatch(t *testing.T, exampleDir string) (*httptest.Serv
 func setupMarkdownTestInternal(t *testing.T, exampleDir string, enableWatch bool) (*httptest.Server, context.Context, context.CancelFunc, *[]string) {
 	t.Helper()
 
-	// Load config
-	cfg, err := config.LoadFromDir(exampleDir)
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	// Create test server
-	srv := server.NewWithConfig(exampleDir, cfg)
+	// Create test server - sources are defined in frontmatter
+	srv := server.New(exampleDir)
 	if err := srv.Discover(); err != nil {
 		t.Fatalf("Failed to discover pages: %v", err)
 	}
@@ -172,30 +165,8 @@ func setupMarkdownTestInternal(t *testing.T, exampleDir string, enableWatch bool
 
 // TestLvtSourceMarkdownTaskList tests the lvt-source functionality with markdown task lists
 func TestLvtSourceMarkdownTaskList(t *testing.T) {
-	// Load config from test example
-	cfg, err := config.LoadFromDir("examples/markdown-data-todo")
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	// Verify sources are configured
-	if cfg.Sources == nil {
-		t.Fatal("No sources configured in livemdtools.yaml")
-	}
-	tasksSource, ok := cfg.Sources["tasks"]
-	if !ok {
-		t.Fatal("tasks source not found in config")
-	}
-	if tasksSource.Type != "markdown" {
-		t.Fatalf("Expected markdown source type, got: %s", tasksSource.Type)
-	}
-	if tasksSource.Anchor != "#data-section" {
-		t.Fatalf("Expected anchor #data-section, got: %s", tasksSource.Anchor)
-	}
-	t.Logf("Source config: type=%s, anchor=%s", tasksSource.Type, tasksSource.Anchor)
-
-	// Create test server
-	srv := server.NewWithConfig("examples/markdown-data-todo", cfg)
+	// Create test server - sources are defined in frontmatter
+	srv := server.New("examples/markdown-data-todo")
 	if err := srv.Discover(); err != nil {
 		t.Fatalf("Failed to discover pages: %v", err)
 	}
@@ -228,6 +199,8 @@ func TestLvtSourceMarkdownTaskList(t *testing.T) {
 	})
 
 	t.Logf("Test server URL: %s", ts.URL)
+
+	var err error
 
 	// Test 1: Navigate and wait for WebSocket to render content
 	// Plugin compilation can take 15-20 seconds on first run
