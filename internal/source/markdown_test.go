@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewMarkdownSource(t *testing.T) {
@@ -1012,4 +1013,209 @@ func TestWriteItemToggleOnlyForTasks(t *testing.T) {
 	if !strings.Contains(err.Error(), "only supported for task lists") {
 		t.Errorf("error should mention task lists, got: %v", err)
 	}
+}
+
+// ============ Phase 4: Concurrency & Conflict Handling Tests ============
+
+func TestWriteItemMtimeTracking(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// First Fetch should record mtime
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	// Verify mtime was recorded
+	src.mu.RLock()
+	hasLastMtime := !src.lastMtime.IsZero()
+	src.mu.RUnlock()
+
+	if !hasLastMtime {
+		t.Error("lastMtime should be set after Fetch()")
+	}
+
+	// Write should succeed without conflict
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "Task 2",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(add) error = %v", err)
+	}
+
+	// Verify mtime was updated after write
+	src.mu.RLock()
+	mtimeAfterWrite := src.lastMtime
+	src.mu.RUnlock()
+
+	if mtimeAfterWrite.IsZero() {
+		t.Error("lastMtime should be updated after WriteItem()")
+	}
+}
+
+func TestWriteItemConflictDetection(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Fetch to record initial mtime
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	// Simulate external modification by writing to the file directly
+	// Wait a bit to ensure different mtime (some filesystems have 1-second resolution)
+	time.Sleep(100 * time.Millisecond)
+	externalContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+- [ ] External task <!-- id:ext1 -->
+`
+	if err := os.WriteFile(mdPath, []byte(externalContent), 0644); err != nil {
+		t.Fatalf("Failed to write external modification: %v", err)
+	}
+
+	// Try to write - should detect conflict
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "My new task",
+	})
+
+	if err == nil {
+		t.Fatal("expected ConflictError, got nil")
+	}
+
+	// Verify it's a ConflictError
+	conflictErr, ok := err.(*ConflictError)
+	if !ok {
+		t.Fatalf("expected *ConflictError, got %T: %v", err, err)
+	}
+
+	// Verify conflict file was created
+	if conflictErr.ConflictPath == "" {
+		t.Error("ConflictPath should not be empty")
+	}
+
+	if _, err := os.Stat(conflictErr.ConflictPath); os.IsNotExist(err) {
+		t.Errorf("conflict file should exist: %s", conflictErr.ConflictPath)
+	}
+
+	// Clean up conflict file
+	os.Remove(conflictErr.ConflictPath)
+}
+
+func TestWriteItemNoConflictWithoutPriorFetch(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Task 1 <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Write without prior Fetch - should succeed (no mtime to compare)
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "New task",
+	})
+	if err != nil {
+		t.Fatalf("WriteItem(add) should succeed without prior Fetch, got error: %v", err)
+	}
+
+	// Verify task was added
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Errorf("expected 2 tasks, got %d", len(results))
+	}
+}
+
+func TestConflictCopyContainsOriginalContent(t *testing.T) {
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Original task <!-- id:t1 -->
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	// Fetch to record initial mtime
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	// Simulate external modification
+	time.Sleep(100 * time.Millisecond)
+	externalContent := `# Tasks {#tasks}
+
+- [ ] Original task <!-- id:t1 -->
+- [ ] External modification <!-- id:ext1 -->
+`
+	if err := os.WriteFile(mdPath, []byte(externalContent), 0644); err != nil {
+		t.Fatalf("Failed to write external modification: %v", err)
+	}
+
+	// Try to write - should create conflict copy
+	err = src.WriteItem(context.Background(), "add", map[string]interface{}{
+		"text": "My task",
+	})
+
+	conflictErr, ok := err.(*ConflictError)
+	if !ok {
+		t.Fatalf("expected *ConflictError, got %T: %v", err, err)
+	}
+
+	// Read conflict file and verify it contains the external modification
+	conflictContent, err := os.ReadFile(conflictErr.ConflictPath)
+	if err != nil {
+		t.Fatalf("Failed to read conflict file: %v", err)
+	}
+
+	if !strings.Contains(string(conflictContent), "External modification") {
+		t.Error("conflict file should contain the external modification")
+	}
+
+	// Clean up
+	os.Remove(conflictErr.ConflictPath)
 }

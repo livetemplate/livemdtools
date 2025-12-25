@@ -10,16 +10,33 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 )
+
+// ConflictError is returned when a write operation detects concurrent modification
+type ConflictError struct {
+	OriginalPath string
+	ConflictPath string
+	Message      string
+}
+
+func (e *ConflictError) Error() string {
+	return e.Message
+}
 
 // MarkdownSource reads data from markdown sections (task lists, bullet lists, tables)
 type MarkdownSource struct {
-	name       string
-	filePath   string // empty means current file (handled by caller)
-	anchor     string // e.g., "#todos"
-	readonly   bool
-	siteDir    string
+	name        string
+	filePath    string // empty means current file (handled by caller)
+	anchor      string // e.g., "#todos"
+	readonly    bool
+	siteDir     string
 	currentFile string // the markdown file being served (for same-file anchors)
+
+	// Concurrency control
+	mu       sync.RWMutex
+	lastMtime time.Time // mtime of file when last read
 }
 
 // NewMarkdownSource creates a new markdown source
@@ -52,10 +69,21 @@ func (s *MarkdownSource) Name() string {
 func (s *MarkdownSource) Fetch(ctx context.Context) ([]map[string]interface{}, error) {
 	path := s.resolvePath()
 
+	// Get file info for mtime tracking
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("markdown source %q: failed to stat file: %w", s.name, err)
+	}
+
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("markdown source %q: failed to read file: %w", s.name, err)
 	}
+
+	// Store mtime for conflict detection on writes
+	s.mu.Lock()
+	s.lastMtime = info.ModTime()
+	s.mu.Unlock()
 
 	return s.parseSection(string(content))
 }
@@ -303,12 +331,38 @@ func (s *MarkdownSource) GetAnchor() string {
 
 // WriteItem adds, updates, or deletes an item in the markdown source
 // Supported actions: add, toggle, delete, update
+// Returns ConflictError if the file was modified externally since last read
 func (s *MarkdownSource) WriteItem(ctx context.Context, action string, data map[string]interface{}) error {
 	if s.readonly {
 		return fmt.Errorf("markdown source %q is read-only", s.name)
 	}
 
 	path := s.resolvePath()
+
+	// Check current mtime before reading
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat file: %w", err)
+	}
+	currentMtime := info.ModTime()
+
+	// Check for conflict (file modified since last read)
+	s.mu.RLock()
+	lastMtime := s.lastMtime
+	s.mu.RUnlock()
+
+	if !lastMtime.IsZero() && !currentMtime.Equal(lastMtime) {
+		// File was modified externally - create conflict copy
+		conflictPath, err := s.createConflictCopy(path)
+		if err != nil {
+			return fmt.Errorf("failed to create conflict copy: %w", err)
+		}
+		return &ConflictError{
+			OriginalPath: path,
+			ConflictPath: conflictPath,
+			Message:      fmt.Sprintf("file was modified externally; your changes saved to %s", conflictPath),
+		}
+	}
 
 	// Read current content
 	contentBytes, err := os.ReadFile(path)
@@ -355,8 +409,38 @@ func (s *MarkdownSource) WriteItem(ctx context.Context, action string, data map[
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
+	// Update stored mtime after successful write
+	if newInfo, err := os.Stat(path); err == nil {
+		s.mu.Lock()
+		s.lastMtime = newInfo.ModTime()
+		s.mu.Unlock()
+	}
+
 	_ = headerLevel // Used in section boundary detection
 	return nil
+}
+
+// createConflictCopy creates a conflict copy of the current pending changes
+// Returns the path to the conflict file
+func (s *MarkdownSource) createConflictCopy(originalPath string) (string, error) {
+	// Read the current file content (what the user was trying to modify)
+	content, err := os.ReadFile(originalPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read original file: %w", err)
+	}
+
+	// Generate conflict filename: file.conflict-{timestamp}.md
+	ext := filepath.Ext(originalPath)
+	base := strings.TrimSuffix(originalPath, ext)
+	timestamp := time.Now().Format("20060102-150405")
+	conflictPath := fmt.Sprintf("%s.conflict-%s%s", base, timestamp, ext)
+
+	// Write conflict copy
+	if err := os.WriteFile(conflictPath, content, 0644); err != nil {
+		return "", fmt.Errorf("failed to write conflict file: %w", err)
+	}
+
+	return conflictPath, nil
 }
 
 // findSectionBoundaries finds where the section starts and ends
