@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -192,9 +193,9 @@ func (s *MarkdownSource) parseTaskList(lines []string) ([]map[string]interface{}
 		text := strings.TrimSpace(matches[2])
 		id := matches[3]
 
-		// Generate ID if missing
+		// Generate content-based ID if missing (deterministic from text)
 		if id == "" {
-			id = generateID()
+			id = generateContentID(text)
 		}
 
 		results = append(results, map[string]interface{}{
@@ -227,9 +228,9 @@ func (s *MarkdownSource) parseBulletList(lines []string) ([]map[string]interface
 			continue
 		}
 
-		// Generate ID if missing
+		// Generate content-based ID if missing (deterministic from text)
 		if id == "" {
-			id = generateID()
+			id = generateContentID(text)
 		}
 
 		results = append(results, map[string]interface{}{
@@ -283,9 +284,10 @@ func (s *MarkdownSource) parseTable(lines []string) ([]map[string]interface{}, e
 			continue
 		}
 
-		// Generate ID if missing
+		// Generate content-based ID if missing (deterministic from row content)
 		if id == "" {
-			id = generateID()
+			// Join all cells to create a unique hash for this row
+			id = generateContentID(strings.Join(cells, "|"))
 		}
 
 		row := map[string]interface{}{
@@ -321,6 +323,14 @@ func generateID() string {
 	bytes := make([]byte, 4)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
+}
+
+// generateContentID creates a deterministic ID from item content using FNV hash.
+// Same text always produces the same ID, making IDs stable across file syncs.
+func generateContentID(text string) string {
+	h := fnv.New32a()
+	h.Write([]byte(text))
+	return fmt.Sprintf("%08x", h.Sum32())
 }
 
 // GetFilePath returns the resolved file path for file watching

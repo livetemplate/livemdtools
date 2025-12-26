@@ -2,7 +2,7 @@
 
 | Name | URL | Tags |
 |------|-----|------|
-| GitHub | https://github.com | dev, code | <!-- id:bm_001 -->
-| Hacker News | https://news.ycombinator.com | news, tech | <!-- id:bm_002 -->
-| MDN Web Docs | https://developer.mozilla.org | docs, web | <!-- id:bm_003 -->
-| Go Documentation | https://go.dev/doc | docs, golang | <!-- id:bm_004 -->
+| GitHub | https://github.com | dev, code |
+| Hacker News | https://news.ycombinator.com | news, tech |
+| MDN Web Docs | https://developer.mozilla.org | docs, web |
+| Go Documentation | https://go.dev/doc | docs, golang |

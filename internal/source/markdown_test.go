@@ -569,6 +569,111 @@ func TestGenerateID(t *testing.T) {
 	}
 }
 
+func TestGenerateContentID(t *testing.T) {
+	// Test that same content always produces same ID
+	id1 := generateContentID("Buy groceries")
+	id2 := generateContentID("Buy groceries")
+	if id1 != id2 {
+		t.Errorf("same content should produce same ID: got %s and %s", id1, id2)
+	}
+
+	// Test that different content produces different IDs
+	id3 := generateContentID("Walk the dog")
+	if id1 == id3 {
+		t.Errorf("different content should produce different IDs: both got %s", id1)
+	}
+
+	// Test ID format (8 hex characters)
+	if len(id1) != 8 {
+		t.Errorf("expected 8-character ID, got %d characters: %s", len(id1), id1)
+	}
+}
+
+func TestContentBasedIDsInParsing(t *testing.T) {
+	// Test that items without explicit IDs get deterministic content-based IDs
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Buy groceries
+- [x] Clean the house
+- [ ] Buy groceries
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Fatalf("expected 3 tasks, got %d", len(results))
+	}
+
+	// First and third have same text, should have same ID (content-based)
+	if results[0]["id"] != results[2]["id"] {
+		t.Errorf("items with same text should have same ID: got %s and %s", results[0]["id"], results[2]["id"])
+	}
+
+	// Second has different text, should have different ID
+	if results[0]["id"] == results[1]["id"] {
+		t.Errorf("items with different text should have different IDs: both got %s", results[0]["id"])
+	}
+
+	// Fetch again - IDs should be identical (deterministic)
+	results2, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Second Fetch() error = %v", err)
+	}
+
+	for i := range results {
+		if results[i]["id"] != results2[i]["id"] {
+			t.Errorf("IDs should be consistent across fetches: item %d got %s then %s", i, results[i]["id"], results2[i]["id"])
+		}
+	}
+}
+
+func TestExplicitIDsTakePrecedence(t *testing.T) {
+	// Test that explicit <!-- id:xxx --> comments take precedence over content-based IDs
+	tmpDir := t.TempDir()
+	mdContent := `# Tasks {#tasks}
+
+- [ ] Buy groceries <!-- id:my_custom_id -->
+- [ ] Walk the dog
+`
+	mdPath := filepath.Join(tmpDir, "test.md")
+	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+	if err != nil {
+		t.Fatalf("NewMarkdownSource() error = %v", err)
+	}
+
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch() error = %v", err)
+	}
+
+	// First item should have the explicit ID
+	if results[0]["id"] != "my_custom_id" {
+		t.Errorf("explicit ID should be used: got %s, want my_custom_id", results[0]["id"])
+	}
+
+	// Second item should have a content-based ID (not the explicit one)
+	if results[1]["id"] == "my_custom_id" {
+		t.Error("second item should not have the same ID as the explicit one")
+	}
+}
+
 func TestParseTableCells(t *testing.T) {
 	src := &MarkdownSource{}
 
