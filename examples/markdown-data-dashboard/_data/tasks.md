@@ -4,7 +4,6 @@
 
 | Task | Priority |
 |------|----------|
-| Review pull requests | high | <!-- id:task_001 -->
 | Update documentation | medium | <!-- id:task_002 -->
 | Fix login bug | high | <!-- id:task_003 -->
 | Add unit tests | low | <!-- id:task_004 -->

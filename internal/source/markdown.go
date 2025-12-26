@@ -41,6 +41,10 @@ type MarkdownSource struct {
 
 // NewMarkdownSource creates a new markdown source
 func NewMarkdownSource(name, file, anchor, siteDir, currentFile string, readonly bool) (*MarkdownSource, error) {
+	if file == "" {
+		return nil, fmt.Errorf("markdown source %q: 'file' field is required - data must be in a separate file from the UI", name)
+	}
+
 	if anchor == "" {
 		return nil, fmt.Errorf("markdown source %q: anchor is required", name)
 	}

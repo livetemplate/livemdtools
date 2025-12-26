@@ -3,13 +3,14 @@ title: "Markdown Data Todo"
 sources:
   tasks:
     type: markdown
-    anchor: "#data-section"
+    file: "./_data/tasks.md"
+    anchor: "#tasks"
     readonly: false
 ---
 
 # Todo List from Markdown
 
-This example demonstrates reading AND writing task list data from a markdown section in the same file.
+This example demonstrates reading AND writing task list data from a separate markdown file.
 
 ## Interactive Todo Display
 
@@ -50,14 +51,4 @@ This example demonstrates reading AND writing task list data from a markdown sec
 </main>
 ```
 
----
-
-## Data Section {#data-section}
-
-Edit this task list directly in the markdown file:
-
-- [ ] Buy groceries <!-- id:task1 -->
-- [x] Clean the house <!-- id:task2 -->
-- [ ] Walk the dog <!-- id:task3 -->
-- [ ] Send emails <!-- id:task4 -->
-- [x] Finish project report <!-- id:task5 -->
+*Task data is stored in `_data/tasks.md`*

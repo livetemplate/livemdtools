@@ -24,7 +24,7 @@ func TestNewMarkdownSource(t *testing.T) {
 		{
 			name:        "valid source with # anchor",
 			sourceName:  "todos",
-			file:        "",
+			file:        "data/tasks.md",
 			anchor:      "#tasks",
 			siteDir:     "/site",
 			currentFile: "/site/index.md",
@@ -35,7 +35,7 @@ func TestNewMarkdownSource(t *testing.T) {
 		{
 			name:        "valid source without # in anchor",
 			sourceName:  "todos",
-			file:        "",
+			file:        "data/tasks.md",
 			anchor:      "tasks",
 			siteDir:     "/site",
 			currentFile: "/site/index.md",
@@ -44,9 +44,19 @@ func TestNewMarkdownSource(t *testing.T) {
 			wantAnchor:  "#tasks",
 		},
 		{
-			name:        "missing anchor",
+			name:        "missing file",
 			sourceName:  "todos",
 			file:        "",
+			anchor:      "#tasks",
+			siteDir:     "/site",
+			currentFile: "/site/index.md",
+			readonly:    true,
+			wantErr:     true,
+		},
+		{
+			name:        "missing anchor",
+			sourceName:  "todos",
+			file:        "data/tasks.md",
 			anchor:      "",
 			siteDir:     "/site",
 			currentFile: "/site/index.md",
@@ -445,7 +455,7 @@ func TestMarkdownSourceFetch(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, true)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -509,7 +519,7 @@ func TestMarkdownSourceExternalFile(t *testing.T) {
 }
 
 func TestMarkdownSourceWriteReadonly(t *testing.T) {
-	src, err := NewMarkdownSource("tasks", "", "#tasks", "/site", "/site/index.md", true)
+	src, err := NewMarkdownSource("tasks", "data/tasks.md", "#tasks", "/site", "/site/index.md", true)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -650,7 +660,7 @@ func TestWriteItemAddTask(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -695,7 +705,7 @@ func TestWriteItemToggleTask(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -748,7 +758,7 @@ func TestWriteItemDeleteTask(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -790,7 +800,7 @@ func TestWriteItemUpdateTask(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -829,7 +839,7 @@ func TestWriteItemAddBullet(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("items", "", "#items", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("items", "test.md", "#items", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -867,7 +877,7 @@ func TestWriteItemAddTableRow(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("products", "", "#products", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("products", "test.md", "#products", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -910,7 +920,7 @@ func TestWriteItemDeleteTableRow(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("products", "", "#products", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("products", "test.md", "#products", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -946,7 +956,7 @@ func TestWriteItemNotFoundError(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -974,7 +984,7 @@ func TestWriteItemUnknownAction(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -999,7 +1009,7 @@ func TestWriteItemToggleOnlyForTasks(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("items", "", "#items", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("items", "test.md", "#items", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -1028,7 +1038,7 @@ func TestWriteItemMtimeTracking(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -1077,7 +1087,7 @@ func TestWriteItemConflictDetection(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -1139,7 +1149,7 @@ func TestWriteItemNoConflictWithoutPriorFetch(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}
@@ -1174,7 +1184,7 @@ func TestConflictCopyContainsOriginalContent(t *testing.T) {
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
 
-	src, err := NewMarkdownSource("tasks", "", "#tasks", tmpDir, mdPath, false)
+	src, err := NewMarkdownSource("tasks", "test.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), false)
 	if err != nil {
 		t.Fatalf("NewMarkdownSource() error = %v", err)
 	}

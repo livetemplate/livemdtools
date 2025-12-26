@@ -1,16 +1,17 @@
 ---
 title: "My Bookmarks"
-description: "Self-contained bookmark manager using markdown data source"
+description: "Bookmark manager using markdown data source"
 sources:
   bookmarks:
     type: markdown
-    anchor: "#links"
+    file: "./_data/bookmarks.md"
+    anchor: "#bookmarks"
     readonly: false
 ---
 
 # {{.Config.Title}}
 
-A self-contained bookmark manager that stores data in this markdown file.
+A bookmark manager that stores data in a separate markdown file.
 
 ## Add New Bookmark
 
@@ -73,13 +74,4 @@ A self-contained bookmark manager that stores data in this markdown file.
 </main>
 ```
 
----
-
-## Links {#links}
-
-| Name | URL | Tags |
-|------|-----|------|
-| GitHub | https://github.com | dev, code | <!-- id:bm_001 -->
-| Hacker News | https://news.ycombinator.com | news, tech | <!-- id:bm_002 -->
-| MDN Web Docs | https://developer.mozilla.org | docs, web | <!-- id:bm_003 -->
-| Go Documentation | https://go.dev/doc | docs, golang | <!-- id:bm_004 -->
+*Bookmark data is stored in `_data/bookmarks.md`*
