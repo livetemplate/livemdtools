@@ -1,6 +1,6 @@
 # Team Directory
 
-## Members {#members}
+## Members
 
 | Name | Role |
 |------|------|

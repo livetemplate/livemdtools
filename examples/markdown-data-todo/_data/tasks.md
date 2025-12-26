@@ -1,4 +1,4 @@
-# Tasks {#tasks}
+# Tasks
 
 - [ ] Buy groceries
 - [x] Clean the house

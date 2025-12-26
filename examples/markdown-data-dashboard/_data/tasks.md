@@ -1,6 +1,6 @@
 # Project Tasks
 
-## Active {#active}
+## Active
 
 | Task | Priority |
 |------|----------|

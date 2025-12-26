@@ -1334,3 +1334,154 @@ func TestConflictCopyContainsOriginalContent(t *testing.T) {
 	// Clean up
 	os.Remove(conflictErr.ConflictPath)
 }
+
+func TestSlugify(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"Tasks", "tasks"},
+		{"My Task List", "my-task-list"},
+		{"Active Items", "active-items"},
+		{"Team Members", "team-members"},
+		{"Special! Characters?", "special-characters"},
+		{"Under_scores", "underscores"}, // underscores are removed (not alphanumeric)
+		{"  Spaces  ", "--spaces--"},     // spaces become hyphens
+		{"123 Numbers", "123-numbers"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := slugify(tt.input)
+			if got != tt.want {
+				t.Errorf("slugify(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTextBasedAnchorMatching(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Test 1: Simple heading text matches anchor
+	t.Run("heading text matches anchor", func(t *testing.T) {
+		mdContent := `# Tasks
+
+- [ ] Task one
+- [x] Task two
+`
+		mdPath := filepath.Join(tmpDir, "tasks.md")
+		if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+			t.Fatalf("Failed to write temp file: %v", err)
+		}
+
+		src, err := NewMarkdownSource("tasks", "tasks.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+		if err != nil {
+			t.Fatalf("NewMarkdownSource() error = %v", err)
+		}
+
+		results, err := src.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("expected 2 tasks, got %d", len(results))
+		}
+	})
+
+	// Test 2: Multi-word heading slugified
+	t.Run("multi-word heading slugified", func(t *testing.T) {
+		mdContent := `# My Task List
+
+- [ ] Item one
+- [ ] Item two
+`
+		mdPath := filepath.Join(tmpDir, "my-tasks.md")
+		if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+			t.Fatalf("Failed to write temp file: %v", err)
+		}
+
+		src, err := NewMarkdownSource("tasks", "my-tasks.md", "#my-task-list", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+		if err != nil {
+			t.Fatalf("NewMarkdownSource() error = %v", err)
+		}
+
+		results, err := src.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("expected 2 items, got %d", len(results))
+		}
+	})
+
+	// Test 3: Explicit anchor takes precedence
+	t.Run("explicit anchor takes precedence", func(t *testing.T) {
+		mdContent := `# Tasks {#todos}
+
+- [ ] Explicit anchor task
+`
+		mdPath := filepath.Join(tmpDir, "explicit.md")
+		if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+			t.Fatalf("Failed to write temp file: %v", err)
+		}
+
+		// Should match #todos, not #tasks
+		src, err := NewMarkdownSource("tasks", "explicit.md", "#todos", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+		if err != nil {
+			t.Fatalf("NewMarkdownSource() error = %v", err)
+		}
+
+		results, err := src.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("expected 1 task, got %d", len(results))
+		}
+
+		// Should NOT match #tasks (because explicit anchor overrides)
+		src2, err := NewMarkdownSource("tasks2", "explicit.md", "#tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+		if err != nil {
+			t.Fatalf("NewMarkdownSource() error = %v", err)
+		}
+
+		results2, err := src2.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(results2) != 0 {
+			t.Errorf("expected 0 tasks for #tasks anchor (explicit #todos should take precedence), got %d", len(results2))
+		}
+	})
+
+	// Test 4: Special characters in heading
+	t.Run("special characters in heading", func(t *testing.T) {
+		mdContent := `# Active! Tasks?
+
+- [ ] Special char task
+`
+		mdPath := filepath.Join(tmpDir, "special.md")
+		if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
+			t.Fatalf("Failed to write temp file: %v", err)
+		}
+
+		src, err := NewMarkdownSource("tasks", "special.md", "#active-tasks", tmpDir, filepath.Join(tmpDir, "index.md"), true)
+		if err != nil {
+			t.Fatalf("NewMarkdownSource() error = %v", err)
+		}
+
+		results, err := src.Fetch(context.Background())
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("expected 1 task, got %d", len(results))
+		}
+	})
+}

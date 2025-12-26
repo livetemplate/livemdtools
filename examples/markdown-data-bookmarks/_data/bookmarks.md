@@ -1,4 +1,4 @@
-# Bookmarks {#bookmarks}
+# Bookmarks
 
 | Name | URL | Tags |
 |------|-----|------|

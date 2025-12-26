@@ -117,13 +117,10 @@ func (s *MarkdownSource) resolvePath() string {
 
 // parseSection finds and parses the data section by anchor
 func (s *MarkdownSource) parseSection(content string) ([]map[string]interface{}, error) {
-	// Find the section by anchor: ## Title {#anchor}
 	anchorName := strings.TrimPrefix(s.anchor, "#")
 
-	// Pattern: ## Title {#anchor} or # Title {#anchor}
-	headerPattern := regexp.MustCompile(`(?m)^(#{1,6})\s+(.+?)\s*\{#` + regexp.QuoteMeta(anchorName) + `\}\s*$`)
-
-	matches := headerPattern.FindStringSubmatchIndex(content)
+	// Try to find the section header - explicit {#anchor} first, then text-based
+	matches := s.findSectionHeader(content, anchorName)
 	if matches == nil {
 		return []map[string]interface{}{}, nil // No section found, return empty
 	}
@@ -144,6 +141,35 @@ func (s *MarkdownSource) parseSection(content string) ([]map[string]interface{},
 
 	// Detect format and parse
 	return s.detectAndParse(sectionContent)
+}
+
+// findSectionHeader finds a section header by anchor name.
+// Tries explicit {#anchor} syntax first, falls back to matching heading text (slugified).
+// Headings with explicit anchors are excluded from text-based matching.
+func (s *MarkdownSource) findSectionHeader(content, anchorName string) []int {
+	// Pattern 1: Explicit {#anchor} syntax - takes precedence
+	explicitPattern := regexp.MustCompile(`(?m)^(#{1,6})\s+(.+?)\s*\{#` + regexp.QuoteMeta(anchorName) + `\}\s*$`)
+	if matches := explicitPattern.FindStringSubmatchIndex(content); matches != nil {
+		return matches
+	}
+
+	// Pattern 2: Match heading text (slugified) - fallback
+	// Only match headings WITHOUT explicit anchors
+	headingPattern := regexp.MustCompile(`(?m)^(#{1,6})\s+(.+?)\s*$`)
+	explicitAnchorPattern := regexp.MustCompile(`\{#[^}]+\}\s*$`)
+	allMatches := headingPattern.FindAllStringSubmatchIndex(content, -1)
+	for _, match := range allMatches {
+		headingText := content[match[4]:match[5]]
+		// Skip headings that have explicit anchors (they should only match their explicit anchor)
+		if explicitAnchorPattern.MatchString(headingText) {
+			continue
+		}
+		if slugify(headingText) == anchorName {
+			return match
+		}
+	}
+
+	return nil
 }
 
 // detectAndParse auto-detects the format and parses accordingly
@@ -333,6 +359,16 @@ func generateContentID(text string) string {
 	return fmt.Sprintf("%08x", h.Sum32())
 }
 
+// slugify converts heading text to an anchor-compatible slug (GitHub-style).
+// "My Task List" -> "my-task-list"
+func slugify(text string) string {
+	text = strings.ToLower(text)
+	text = strings.ReplaceAll(text, " ", "-")
+	// Remove non-alphanumeric chars except hyphens
+	re := regexp.MustCompile(`[^a-z0-9-]`)
+	return re.ReplaceAllString(text, "")
+}
+
 // GetFilePath returns the resolved file path for file watching
 func (s *MarkdownSource) GetFilePath() string {
 	return s.resolvePath()
@@ -460,9 +496,9 @@ func (s *MarkdownSource) createConflictCopy(originalPath string) (string, error)
 // findSectionBoundaries finds where the section starts and ends
 func (s *MarkdownSource) findSectionBoundaries(content string) (start, end, headerLevel int, err error) {
 	anchorName := strings.TrimPrefix(s.anchor, "#")
-	headerPattern := regexp.MustCompile(`(?m)^(#{1,6})\s+(.+?)\s*\{#` + regexp.QuoteMeta(anchorName) + `\}\s*$`)
 
-	matches := headerPattern.FindStringSubmatchIndex(content)
+	// Use the same header finding logic as parseSection
+	matches := s.findSectionHeader(content, anchorName)
 	if matches == nil {
 		return 0, 0, 0, fmt.Errorf("section %q not found", s.anchor)
 	}
