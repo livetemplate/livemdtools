@@ -201,37 +201,6 @@ func (h *WebSocketHandler) compileServerBlocks() {
 					}
 				}
 			}
-		} else if block.Metadata["auto-persist"] == "true" {
-			// Auto-persist block - use sqlite source (no compilation needed!)
-			tableName := block.Metadata["lvt-persist"]
-			if tableName == "" {
-				tableName = blockID // Use block ID as table name if not specified
-			}
-			dbPath := filepath.Join(h.rootDir, "site.sqlite")
-			if h.debug {
-				log.Printf("[WS] Creating runtime state for auto-persist block: %s (table: %s, db: %s)", blockID, tableName, dbPath)
-			}
-
-			// Create a sqlite source config
-			readonly := false
-			srcCfg := config.SourceConfig{
-				Type:     "sqlite",
-				DB:       dbPath,
-				Table:    tableName,
-				Readonly: &readonly,
-			}
-
-			// Capture variables for closure
-			srcName, cfg, rootDir := tableName, srcCfg, h.rootDir
-			factory = func() compiler.Store {
-				state, err := runtime.NewGenericState(srcName, cfg, rootDir, "")
-				if err != nil {
-					log.Printf("[WS] Failed to create runtime state for auto-persist %s: %v", srcName, err)
-					return nil
-				}
-				return state
-			}
-			err = nil
 		} else {
 			// Regular server block - deprecated, requires Go toolchain
 			// TODO: Remove this path once migration is complete
