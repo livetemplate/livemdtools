@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/config"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // TestLvtSourceExec tests the lvt-source functionality with exec type

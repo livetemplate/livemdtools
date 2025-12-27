@@ -1,8 +1,8 @@
 ---
-name: livemdtools
+name: tinkerdown
 description: Build single-file web apps in markdown. No React. No build step. Just run.
 triggers:
-  - livemdtools
+  - tinkerdown
   - single-file app
   - markdown app
   - no-build app
@@ -11,19 +11,19 @@ triggers:
   - one-file app
 ---
 
-# Livemdtools: One-File AI App Builder
+# Tinkerdown: One-File AI App Builder
 
 Build working web apps in a single markdown file. No React. No build step. Just run.
 
-## When to Use Livemdtools
+## When to Use Tinkerdown
 
-Use Livemdtools for:
+Use Tinkerdown for:
 - **Internal tools** - Admin dashboards, data viewers, CRUD apps
 - **Prototypes** - Quick interactive demos
 - **Personal utilities** - Task managers, trackers, simple apps
 - **Data displays** - Tables, forms, dashboards connected to databases/APIs
 
-**Don't use Livemdtools for:**
+**Don't use Tinkerdown for:**
 - Public-facing marketing sites (use static site generators)
 - Apps requiring complex client-side state (use React/Vue)
 - Real-time multiplayer games
@@ -69,7 +69,7 @@ title: "My App"
 ### 2. Run it
 
 ```bash
-livemdtools serve myapp.md
+tinkerdown serve myapp.md
 ```
 
 ### 3. Open in browser
@@ -85,7 +85,7 @@ Navigate to `http://localhost:3000` - your app is running!
 | `lvt-click` | Triggers server action on click |
 | `lvt-submit` | Handles form submission |
 | `lvt-data-*` | Passes data with actions (e.g., `lvt-data-id="123"`) |
-| frontmatter sources | Define data sources in frontmatter - no `livemdtools.yaml` needed! |
+| frontmatter sources | Define data sources in frontmatter - no `tinkerdown.yaml` needed! |
 
 ## Reference
 

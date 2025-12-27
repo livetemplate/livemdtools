@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // createTempMarkdownExample creates a temporary copy of the markdown-data-todo example

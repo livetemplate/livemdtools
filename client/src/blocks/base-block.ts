@@ -23,7 +23,7 @@ export abstract class BaseBlock {
   }
 
   /**
-   * Initialize the block (called by LivemdtoolsClient)
+   * Initialize the block (called by TinkerdownClient)
    */
   abstract initialize(): void;
 

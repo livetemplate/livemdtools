@@ -12,7 +12,7 @@ A data dashboard demonstrating `lvt-source` with REST API and table display.
 - Refresh button
 - **No CSS classes needed** - PicoCSS styles semantic HTML automatically
 
-**Configuration (livemdtools.yaml):**
+**Configuration (tinkerdown.yaml):**
 ```yaml
 title: "User Dashboard"
 
@@ -84,7 +84,7 @@ sources:
 
 ## How It Works
 
-1. **Source configuration** - `livemdtools.yaml` defines the REST API endpoint
+1. **Source configuration** - `tinkerdown.yaml` defines the REST API endpoint
 2. **Data binding** - `lvt-source="users"` fetches data and makes it available as `.Data`
 3. **Template rendering** - Use `{{range .Data}}` to iterate over results
 4. **Refresh** - `lvt-click="Refresh"` reloads data from the API

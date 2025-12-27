@@ -1,14 +1,14 @@
-# Livemdtools
+# Tinkerdown
 
 **Interactive documentation made easy**
 
-Livemdtools is a CLI tool for creating interactive tutorials, guides, and playgrounds using markdown files with embedded executable code blocks. Built on [LiveTemplate](https://github.com/livetemplate/livetemplate).
+Tinkerdown is a CLI tool for creating interactive tutorials, guides, and playgrounds using markdown files with embedded executable code blocks. Built on [LiveTemplate](https://github.com/livetemplate/livetemplate).
 
 ## Status
 
 🚧 **Early Development** - Not yet ready for use
 
-See [PROGRESS.md](PROGRESS.md) for implementation status and [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdtools-design.md) for complete design.
+See [PROGRESS.md](PROGRESS.md) for implementation status and [docs/plans/2025-11-12-tinkerdown-design.md](docs/plans/2025-11-12-tinkerdown-design.md) for complete design.
 
 ## Vision
 
@@ -59,7 +59,7 @@ func main() {
 Then run:
 
 ```bash
-livemdtools serve
+tinkerdown serve
 ```
 
 And get a fully interactive tutorial website!
@@ -70,7 +70,7 @@ And get a fully interactive tutorial website!
 - ⚡ **Real-time**: Interactive demos powered by LiveTemplate's reactivity
 - 🎮 **Playgrounds**: Editable Go code that runs in browser via WebAssembly
 - 🔒 **Secure**: Student code never touches server (WASM sandbox)
-- 🚀 **Zero config**: `livemdtools serve` just works
+- 🚀 **Zero config**: `tinkerdown serve` just works
 - 🎨 **Beautiful**: Built-in theme, looks professional out of the box
 - 🔥 **Hot reload**: Changes reflect immediately during development
 
@@ -82,10 +82,10 @@ And get a fully interactive tutorial website!
 
 ## Configuration
 
-Livemdtools can be customized using a `livemdtools.yaml` file in your project directory:
+Tinkerdown can be customized using a `tinkerdown.yaml` file in your project directory:
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 title: "My Tutorial"
 description: "Learn something awesome"
 
@@ -115,15 +115,15 @@ ignore:
 CLI flags override configuration file values:
 
 ```bash
-livemdtools serve --port 3000 --watch     # Override port and enable watch
-livemdtools serve --config custom.yaml    # Use custom config file
+tinkerdown serve --port 3000 --watch     # Override port and enable watch
+tinkerdown serve --config custom.yaml    # Use custom config file
 ```
 
-See `livemdtools.yaml.example` for all available options.
+See `tinkerdown.yaml.example` for all available options.
 
 ### Frontmatter Configuration (Optional)
 
-For single-file apps, you can define configuration directly in the markdown frontmatter, making `livemdtools.yaml` optional:
+For single-file apps, you can define configuration directly in the markdown frontmatter, making `tinkerdown.yaml` optional:
 
 ```markdown
 ---
@@ -163,14 +163,14 @@ features:
 | `blocks` | Code block settings (auto_id, id_format, show_line_numbers) |
 | `features` | Feature flags (hot_reload) |
 
-Frontmatter config takes precedence over `livemdtools.yaml` when both exist.
+Frontmatter config takes precedence over `tinkerdown.yaml` when both exist.
 
 ## Development
 
 ```bash
 # Clone
-git clone https://github.com/livetemplate/livemdtools.git
-cd livemdtools
+git clone https://github.com/livetemplate/tinkerdown.git
+cd tinkerdown
 
 # Install dependencies
 go mod download
@@ -179,12 +179,12 @@ go mod download
 go test ./...
 
 # Build
-go build -o livemdtools ./cmd/livemdtools
+go build -o tinkerdown ./cmd/tinkerdown
 ```
 
 ## Documentation
 
-- [Design Document](docs/plans/2025-11-12-livemdtools-design.md) - Complete architecture and design decisions
+- [Design Document](docs/plans/2025-11-12-tinkerdown-design.md) - Complete architecture and design decisions
 - [Progress Tracker](PROGRESS.md) - Implementation status and roadmap
 
 ## License

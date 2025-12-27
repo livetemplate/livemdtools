@@ -1,9 +1,9 @@
-# Makefile for livemdtools CLI
+# Makefile for tinkerdown CLI
 
 # Variables
-BINARY_NAME=livemdtools
+BINARY_NAME=tinkerdown
 INSTALL_PATH=$(HOME)/go/bin
-CMD_PATH=./cmd/livemdtools
+CMD_PATH=./cmd/tinkerdown
 GO=go
 GOFLAGS=-ldflags="-s -w"
 
@@ -25,25 +25,25 @@ build-client: ## Build the TypeScript client
 	@cd client && npm run build
 	@echo "Copying client assets..."
 	@mkdir -p internal/assets/client
-	@cp client/dist/livemdtools-client.browser.* internal/assets/client/
+	@cp client/dist/tinkerdown-client.browser.* internal/assets/client/
 	@echo "Client build complete"
 
 .PHONY: build
-build: build-client ## Build the livemdtools binary
+build: build-client ## Build the tinkerdown binary
 	@echo "Building $(BINARY_NAME)..."
 	$(GO) build $(LDFLAGS) -o $(BINARY_NAME) $(CMD_PATH)
 	@echo "Build complete: ./$(BINARY_NAME)"
 
 .PHONY: install
-install: build ## Build and install livemdtools to ~/go/bin
+install: build ## Build and install tinkerdown to ~/go/bin
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_PATH)..."
 	@mkdir -p $(INSTALL_PATH)
 	@install -m 755 $(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
 	@echo "Installation complete: $(INSTALL_PATH)/$(BINARY_NAME)"
-	@echo "Run 'livemdtools version' to verify"
+	@echo "Run 'tinkerdown version' to verify"
 
 .PHONY: uninstall
-uninstall: ## Remove livemdtools from ~/go/bin
+uninstall: ## Remove tinkerdown from ~/go/bin
 	@echo "Uninstalling $(BINARY_NAME) from $(INSTALL_PATH)..."
 	@rm -f $(INSTALL_PATH)/$(BINARY_NAME)
 	@echo "Uninstall complete"

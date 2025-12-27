@@ -14,9 +14,9 @@ Get Livemdtools up and running on your machine.
 ## Install from Source
 
 ```bash
-git clone https://github.com/livetemplate/livemdtools
-cd livemdtools
-go install ./cmd/livemdtools
+git clone https://github.com/livetemplate/tinkerdown
+cd tinkerdown
+go install ./cmd/tinkerdown
 ```
 
 ## Verify Installation
@@ -24,7 +24,7 @@ go install ./cmd/livemdtools
 Check that Livemdtools is installed correctly:
 
 ```bash
-livemdtools --version
+tinkerdown --version
 ```
 
 ## Create Your First Page
@@ -40,7 +40,7 @@ echo "# Hello Livemdtools" > index.md
 Start the development server:
 
 ```bash
-livemdtools serve .
+tinkerdown serve .
 ```
 
 Open your browser to `http://localhost:8080` and you should see your page!

@@ -15,7 +15,7 @@ var templatesFS embed.FS
 // NewCommand implements the new command.
 func NewCommand(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("project name required\n\nUsage: livemdtools new <project-name>")
+		return fmt.Errorf("project name required\n\nUsage: tinkerdown new <project-name>")
 	}
 
 	projectName := args[0]
@@ -94,7 +94,7 @@ func NewCommand(args []string) error {
 	fmt.Printf("   └── README.md\n\n")
 	fmt.Printf("🚀 Next steps:\n")
 	fmt.Printf("   cd %s\n", projectName)
-	fmt.Printf("   livemdtools serve\n\n")
+	fmt.Printf("   tinkerdown serve\n\n")
 	fmt.Printf("📚 Your tutorial will be available at http://localhost:8080\n")
 
 	return nil

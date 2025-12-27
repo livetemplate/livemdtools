@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/livetemplate/livemdtools"
-	"github.com/livetemplate/livemdtools/internal/config"
-	livemdtoolsplugin "github.com/livetemplate/livemdtools/plugin"
+	"github.com/livetemplate/tinkerdown"
+	"github.com/livetemplate/tinkerdown/internal/config"
+	tinkerdownplugin "github.com/livetemplate/tinkerdown/plugin"
 )
 
 // Store is a local interface for state objects that can handle actions.
@@ -33,7 +33,7 @@ type ServerBlockCompiler struct {
 // NewServerBlockCompiler creates a new compiler for server blocks
 func NewServerBlockCompiler(debug bool) *ServerBlockCompiler {
 	// Create temp directory for build artifacts
-	buildDir := filepath.Join(os.TempDir(), "livemdtools-builds")
+	buildDir := filepath.Join(os.TempDir(), "tinkerdown-builds")
 	os.MkdirAll(buildDir, 0755)
 
 	return &ServerBlockCompiler{
@@ -43,7 +43,7 @@ func NewServerBlockCompiler(debug bool) *ServerBlockCompiler {
 }
 
 // CompileServerBlock compiles a server block to a Go plugin and returns a state factory function
-func (c *ServerBlockCompiler) CompileServerBlock(block *livemdtools.ServerBlock) (func() Store, error) {
+func (c *ServerBlockCompiler) CompileServerBlock(block *tinkerdown.ServerBlock) (func() Store, error) {
 	if c.debug {
 		fmt.Printf("[Compiler] Compiling server block: %s\n", block.ID)
 		fmt.Printf("[Compiler] Block content length: %d bytes\n", len(block.Content))
@@ -62,29 +62,29 @@ func (c *ServerBlockCompiler) CompileServerBlock(block *livemdtools.ServerBlock)
 		return nil, fmt.Errorf("failed to write source file: %w", err)
 	}
 
-	// Copy go.mod and go.sum from livemdtools to ensure identical dependencies
-	livemdtoolsDir := c.findLivemdtoolsModule()
+	// Copy go.mod and go.sum from tinkerdown to ensure identical dependencies
+	tinkerdownDir := c.findTinkerdownModule()
 
-	// Read livemdtools's go.mod
-	livemdtoolsGoMod, err := os.ReadFile(filepath.Join(livemdtoolsDir, "go.mod"))
+	// Read tinkerdown's go.mod
+	tinkerdownGoMod, err := os.ReadFile(filepath.Join(tinkerdownDir, "go.mod"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to read livemdtools go.mod: %w", err)
+		return nil, fmt.Errorf("failed to read tinkerdown go.mod: %w", err)
 	}
 
-	// Read livemdtools's go.sum
-	livemdtoolsGoSum, err := os.ReadFile(filepath.Join(livemdtoolsDir, "go.sum"))
+	// Read tinkerdown's go.sum
+	tinkerdownGoSum, err := os.ReadFile(filepath.Join(tinkerdownDir, "go.sum"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to read livemdtools go.sum: %w", err)
+		return nil, fmt.Errorf("failed to read tinkerdown go.sum: %w", err)
 	}
 
 	// Copy go.sum as-is
 	goSumFile := filepath.Join(pluginDir, "go.sum")
-	if err := os.WriteFile(goSumFile, livemdtoolsGoSum, 0644); err != nil {
+	if err := os.WriteFile(goSumFile, tinkerdownGoSum, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write go.sum: %w", err)
 	}
 
 	// Update module name in go.mod but keep all dependencies
-	lines := strings.Split(string(livemdtoolsGoMod), "\n")
+	lines := strings.Split(string(tinkerdownGoMod), "\n")
 	if len(lines) > 0 {
 		lines[0] = "module " + block.ID // Replace module name
 	}
@@ -228,7 +228,7 @@ func (c *ServerBlockCompiler) CompileServerBlock(block *livemdtools.ServerBlock)
 	}
 
 	if c.debug {
-		fmt.Printf("[Compiler] Copied go.mod and go.sum from livemdtools\n")
+		fmt.Printf("[Compiler] Copied go.mod and go.sum from tinkerdown\n")
 		fmt.Printf("[Compiler] Plugin will use same livetemplate version as main binary\n")
 	}
 
@@ -265,7 +265,7 @@ func (c *ServerBlockCompiler) CompileServerBlock(block *livemdtools.ServerBlock)
 }
 
 // generatePluginCode wraps the server block code in RPC plugin boilerplate
-func (c *ServerBlockCompiler) generatePluginCode(block *livemdtools.ServerBlock) string {
+func (c *ServerBlockCompiler) generatePluginCode(block *tinkerdown.ServerBlock) string {
 	// Extract the package declaration and imports from the block content
 	lines := strings.Split(block.Content, "\n")
 	var imports []string
@@ -325,7 +325,7 @@ func (c *ServerBlockCompiler) generatePluginCode(block *livemdtools.ServerBlock)
 	code.WriteString("\t\"strings\"\n")
 	code.WriteString("\t\"github.com/hashicorp/go-plugin\"\n")
 	code.WriteString("\t\"github.com/livetemplate/livetemplate\"\n")
-	code.WriteString("\tlivemdtoolsplugin \"github.com/livetemplate/livemdtools/plugin\"\n")
+	code.WriteString("\ttinkerdownplugin \"github.com/livetemplate/tinkerdown/plugin\"\n")
 
 	// Add user imports
 	for _, imp := range imports {
@@ -345,7 +345,7 @@ func (c *ServerBlockCompiler) generatePluginCode(block *livemdtools.ServerBlock)
 		}
 		// Skip duplicates of what we already added (but keep components imports!)
 		if strings.Contains(imp, "livetemplate/livetemplate") ||
-			strings.Contains(imp, "livetemplate/livemdtools") ||
+			strings.Contains(imp, "livetemplate/tinkerdown") ||
 			strings.Contains(imp, "go-plugin") {
 			continue
 		}
@@ -439,9 +439,9 @@ func dispatchAction(state interface{}, action string, ctx *livetemplate.Context)
 
 func main() {
 	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: livemdtoolsplugin.Handshake,
+		HandshakeConfig: tinkerdownplugin.Handshake,
 		Plugins: map[string]plugin.Plugin{
-			"state": &livemdtoolsplugin.StateRPCPlugin{Impl: NewStatePluginImpl()},
+			"state": &tinkerdownplugin.StateRPCPlugin{Impl: NewStatePluginImpl()},
 		},
 	})
 }
@@ -547,8 +547,8 @@ func (c *ServerBlockCompiler) findGoWorkspace() string {
 	return ""
 }
 
-// findLivemdtoolsModule searches upward from current directory for livemdtools's go.mod
-func (c *ServerBlockCompiler) findLivemdtoolsModule() string {
+// findTinkerdownModule searches upward from current directory for tinkerdown's go.mod
+func (c *ServerBlockCompiler) findTinkerdownModule() string {
 	// Start from current working directory
 	dir, err := os.Getwd()
 	if err != nil {
@@ -558,15 +558,15 @@ func (c *ServerBlockCompiler) findLivemdtoolsModule() string {
 		return "."
 	}
 
-	// Search upward for go.mod containing livemdtools module
+	// Search upward for go.mod containing tinkerdown module
 	for {
 		modPath := filepath.Join(dir, "go.mod")
 		if _, err := os.Stat(modPath); err == nil {
-			// Check if this is the livemdtools module
+			// Check if this is the tinkerdown module
 			content, err := os.ReadFile(modPath)
-			if err == nil && strings.Contains(string(content), "module github.com/livetemplate/livemdtools") {
+			if err == nil && strings.Contains(string(content), "module github.com/livetemplate/tinkerdown") {
 				if c.debug {
-					fmt.Printf("[Compiler] Found livemdtools module at: %s\n", dir)
+					fmt.Printf("[Compiler] Found tinkerdown module at: %s\n", dir)
 				}
 				return dir
 			}
@@ -583,7 +583,7 @@ func (c *ServerBlockCompiler) findLivemdtoolsModule() string {
 
 	// Fallback to current directory
 	if c.debug {
-		fmt.Printf("[Compiler] Could not find livemdtools go.mod, using current directory\n")
+		fmt.Printf("[Compiler] Could not find tinkerdown go.mod, using current directory\n")
 	}
 	return "."
 }
@@ -592,8 +592,8 @@ func (c *ServerBlockCompiler) findLivemdtoolsModule() string {
 func (c *ServerBlockCompiler) createRPCClient(pluginPath string, blockID string) Store {
 	// Create an exec.Command to start the plugin
 	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig: livemdtoolsplugin.Handshake,
-		Plugins:         livemdtoolsplugin.PluginMap,
+		HandshakeConfig: tinkerdownplugin.Handshake,
+		Plugins:         tinkerdownplugin.PluginMap,
 		Cmd:             exec.Command(pluginPath),
 		AllowedProtocols: []plugin.Protocol{
 			plugin.ProtocolNetRPC,
@@ -621,7 +621,7 @@ func (c *ServerBlockCompiler) createRPCClient(pluginPath string, blockID string)
 	}
 
 	// Cast to StatePlugin interface
-	statePlugin := raw.(livemdtoolsplugin.StatePlugin)
+	statePlugin := raw.(tinkerdownplugin.StatePlugin)
 
 	// Return an adapter that implements Store interface
 	return &rpcStoreAdapter{
@@ -633,7 +633,7 @@ func (c *ServerBlockCompiler) createRPCClient(pluginPath string, blockID string)
 
 // rpcStoreAdapter adapts the RPC plugin to be used with livetemplate's method dispatch
 type rpcStoreAdapter struct {
-	plugin livemdtoolsplugin.StatePlugin
+	plugin tinkerdownplugin.StatePlugin
 	client *plugin.Client
 	debug  bool
 }
@@ -817,7 +817,7 @@ func (c *ServerBlockCompiler) CompileAutoPersist(blockID string, lvtContent stri
 	generatedCode := GenerateAutoPersistCode(config, siteDBPath)
 
 	// Create a virtual ServerBlock with the generated code
-	block := &livemdtools.ServerBlock{
+	block := &tinkerdown.ServerBlock{
 		ID:       blockID,
 		Language: "go",
 		Content:  generatedCode,
@@ -851,7 +851,7 @@ func (c *ServerBlockCompiler) CompileLvtSource(blockID string, sourceName string
 
 	// Create a synthetic server block with the generated code
 	// Preserve all metadata from the original block
-	block := &livemdtools.ServerBlock{
+	block := &tinkerdown.ServerBlock{
 		ID:       blockID,
 		Language: "go",
 		Content:  generatedCode,

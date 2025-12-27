@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/tinkerdown"
 )
 
 //go:embed playground.html
@@ -21,7 +21,7 @@ var playgroundHTML embed.FS
 // PlaygroundSession represents an active playground session.
 type PlaygroundSession struct {
 	ID        string
-	Page      *livemdtools.Page
+	Page      *tinkerdown.Page
 	Markdown  string
 	CreatedAt time.Time
 }
@@ -120,7 +120,7 @@ func (h *PlaygroundHandler) HandleRender(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Parse the markdown
-	page, err := livemdtools.ParseString(req.Markdown)
+	page, err := tinkerdown.ParseString(req.Markdown)
 	if err != nil {
 		h.jsonError(w, fmt.Sprintf("Failed to parse markdown: %v", err), http.StatusBadRequest)
 		return
@@ -197,7 +197,7 @@ func (h *PlaygroundHandler) HandlePreviewWS(w http.ResponseWriter, r *http.Reque
 }
 
 // renderPage renders a page to HTML using the server's rendering logic.
-func (h *PlaygroundHandler) renderPage(page *livemdtools.Page, host string) string {
+func (h *PlaygroundHandler) renderPage(page *tinkerdown.Page, host string) string {
 	// Use the server's renderPage method for consistent output
 	return h.server.renderPage(page, "/playground/preview", host)
 }

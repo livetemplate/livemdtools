@@ -1,19 +1,19 @@
-# Livemdtools Implementation Progress
+# Tinkerdown Implementation Progress
 
 **Last Updated**: 2025-11-15
 
 ## Project Overview
 
-Livemdtools is a CLI tool for creating interactive documentation (tutorials, guides, playgrounds) using markdown files with embedded executable code blocks, powered by livetemplate.
+Tinkerdown is a CLI tool for creating interactive documentation (tutorials, guides, playgrounds) using markdown files with embedded executable code blocks, powered by livetemplate.
 
 ## Design Document
 
-See [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdtools-design.md) for complete design.
+See [docs/plans/2025-11-12-tinkerdown-design.md](docs/plans/2025-11-12-tinkerdown-design.md) for complete design.
 
 ## Implementation Status
 
 ### Phase 1: Project Setup ✅
-- [x] Create GitHub repository (livetemplate/livemdtools)
+- [x] Create GitHub repository (livetemplate/tinkerdown)
 - [x] Initialize Go module
 - [x] Create directory structure
 - [x] Write progress tracker
@@ -65,11 +65,11 @@ See [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdto
   - [x] Helpful suggestions (did you mean?)
   - [x] Validation command for early error detection
 - [ ] Config file support (deferred to future)
-  - [ ] Parse livemdtools.yaml
+  - [ ] Parse tinkerdown.yaml
   - [ ] Apply configuration
 
 ### Phase 4: Client Runtime 🖥️ ✅
-- [x] Core client (`@livetemplate/livemdtools-client`)
+- [x] Core client (`@livetemplate/tinkerdown-client`)
   - [x] Separate package (not extending core livetemplate-client)
   - [x] Message router (multiplex by blockID)
   - [x] Persistence manager (localStorage)
@@ -143,7 +143,7 @@ See [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdto
 
 **Session 2 (2025-11-14)**: Phase 4 - Client Runtime ✅
 - [x] Research livetemplate-client architecture
-- [x] Design separate @livetemplate/livemdtools-client package
+- [x] Design separate @livetemplate/tinkerdown-client package
 - [x] Implement TypeScript client with full Phase 4 features
 - [x] Integrate with Go server and asset embedding
 - [x] Build and test compilation
@@ -195,7 +195,7 @@ See [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdto
 ### Key Design Decisions
 - **Dual execution model**: Author code runs on server (trusted), student code in browser (WASM, sandboxed)
 - **Multiplexed WebSocket**: Single connection for all blocks, messages tagged by blockID
-- **CLI-focused**: Not a library - `livemdtools serve` is the primary interface
+- **CLI-focused**: Not a library - `tinkerdown serve` is the primary interface
 - **Zero config**: Built-in theme, auto-discovery, works out of the box
 - **Hybrid architecture**: Static markdown cached as HTML, code blocks are dynamic livetemplate components
 
@@ -208,7 +208,7 @@ See [docs/plans/2025-11-12-livemdtools-design.md](docs/plans/2025-11-12-livemdto
 - TinyGo - For WASM compilation (server-side endpoint needed)
 
 ### Architecture Decisions Made
-- ✅ **Client package**: Separate `@livetemplate/livemdtools-client` package, not extending core client
+- ✅ **Client package**: Separate `@livetemplate/tinkerdown-client` package, not extending core client
 - ✅ **Monaco vs textarea**: Using Monaco for enhanced developer experience
 - ✅ **WASM compilation**: Server-side approach (simpler MVP), client-side deferred
 - ✅ **Syntax highlighting**: Monaco handles this on client, Chroma deferred

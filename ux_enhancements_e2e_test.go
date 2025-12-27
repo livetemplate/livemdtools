@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // TestUXEnhancements verifies the Phase 4 UX improvements

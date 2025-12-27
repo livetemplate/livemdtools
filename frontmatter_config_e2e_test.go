@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // TestFrontmatterSources tests that sources defined in markdown frontmatter work correctly

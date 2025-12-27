@@ -13,7 +13,7 @@ An inventory system demonstrating PostgreSQL integration with `lvt-source`.
 - Conditional styling for low stock
 - **No CSS classes needed** - PicoCSS styles semantic HTML automatically
 
-**Configuration (livemdtools.yaml):**
+**Configuration (tinkerdown.yaml):**
 ```yaml
 title: "Inventory Manager"
 
@@ -89,7 +89,7 @@ export DATABASE_URL="postgres://user:pass@localhost:5432/inventory"
 
 ## How It Works
 
-1. **PostgreSQL source** - Define query in `livemdtools.yaml`, reference with `lvt-source`
+1. **PostgreSQL source** - Define query in `tinkerdown.yaml`, reference with `lvt-source`
 2. **Number inputs** - `type="number"` with `min`, `step` attributes
 3. **Low stock warning** - Conditional styling with `{{if lt .Quantity 10}}` using `<mark>` tag
 4. **CRUD** - `lvt-persist` auto-generates Save/Delete actions

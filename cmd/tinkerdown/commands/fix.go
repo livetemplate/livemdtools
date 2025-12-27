@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/tinkerdown"
 )
 
 // FixCommand implements the fix command to auto-fix common issues.
@@ -36,9 +36,9 @@ func FixCommand(args []string) error {
 	}
 
 	if dryRun {
-		fmt.Printf("🔍 Checking livemdtools files in: %s (dry-run mode)\n\n", absDir)
+		fmt.Printf("🔍 Checking tinkerdown files in: %s (dry-run mode)\n\n", absDir)
 	} else {
-		fmt.Printf("🔧 Fixing livemdtools files in: %s\n\n", absDir)
+		fmt.Printf("🔧 Fixing tinkerdown files in: %s\n\n", absDir)
 	}
 
 	var totalFiles int
@@ -211,7 +211,7 @@ func fixFile(path string, dryRun bool) ([]string, error) {
 		}
 
 		// Try to parse the fixed content
-		_, err := livemdtools.ParseFile(tmpFile)
+		_, err := tinkerdown.ParseFile(tmpFile)
 		os.Remove(tmpFile) // Clean up temp file
 
 		if err != nil {

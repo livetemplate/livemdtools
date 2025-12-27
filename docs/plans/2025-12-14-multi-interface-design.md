@@ -1,11 +1,11 @@
-# Multi-Interface Livemdtools Design
+# Multi-Interface Tinkerdown Design
 
 **Date:** 2025-12-14
 **Status:** Design Complete
 
 ## Overview
 
-Extend Livemdtools so the same markdown file can power multiple interfaces beyond the web browser: CLI, HTTP API, and future chat bots (Slack, Discord, GitHub, Telegram).
+Extend Tinkerdown so the same markdown file can power multiple interfaces beyond the web browser: CLI, HTTP API, and future chat bots (Slack, Discord, GitHub, Telegram).
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -56,7 +56,7 @@ Extend Livemdtools so the same markdown file can power multiple interfaces beyon
 ```
 myapp/
   app.md              # State + Actions + Web View (required)
-  livemdtools.yaml       # Config: sources, auth, etc. (optional)
+  tinkerdown.yaml       # Config: sources, auth, etc. (optional)
 ```
 
 ### With interface overrides (optional)
@@ -66,7 +66,7 @@ myapp/
   app.md              # State + Actions + Web View
   app.cli.md          # CLI-specific output formatting (optional)
   app.slack.md        # Slack Block Kit templates (optional)
-  livemdtools.yaml
+  tinkerdown.yaml
 ```
 
 Override files contain **only view logic**, not state/actions:
@@ -84,7 +84,7 @@ Override files contain **only view logic**, not state/actions:
   delete <id>        Delete a todo
 ```
 
-When no override exists, Livemdtools **auto-generates** CLI output using conventions.
+When no override exists, Tinkerdown **auto-generates** CLI output using conventions.
 
 ---
 
@@ -137,7 +137,7 @@ curl -H "Authorization: Bearer <token>" ...
 ### Configuration
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 api:
   enabled: true
   auth: none | token | custom
@@ -214,7 +214,7 @@ livemdtools cli app.md add "Buy milk"
 ### Server mode (web UI, API, connected CLI)
 
 ```
-livemdtools serve app.md
+tinkerdown serve app.md
 
 Persistent process:
 - Web UI on :8080
@@ -239,14 +239,14 @@ livemdtools api app.md --port=9000
 ### Build standalone executable
 
 ```bash
-livemdtools build app.md -o myapp
+tinkerdown build app.md -o myapp
 # Produces: ./myapp (or myapp.exe on Windows)
 ```
 
 The compiled binary embeds:
 - The app.md file (and any override files)
-- livemdtools.yaml config
-- Livemdtools runtime
+- tinkerdown.yaml config
+- Tinkerdown runtime
 
 ### Usage after build
 
@@ -265,7 +265,7 @@ The compiled binary embeds:
 
 ```bash
 # Cross-compile for colleague on Windows
-GOOS=windows livemdtools build app.md -o myapp.exe
+GOOS=windows tinkerdown build app.md -o myapp.exe
 ```
 
 ---
@@ -339,7 +339,7 @@ Slack/Discord/Telegram message
 ### Configuration
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 bots:
   slack:
     enabled: true
@@ -352,7 +352,7 @@ bots:
 ### Run with bot enabled
 
 ```bash
-livemdtools serve app.md --bots    # Web UI + API + Slack bot
+tinkerdown serve app.md --bots    # Web UI + API + Slack bot
 livemdtools bot app.md             # Bot only (no web UI)
 ```
 
@@ -366,7 +366,7 @@ livemdtools bot app.md             # Bot only (no web UI)
 | **2. CLI Core** | One-shot commands, transient mode, state persistence | High |
 | **3. CLI Polish** | REPL mode, `--server` flag, grouped help | Medium |
 | **4. Convention Inference** | Auto-generate CLI from `lvt-*` attributes | Medium |
-| **5. Build Command** | `livemdtools build` to produce standalone binary | Medium |
+| **5. Build Command** | `tinkerdown build` to produce standalone binary | Medium |
 | **6. Bot Adapters** | Slack, Discord, GitHub, Telegram | Future |
 
 ---
@@ -393,6 +393,6 @@ livemdtools bot app.md             # Bot only (no web UI)
 | Parse `lvt-*` for CLI hints | ⏳ TODO | |
 | Generate help from HTML | ⏳ TODO | |
 | **Phase 5: Build Command** | | |
-| `livemdtools build` command | ⏳ TODO | |
+| `tinkerdown build` command | ⏳ TODO | |
 | Embed app.md in binary | ⏳ TODO | |
 | Cross-compilation support | ⏳ TODO | |

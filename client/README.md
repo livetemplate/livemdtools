@@ -13,7 +13,7 @@ Client runtime for interactive Livemdtools documentation.
 ## Installation
 
 ```bash
-npm install @livetemplate/livemdtools-client
+npm install @livetemplate/tinkerdown-client
 ```
 
 ## Usage
@@ -23,20 +23,20 @@ npm install @livetemplate/livemdtools-client
 The client auto-initializes when the script loads. Just include it in your HTML:
 
 ```html
-<script src="/assets/livemdtools-client.browser.js"></script>
+<script src="/assets/tinkerdown-client.browser.js"></script>
 ```
 
 Configure via meta tags:
 
 ```html
-<meta name="livemdtools-ws-url" content="ws://localhost:8080/ws">
-<meta name="livemdtools-debug" content="true">
+<meta name="tinkerdown-ws-url" content="ws://localhost:8080/ws">
+<meta name="tinkerdown-debug" content="true">
 ```
 
 ### Manual initialization
 
 ```typescript
-import { LivemdtoolsClient } from '@livetemplate/livemdtools-client';
+import { LivemdtoolsClient } from '@livetemplate/tinkerdown-client';
 
 const client = new LivemdtoolsClient({
   wsUrl: 'ws://localhost:8080/ws',
@@ -60,7 +60,7 @@ client.connect();
 Read-only code display (server-side code):
 
 ```html
-<div data-livemdtools-block
+<div data-tinkerdown-block
      data-block-id="counter-state"
      data-block-type="server"
      data-language="go"
@@ -74,7 +74,7 @@ Read-only code display (server-side code):
 Live reactive UI:
 
 ```html
-<div data-livemdtools-block
+<div data-tinkerdown-block
      data-block-id="counter-demo"
      data-block-type="interactive"
      data-state-ref="counter-state">
@@ -87,7 +87,7 @@ Live reactive UI:
 Editable code with execution:
 
 ```html
-<div data-livemdtools-block
+<div data-tinkerdown-block
      data-block-id="playground"
      data-block-type="wasm"
      data-language="go"

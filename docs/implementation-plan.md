@@ -1,4 +1,4 @@
-# Livemdtools PMF Implementation Plan
+# Tinkerdown PMF Implementation Plan
 
 ## Summary
 
@@ -39,10 +39,10 @@ This plan implements the "One-File AI App Builder" vision. See `docs/pmf-one-fil
 | Prompt library (10) | ⏳ TODO | Copy-Paste App Store |
 | **Phase 3: Future Features** | | |
 | `<lvt-auth>` | ⏳ TODO | Critical for enterprise |
-| `livemdtools build` | ⏳ TODO | Compile to binary |
+| `tinkerdown build` | ⏳ TODO | Compile to binary |
 | Headless API | ⏳ TODO | Auto-generated API |
 | `lvt-ai` components | ⏳ TODO | AI-native UI |
-| Livemdtools Hub | ⏳ TODO | Decentralized package manager |
+| Tinkerdown Hub | ⏳ TODO | Decentralized package manager |
 
 ## Implementation Details
 
@@ -186,7 +186,7 @@ The datatable component:
 
 **Usage:**
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: pg
@@ -226,7 +226,7 @@ Set `DATABASE_URL` environment variable or add `dsn` in options.
 
 **Usage:**
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: rest
@@ -268,7 +268,7 @@ URLs and header values support `$ENV_VAR` expansion.
 
 **Usage:**
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: json
@@ -298,13 +298,13 @@ Files are resolved relative to the site directory.
 
 **⚠️ SECURITY RULE: Never allow SQL/queries in HTML attributes.**
 
-All queries MUST be defined server-side in `livemdtools.yaml`. HTML only references sources by name. Non-SQL display params (columns, page-size) are allowed in HTML.
+All queries MUST be defined server-side in `tinkerdown.yaml`. HTML only references sources by name. Non-SQL display params (columns, page-size) are allowed in HTML.
 
 **Configuration modes** (ordered by simplicity):
 
 **Mode 1: HTML Attributes (Simplest - No Go Template Knowledge)**
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: pg
@@ -384,7 +384,7 @@ Paths are resolved relative to the including file's directory. Partials can have
 
 #### 2.1 LLM Testing
 
-Test if Claude/GPT-4 can reliably generate Livemdtools markdown:
+Test if Claude/GPT-4 can reliably generate Tinkerdown markdown:
 - Create test prompts for common use cases (admin panel, dashboard, form)
 - Verify generated output runs without errors
 - Measure success rate and identify failure patterns
@@ -428,10 +428,10 @@ Create 10 example prompts with working outputs:
 
 **Impact**: Critical for enterprise adoption.
 
-#### 3.2 Compile to Binary (`livemdtools build`)
+#### 3.2 Compile to Binary (`tinkerdown build`)
 
 ```bash
-livemdtools build my-app.md -o my-app
+tinkerdown build my-app.md -o my-app
 ```
 
 Embed markdown + assets into single executable. Double-click to run.
@@ -457,12 +457,12 @@ func (s *State) Refund(ctx Context) → POST /api/action/Refund
 
 **Impact**: High - unique differentiator vs Retool.
 
-#### 3.5 Livemdtools Hub
+#### 3.5 Tinkerdown Hub
 
 ```bash
 livemdtools run github.com/user/repo/postgres-admin.md
 ```
 
-Decentralized package manager for Livemdtools apps.
+Decentralized package manager for Tinkerdown apps.
 
 **Impact**: High - drives viral growth.

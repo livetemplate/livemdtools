@@ -1,4 +1,4 @@
-# Livemdtools Design Document
+# Tinkerdown Design Document
 
 **Date**: 2025-11-12
 **Status**: Draft
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Livemdtools is a CLI tool for creating interactive documentation - tutorials, guides, reference docs, and playgrounds - using markdown files with embedded executable code blocks. It builds on the livetemplate library to provide real-time reactivity and is designed for simplicity: authors write markdown, run `livemdtools serve`, and get a fully interactive tutorial website.
+Tinkerdown is a CLI tool for creating interactive documentation - tutorials, guides, reference docs, and playgrounds - using markdown files with embedded executable code blocks. It builds on the livetemplate library to provide real-time reactivity and is designed for simplicity: authors write markdown, run `tinkerdown serve`, and get a fully interactive tutorial website.
 
 **Core Innovation**: Dual execution model where trusted author code runs on the server powering interactive demos, while untrusted student code runs client-side in WASM sandboxes.
 
@@ -14,7 +14,7 @@ Livemdtools is a CLI tool for creating interactive documentation - tutorials, gu
 
 ### Primary Goals
 1. **Easy authoring**: Write tutorials in markdown with special code blocks
-2. **Zero config**: `livemdtools serve` on a directory of .md files just works
+2. **Zero config**: `tinkerdown serve` on a directory of .md files just works
 3. **Interactive demos**: Embed working apps (counters, forms, etc.) powered by server-side state
 4. **Student playgrounds**: Editable Go code that compiles and runs in the browser
 5. **Multi-session support**: Progress tracking and state persistence
@@ -58,13 +58,13 @@ Livemdtools is a CLI tool for creating interactive documentation - tutorials, gu
                      │
                      ▼
          ┌───────────────────────┐
-         │   livemdtools serve      │
+         │   tinkerdown serve      │
          │   (CLI Tool)          │
          └───────────┬───────────┘
                      │
                      ▼
 ┌────────────────────────────────────────────────────┐
-│              Livemdtools Server                        │
+│              Tinkerdown Server                        │
 │  ┌──────────────────────────────────────────────┐  │
 │  │  Markdown Parser                             │  │
 │  │  • Extracts code blocks                      │  │
@@ -92,7 +92,7 @@ Livemdtools is a CLI tool for creating interactive documentation - tutorials, gu
 ┌────────────────────────────────────────────────────┐
 │              Browser (Student)                      │
 │  ┌──────────────────────────────────────────────┐  │
-│  │  Livemdtools Client                             │  │
+│  │  Tinkerdown Client                             │  │
 │  │  • Message router (by blockID)               │  │
 │  │  • Persistence manager (localStorage)        │  │
 │  └────────┬─────────────────────┬─────────────┬─┘  │
@@ -270,7 +270,7 @@ func (p *Page) parseInteractiveBlock(md *MarkdownBlock) error {
 
 **Flow**:
 1. Author writes CounterState in `server readonly` block
-2. Livemdtools compiles it on startup
+2. Tinkerdown compiles it on startup
 3. Student clicks button in `lvt interactive` block
 4. Server executes CounterState.Change()
 5. Server sends tree diff back
@@ -301,7 +301,7 @@ func (p *Page) parseInteractiveBlock(md *MarkdownBlock) error {
 
 ```bash
 # Primary command: serve directory
-livemdtools serve [directory]
+tinkerdown serve [directory]
 
 # Create new tutorial
 livemdtools new <name>
@@ -335,9 +335,9 @@ Algorithm:
 Watch for changes:
 - .md file changes → Reparse and update page
 - _shared/*.go changes → Recompile shared state structs
-- livemdtools.yaml changes → Reload config
+- tinkerdown.yaml changes → Reload config
 
-#### Configuration (livemdtools.yaml)
+#### Configuration (tinkerdown.yaml)
 
 ```yaml
 # Optional - zero config by default
@@ -498,7 +498,7 @@ assets:
 ```go
 func TestCounterTutorial(t *testing.T) {
     ctx := setupTest(t)
-    srv := startLivemdtoolsServer("testdata/counter")
+    srv := startTinkerdownServer("testdata/counter")
     defer srv.Close()
 
     browser := chromedp.NewBrowser(ctx)
@@ -598,19 +598,19 @@ Suggestion: Check that you have a `server readonly` block with id="counter-state
 ### Development
 
 ```bash
-livemdtools serve
+tinkerdown serve
 ```
 
 ### Production
 
-**Option 1**: Run livemdtools server
+**Option 1**: Run tinkerdown server
 ```bash
-livemdtools serve --port 8080
+tinkerdown serve --port 8080
 ```
 
 **Option 2**: Static export (future)
 ```bash
-livemdtools build --output ./dist
+tinkerdown build --output ./dist
 ```
 
 Generates static HTML + JavaScript. WASM blocks still work, interactive blocks require server.
@@ -633,7 +633,7 @@ Generates static HTML + JavaScript. WASM blocks still work, interactive blocks r
 - Hot reload
 - Built-in theme
 
-**Deliverable**: `livemdtools serve` works, can view static tutorials
+**Deliverable**: `tinkerdown serve` works, can view static tutorials
 
 ### Phase 3: Client Runtime
 - Message router
@@ -697,7 +697,7 @@ Use both: server for readonly blocks, client for editable blocks
 
 ## Success Criteria
 
-1. ✅ `livemdtools serve` works on directory of .md files
+1. ✅ `tinkerdown serve` works on directory of .md files
 2. ✅ Interactive blocks update in real-time
 3. ✅ WASM blocks execute entirely client-side
 4. ✅ Zero config for basic use

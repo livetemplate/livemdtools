@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/tinkerdown"
 )
 
 // BlocksCommand implements the blocks command.
@@ -72,7 +72,7 @@ func BlocksCommand(args []string) error {
 		}
 
 		// Parse the file to get blocks
-		page, err := livemdtools.ParseFile(path)
+		page, err := tinkerdown.ParseFile(path)
 		if err != nil {
 			// Collect error but don't fail completely
 			fmt.Printf("⚠️  %s: Failed to parse: %v\n\n", relPath, err)
@@ -81,7 +81,7 @@ func BlocksCommand(args []string) error {
 
 		// Parse raw markdown to get code blocks with line numbers
 		content, _ := os.ReadFile(path)
-		_, codeBlocks, _, err := livemdtools.ParseMarkdown(content)
+		_, codeBlocks, _, err := tinkerdown.ParseMarkdown(content)
 		if err != nil {
 			return nil
 		}
@@ -137,8 +137,8 @@ func BlocksCommand(args []string) error {
 
 type fileBlockInfo struct {
 	file       string
-	page       *livemdtools.Page
-	codeBlocks []*livemdtools.CodeBlock
+	page       *tinkerdown.Page
+	codeBlocks []*tinkerdown.CodeBlock
 }
 
 func printBasicBlocks(fb fileBlockInfo) {
@@ -229,7 +229,7 @@ func printVerboseBlocks(fb fileBlockInfo) {
 }
 
 // getBlockIDFromCodeBlock returns the block ID (explicit or auto-generated)
-func getBlockIDFromCodeBlock(cb *livemdtools.CodeBlock, index int) string {
+func getBlockIDFromCodeBlock(cb *tinkerdown.CodeBlock, index int) string {
 	if id := cb.Metadata["id"]; id != "" {
 		return id
 	}

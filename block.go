@@ -1,4 +1,4 @@
-package livemdtools
+package tinkerdown
 
 import "github.com/livetemplate/livetemplate"
 

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools"
+	"github.com/livetemplate/tinkerdown"
 )
 
 // ValidateCommand implements the validate command.
@@ -33,7 +33,7 @@ func ValidateCommand(args []string) error {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	fmt.Printf("🔍 Validating livemdtools files in: %s\n\n", absDir)
+	fmt.Printf("🔍 Validating tinkerdown files in: %s\n\n", absDir)
 
 	// Discover and validate all markdown files
 	var totalFiles int
@@ -77,7 +77,7 @@ func ValidateCommand(args []string) error {
 		totalFiles++
 
 		// Validate the file by attempting to parse it
-		_, err = livemdtools.ParseFile(path)
+		_, err = tinkerdown.ParseFile(path)
 		if err != nil {
 			// Collect error
 			fileErrors = append(fileErrors, fileValidationError{

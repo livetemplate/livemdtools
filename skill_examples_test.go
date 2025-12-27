@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"os"

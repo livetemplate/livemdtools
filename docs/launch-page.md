@@ -1,4 +1,4 @@
-# Livemdtools
+# Tinkerdown
 
 ## AI builds tools in one file. No React. No build step. Just run.
 
@@ -26,7 +26,7 @@ Now you need to `npm install`, configure your environment, set up hosting, and d
 
 ### The Solution
 
-**Livemdtools outputs a single markdown file that just works.**
+**Tinkerdown outputs a single markdown file that just works.**
 
 ```markdown
 # Todo App
@@ -46,7 +46,7 @@ Now you need to `npm install`, configure your environment, set up hosting, and d
 **One file. 12 lines. Run it:**
 
 ```bash
-livemdtools serve todo.md
+tinkerdown serve todo.md
 ```
 
 **That's it.** No npm. No build. No deploy. It just works.
@@ -55,7 +55,7 @@ livemdtools serve todo.md
 
 ### How It Works
 
-| You Write | Livemdtools Handles |
+| You Write | Tinkerdown Handles |
 |-----------|------------------|
 | `lvt-persist="todos"` | Database table, CRUD operations, persistence |
 | `lvt-source="pg:users"` | PostgreSQL queries, real-time updates |
@@ -70,25 +70,25 @@ livemdtools serve todo.md
 
 ---
 
-### Why Livemdtools?
+### Why Tinkerdown?
 
-| | React Builders | Livemdtools |
+| | React Builders | Tinkerdown |
 |--|----------------|----------|
 | **Output** | 10+ files | 1 file |
 | **Build step** | Required | None |
 | **Hosting** | Required | Single binary |
 | **Time to working app** | Minutes | Seconds |
-| **Self-hosted** | Complex | `./livemdtools serve` |
+| **Self-hosted** | Complex | `./tinkerdown serve` |
 | **Cost** | $25-50/mo | Free & open source |
 
 ---
 
 ### Use Any Language
 
-Don't know Go? No problem. Livemdtools's "polyglot" mode lets you use **any language** as a data source:
+Don't know Go? No problem. Tinkerdown's "polyglot" mode lets you use **any language** as a data source:
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   sales:
     type: exec
@@ -134,7 +134,7 @@ echo '# Hello World
 ```' > hello.md
 
 # Run it
-livemdtools serve hello.md
+tinkerdown serve hello.md
 ```
 
 Open `http://localhost:8080` and you have a working app.
@@ -149,6 +149,6 @@ Open `http://localhost:8080` and you have a working app.
 
 ---
 
-*Livemdtools is open source (Apache 2.0). Built with Go.*
+*Tinkerdown is open source (Apache 2.0). Built with Go.*
 
-**Stop building React apps for simple tools. Just write a Livemdtools.**
+**Stop building React apps for simple tools. Just write a Tinkerdown.**

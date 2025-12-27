@@ -13,7 +13,7 @@ A status monitoring page demonstrating exec source for real-time system checks.
 - Auto-refresh capability
 - **No CSS classes needed** - PicoCSS styles semantic HTML automatically
 
-**Configuration (livemdtools.yaml):**
+**Configuration (tinkerdown.yaml):**
 ```yaml
 title: "Service Status"
 

@@ -38,6 +38,6 @@ testdata/tmp/
 *.sqlite
 .worktrees/
 
-livemdtools
-livemdtools-test
+/tinkerdown
+/tinkerdown-test
 .worktrees/

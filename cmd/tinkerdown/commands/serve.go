@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/livetemplate/livemdtools/internal/config"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // ServeCommand implements the serve command.

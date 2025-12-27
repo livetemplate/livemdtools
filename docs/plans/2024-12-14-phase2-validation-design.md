@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document defines the implementation plan for Phase 2 of the Livemdtools PMF strategy. The goal is to validate that LLMs can reliably generate working Livemdtools applications by creating comprehensive documentation and a "Copy-Paste App Store" of 10 example prompts.
+This document defines the implementation plan for Phase 2 of the Tinkerdown PMF strategy. The goal is to validate that LLMs can reliably generate working Tinkerdown applications by creating comprehensive documentation and a "Copy-Paste App Store" of 10 example prompts.
 
 ## Design Decisions
 
@@ -46,7 +46,7 @@ Create `docs/llms.txt` following the emerging LLMS.txt standard for AI-readable 
 ### 3. Golden File Tests
 
 Each example in `examples/` serves as a golden file:
-- Examples are complete, runnable Livemdtools apps
+- Examples are complete, runnable Tinkerdown apps
 - Validation script compiles each example and verifies it serves HTTP
 - CI runs validation on every commit
 
@@ -68,7 +68,7 @@ Entry point that Claude Code loads when skill is triggered.
 ```markdown
 ---
 name: livemdtools
-description: Build single-file web apps with Livemdtools
+description: Build single-file web apps with Tinkerdown
 triggers:
   - livemdtools
   - single-file app
@@ -76,13 +76,13 @@ triggers:
   - no-build app
 ---
 
-# Livemdtools Skill
+# Tinkerdown Skill
 
-Livemdtools is an AI app builder that outputs working apps in a single markdown file with no build step.
+Tinkerdown is an AI app builder that outputs working apps in a single markdown file with no build step.
 
 ## When to Use
 
-Use Livemdtools when building:
+Use Tinkerdown when building:
 - Internal tools
 - Admin dashboards
 - Data viewers
@@ -92,7 +92,7 @@ Use Livemdtools when building:
 ## Quick Start
 
 1. Create a `.md` file with frontmatter and server block
-2. Run `livemdtools serve myapp.md`
+2. Run `tinkerdown serve myapp.md`
 3. Open in browser
 
 ## Reference
@@ -135,7 +135,7 @@ Comprehensive API reference covering:
 Create `docs/llms.txt` for broader AI tool compatibility:
 
 ```
-# Livemdtools - One-File AI App Builder
+# Tinkerdown - One-File AI App Builder
 
 > Build working web apps in a single markdown file. No React. No build step.
 
@@ -156,7 +156,7 @@ Create `docs/llms.txt` for broader AI tool compatibility:
 
 `skills/livemdtools/scripts/validate.sh`:
 - Iterate through each example
-- Run `livemdtools serve` in background
+- Run `tinkerdown serve` in background
 - Verify HTTP 200 response
 - Check for JavaScript errors (optional: headless browser)
 - Report pass/fail

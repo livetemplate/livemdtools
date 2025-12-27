@@ -1,5 +1,5 @@
 /**
- * Core types for Livemdtools Client
+ * Core types for Tinkerdown Client
  */
 
 export type BlockType = "server" | "wasm" | "interactive" | "lvt";
@@ -28,7 +28,7 @@ export interface MessageEnvelope {
   execMeta?: ExecMeta;
 }
 
-export interface LivemdtoolsClientOptions {
+export interface TinkerdownClientOptions {
   wsUrl: string;
   debug?: boolean;
   persistence?: boolean;

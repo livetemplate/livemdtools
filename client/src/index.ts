@@ -1,9 +1,9 @@
 /**
- * Livemdtools Client - Interactive documentation runtime
- * @module @livetemplate/livemdtools-client
+ * Tinkerdown Client - Interactive documentation runtime
+ * @module @livetemplate/tinkerdown-client
  */
 
-export { LivemdtoolsClient } from "./livemdtools-client";
+export { TinkerdownClient } from "./tinkerdown-client";
 export { MessageRouter } from "./core/message-router";
 export { PersistenceManager } from "./core/persistence-manager";
 export { BaseBlock } from "./blocks/base-block";
@@ -20,7 +20,7 @@ export type {
   BlockType,
   BlockMetadata,
   MessageEnvelope,
-  LivemdtoolsClientOptions,
+  TinkerdownClientOptions,
   BlockConfig,
   WasmExecutionResult,
   EditorOptions,

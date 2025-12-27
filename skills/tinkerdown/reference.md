@@ -1,10 +1,10 @@
-# Livemdtools Reference
+# Tinkerdown Reference
 
-Complete API reference for building Livemdtools applications.
+Complete API reference for building Tinkerdown applications.
 
 ## File Structure
 
-A Livemdtools app is a markdown file with:
+A Tinkerdown app is a markdown file with:
 
 ```markdown
 ---
@@ -40,7 +40,7 @@ Regular markdown content...
 
 ### Frontmatter Sources (New!)
 
-You can define data sources directly in the frontmatter, making `livemdtools.yaml` optional for single-file apps:
+You can define data sources directly in the frontmatter, making `tinkerdown.yaml` optional for single-file apps:
 
 ```yaml
 ---
@@ -71,7 +71,7 @@ sources:
 - `pg` - PostgreSQL query (requires `query`, needs `DATABASE_URL` env var)
 - `exec` - Shell command (requires `cmd`)
 
-Frontmatter sources take precedence over `livemdtools.yaml` sources if both define the same name.
+Frontmatter sources take precedence over `tinkerdown.yaml` sources if both define the same name.
 
 ## lvt-* Attributes
 
@@ -168,7 +168,7 @@ This auto-generates:
 
 #### `lvt-source`
 
-Connect to external data. Source must be defined in `livemdtools.yaml`.
+Connect to external data. Source must be defined in `tinkerdown.yaml`.
 
 ```html
 <div lvt-source="users">
@@ -199,7 +199,7 @@ Connect to external data. Source must be defined in `livemdtools.yaml`.
 </select>
 ```
 
-## Source Configuration (livemdtools.yaml)
+## Source Configuration (tinkerdown.yaml)
 
 ### Exec Source (Run Scripts)
 
@@ -280,7 +280,7 @@ CSV is automatically parsed with headers as field names.
 
 ## Template Syntax
 
-Livemdtools uses Go templates.
+Tinkerdown uses Go templates.
 
 ### Variables
 
@@ -427,12 +427,12 @@ Create `_header.md`:
 
 ### Serve
 
-Run a Livemdtools application:
+Run a Tinkerdown application:
 
 ```bash
-livemdtools serve myapp.md           # Serve single file
-livemdtools serve ./myapp/           # Serve directory
-livemdtools serve . --port 8080      # Custom port
+tinkerdown serve myapp.md           # Serve single file
+tinkerdown serve ./myapp/           # Serve directory
+tinkerdown serve . --port 8080      # Custom port
 ```
 
 ### Build (Coming Soon)
@@ -440,7 +440,7 @@ livemdtools serve . --port 8080      # Custom port
 Compile to standalone binary:
 
 ```bash
-livemdtools build myapp.md -o myapp
+tinkerdown build myapp.md -o myapp
 ```
 
 ## Common Patterns
@@ -464,7 +464,7 @@ livemdtools build myapp.md -o myapp
 ### Data Table from API
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: rest

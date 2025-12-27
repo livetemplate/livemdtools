@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config represents the livemdtools configuration
+// Config represents the tinkerdown configuration
 type Config struct {
 	Title       string                  `yaml:"title"`
 	Description string                  `yaml:"description"`
@@ -161,17 +161,23 @@ func Load(configPath string) (*Config, error) {
 	return config, nil
 }
 
-// LoadFromDir looks for lmt.yaml or livemdtools.yaml in the given directory
-// lmt.yaml is checked first (preferred short form), then livemdtools.yaml
-// If neither is found, returns the default configuration
+// LoadFromDir looks for tinkerdown.yaml, lmt.yaml, or livemdtools.yaml in the given directory
+// tinkerdown.yaml is checked first, then lmt.yaml (short form), then livemdtools.yaml (legacy)
+// If none is found, returns the default configuration
 func LoadFromDir(dir string) (*Config, error) {
-	// Check for lmt.yaml first (short form)
+	// Check for tinkerdown.yaml first (new name)
+	tinkerdownPath := filepath.Join(dir, "tinkerdown.yaml")
+	if _, err := os.Stat(tinkerdownPath); err == nil {
+		return Load(tinkerdownPath)
+	}
+
+	// Check for lmt.yaml (short form)
 	lmtPath := filepath.Join(dir, "lmt.yaml")
 	if _, err := os.Stat(lmtPath); err == nil {
 		return Load(lmtPath)
 	}
 
-	// Check for livemdtools.yaml
+	// Check for livemdtools.yaml (legacy, backwards compatibility)
 	configPath := filepath.Join(dir, "livemdtools.yaml")
 	return Load(configPath)
 }

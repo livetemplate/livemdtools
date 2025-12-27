@@ -1,12 +1,12 @@
 # {{.Title}}
 
-A LiveTemplate tutorial project created with `livemdtools new`.
+A Tinkerdown tutorial project created with `tinkerdown new`.
 
 ## Getting Started
 
 1. **Start the development server:**
    ```bash
-   livemdtools serve {{.ProjectName}}
+   tinkerdown serve {{.ProjectName}}
    ```
 
 2. **Open your browser:**
@@ -26,8 +26,8 @@ A LiveTemplate tutorial project created with `livemdtools new`.
 
 ## Learn More
 
-- [LiveTemplate Documentation](https://github.com/livetemplate/livemdtools)
-- [Tutorial Authoring Guide](https://github.com/livetemplate/livemdtools/docs)
+- [Tinkerdown Documentation](https://github.com/livetemplate/tinkerdown)
+- [Tutorial Authoring Guide](https://github.com/livetemplate/tinkerdown/docs)
 
 ## Next Steps
 

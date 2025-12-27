@@ -1,9 +1,9 @@
 /**
- * LivemdtoolsClient - Main orchestrator for Livemdtools interactive documentation
+ * TinkerdownClient - Main orchestrator for Tinkerdown interactive documentation
  */
 
 import { setupReactiveAttributeListeners } from "@livetemplate/client";
-import { LivemdtoolsClientOptions, BlockConfig, BlockMetadata, MessageEnvelope } from "./types";
+import { TinkerdownClientOptions, BlockConfig, BlockMetadata, MessageEnvelope } from "./types";
 import { MessageRouter } from "./core/message-router";
 import { PersistenceManager } from "./core/persistence-manager";
 import { BaseBlock } from "./blocks/base-block";
@@ -11,8 +11,8 @@ import { ServerBlock } from "./blocks/server-block";
 import { InteractiveBlock } from "./blocks/interactive-block";
 import { WasmBlock } from "./blocks/wasm-block";
 
-export class LivemdtoolsClient {
-  private options: LivemdtoolsClientOptions;
+export class TinkerdownClient {
+  private options: TinkerdownClientOptions;
   private router: MessageRouter;
   private persistence: PersistenceManager;
   private blocks: Map<string, BaseBlock> = new Map();
@@ -20,7 +20,7 @@ export class LivemdtoolsClient {
   private reconnectTimer: number | null = null;
   private isConnected = false;
 
-  constructor(options: LivemdtoolsClientOptions) {
+  constructor(options: TinkerdownClientOptions) {
     this.options = {
       debug: false,
       persistence: true,
@@ -30,13 +30,13 @@ export class LivemdtoolsClient {
 
     this.router = new MessageRouter(this.options.debug);
     this.persistence = new PersistenceManager(
-      "livemdtools:persistence",
+      "tinkerdown:persistence",
       this.options.persistence,
       this.options.debug
     );
 
     if (this.options.debug) {
-      console.log("[LivemdtoolsClient] Initialized with options:", this.options);
+      console.log("[TinkerdownClient] Initialized with options:", this.options);
     }
   }
 
@@ -45,7 +45,7 @@ export class LivemdtoolsClient {
    */
   connect(): void {
     if (this.ws) {
-      console.warn("[LivemdtoolsClient] Already connected");
+      console.warn("[TinkerdownClient] Already connected");
       return;
     }
 
@@ -54,19 +54,19 @@ export class LivemdtoolsClient {
 
       this.ws.onopen = () => {
         this.isConnected = true;
-        console.log("[LivemdtoolsClient] Connected to server");
+        console.log("[TinkerdownClient] Connected to server");
         this.options.onConnect?.();
       };
 
       this.ws.onclose = () => {
         this.isConnected = false;
-        console.log("[LivemdtoolsClient] Disconnected from server");
+        console.log("[TinkerdownClient] Disconnected from server");
         this.options.onDisconnect?.();
         this.scheduleReconnect();
       };
 
       this.ws.onerror = (error) => {
-        console.error("[LivemdtoolsClient] WebSocket error:", error);
+        console.error("[TinkerdownClient] WebSocket error:", error);
         this.options.onError?.(new Error("WebSocket error"));
       };
 
@@ -74,7 +74,7 @@ export class LivemdtoolsClient {
         this.handleMessage(event.data);
       };
     } catch (error) {
-      console.error("[LivemdtoolsClient] Failed to connect:", error);
+      console.error("[TinkerdownClient] Failed to connect:", error);
       this.options.onError?.(error as Error);
     }
   }
@@ -101,7 +101,7 @@ export class LivemdtoolsClient {
    */
   private handleMessage(data: string): void {
     if (this.options.debug) {
-      console.log("[LivemdtoolsClient] Received message:", data);
+      console.log("[TinkerdownClient] Received message:", data);
     }
 
     // Route message to appropriate block
@@ -113,7 +113,7 @@ export class LivemdtoolsClient {
    */
   send(blockID: string, action: string, data: any = {}): void {
     if (!this.isConnected || !this.ws) {
-      console.warn("[LivemdtoolsClient] Cannot send - not connected");
+      console.warn("[TinkerdownClient] Cannot send - not connected");
       return;
     }
 
@@ -126,7 +126,7 @@ export class LivemdtoolsClient {
     const message = JSON.stringify(envelope);
 
     if (this.options.debug) {
-      console.log("[LivemdtoolsClient] Sending message:", message);
+      console.log("[TinkerdownClient] Sending message:", message);
     }
 
     this.ws.send(message);
@@ -142,7 +142,7 @@ export class LivemdtoolsClient {
 
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
-      console.log("[LivemdtoolsClient] Attempting to reconnect...");
+      console.log("[TinkerdownClient] Attempting to reconnect...");
       this.connect();
     }, 3000);
   }
@@ -151,15 +151,15 @@ export class LivemdtoolsClient {
    * Discover and register all code blocks on the page
    */
   discoverBlocks(): void {
-    console.log("[LivemdtoolsClient] Discovering blocks...");
+    console.log("[TinkerdownClient] Discovering blocks...");
 
     // Set up reactive attribute listeners from @livetemplate/client
     // This handles lvt-{action}-on:{event} attributes (e.g., lvt-reset-on:success)
     setupReactiveAttributeListeners();
 
-    // Find all code blocks with livemdtools metadata
+    // Find all code blocks with tinkerdown metadata
     const codeBlocks = document.querySelectorAll<HTMLElement>(
-      "[data-livemdtools-block]"
+      "[data-tinkerdown-block]"
     );
 
     for (const element of Array.from(codeBlocks)) {
@@ -175,11 +175,11 @@ export class LivemdtoolsClient {
 
         this.registerBlock(config);
       } catch (error) {
-        console.error("[LivemdtoolsClient] Error discovering block:", error);
+        console.error("[TinkerdownClient] Error discovering block:", error);
       }
     }
 
-    console.log(`[LivemdtoolsClient] Discovered ${this.blocks.size} blocks`);
+    console.log(`[TinkerdownClient] Discovered ${this.blocks.size} blocks`);
   }
 
   /**
@@ -231,7 +231,7 @@ export class LivemdtoolsClient {
     const { metadata } = config;
 
     if (this.blocks.has(metadata.id)) {
-      console.warn(`[LivemdtoolsClient] Block already registered: ${metadata.id}`);
+      console.warn(`[TinkerdownClient] Block already registered: ${metadata.id}`);
       return;
     }
 
@@ -257,7 +257,7 @@ export class LivemdtoolsClient {
         break;
 
       default:
-        console.warn(`[LivemdtoolsClient] Unknown block type: ${metadata.type}`);
+        console.warn(`[TinkerdownClient] Unknown block type: ${metadata.type}`);
         return;
     }
 
@@ -273,7 +273,7 @@ export class LivemdtoolsClient {
     this.blocks.set(metadata.id, block);
 
     if (this.options.debug) {
-      console.log(`[LivemdtoolsClient] Registered block: ${metadata.id} (${metadata.type})`);
+      console.log(`[TinkerdownClient] Registered block: ${metadata.id} (${metadata.type})`);
     }
   }
 
@@ -296,7 +296,7 @@ export class LivemdtoolsClient {
     this.blocks.delete(blockID);
 
     if (this.options.debug) {
-      console.log(`[LivemdtoolsClient] Unregistered block: ${blockID}`);
+      console.log(`[TinkerdownClient] Unregistered block: ${blockID}`);
     }
   }
 
@@ -318,7 +318,7 @@ export class LivemdtoolsClient {
    * Destroy the client and all blocks
    */
   destroy(): void {
-    console.log("[LivemdtoolsClient] Destroying client");
+    console.log("[TinkerdownClient] Destroying client");
 
     // Destroy all blocks
     for (const block of this.blocks.values()) {

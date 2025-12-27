@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/livetemplate/livemdtools/internal/config"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // TestTutorialNavigationDoesNotOverrideSiteNavigation verifies that the

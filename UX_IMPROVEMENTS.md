@@ -1,7 +1,7 @@
 # Documentation Site UX Improvements - Progress Tracker
 
 ## Overview
-This document tracks the implementation of UX improvements for the Livemdtools documentation site based on the expert UX review conducted on November 21, 2025.
+This document tracks the implementation of UX improvements for the Tinkerdown documentation site based on the expert UX review conducted on November 21, 2025.
 
 **Review Date**: November 21, 2025
 **Screenshots**: `01_homepage.png`, `02_intro_page.png`, `03_installation.png`, `06_search_modal.png`
@@ -30,7 +30,7 @@ This document tracks the implementation of UX improvements for the Livemdtools d
 - [ ] Ensure mobile responsiveness
 
 **Files to Modify**:
-- `internal/assets/client/livemdtools-client.browser.css`
+- `internal/assets/client/tinkerdown-client.browser.css`
 
 **Success Criteria**:
 - Content feels spacious and readable
@@ -55,7 +55,7 @@ This document tracks the implementation of UX improvements for the Livemdtools d
 - [ ] Add subtle padding/margin adjustments
 
 **Files to Modify**:
-- `internal/assets/client/livemdtools-client.browser.css`
+- `internal/assets/client/tinkerdown-client.browser.css`
 
 **Success Criteria**:
 - Active page immediately obvious at a glance
@@ -82,7 +82,7 @@ This document tracks the implementation of UX improvements for the Livemdtools d
 **Files to Modify**:
 - `internal/server/server.go` (nav logic)
 - HTML template generation
-- `internal/assets/client/livemdtools-client.browser.css`
+- `internal/assets/client/tinkerdown-client.browser.css`
 
 **Success Criteria**:
 - Clear prev/next buttons at bottom of each page
@@ -99,7 +99,7 @@ This document tracks the implementation of UX improvements for the Livemdtools d
 **Issues**:
 - Search result previews very short (~40 chars)
 - Hard to distinguish between results with similar titles
-- Search modal shows "Introduction to Livemdtools Introduction to Livemdtools Livemdtools is a revolutionary framework..."
+- Search modal shows "Introduction to Tinkerdown Introduction to Tinkerdown Tinkerdown is a revolutionary framework..."
 
 **Implementation**:
 - [ ] Increase preview length to 120-150 characters
@@ -109,7 +109,7 @@ This document tracks the implementation of UX improvements for the Livemdtools d
 
 **Files to Modify**:
 - Search result generation logic
-- `internal/assets/client/livemdtools-client.browser.css` (preview styling)
+- `internal/assets/client/tinkerdown-client.browser.css` (preview styling)
 
 **Success Criteria**:
 - Meaningful context in search previews

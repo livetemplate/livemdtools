@@ -20,10 +20,10 @@ func ClientFS() fs.FS {
 
 // GetClientJS returns the browser JavaScript bundle
 func GetClientJS() ([]byte, error) {
-	return clientFS.ReadFile("client/livemdtools-client.browser.js")
+	return clientFS.ReadFile("client/tinkerdown-client.browser.js")
 }
 
 // GetClientCSS returns the browser CSS bundle
 func GetClientCSS() ([]byte, error) {
-	return clientFS.ReadFile("client/livemdtools-client.browser.css")
+	return clientFS.ReadFile("client/tinkerdown-client.browser.css")
 }

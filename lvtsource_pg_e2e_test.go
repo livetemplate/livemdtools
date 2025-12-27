@@ -1,4 +1,4 @@
-package livemdtools_test
+package tinkerdown_test
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
-	"github.com/livetemplate/livemdtools/internal/config"
-	"github.com/livetemplate/livemdtools/internal/server"
+	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/server"
 )
 
 // TestLvtSourcePostgres tests the lvt-source functionality with PostgreSQL

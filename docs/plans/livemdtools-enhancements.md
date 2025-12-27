@@ -1,4 +1,4 @@
-# Livemdtools Enhancement Plan
+# Tinkerdown Enhancement Plan
 
 **Date**: 2025-11-15
 **Status**: Planning
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document outlines a comprehensive enhancement plan for Livemdtools based on lessons learned from implementing the interactive counter tutorial. The plan is divided into two main areas:
+This document outlines a comprehensive enhancement plan for Tinkerdown based on lessons learned from implementing the interactive counter tutorial. The plan is divided into two main areas:
 
 1. **Tutorial Experience** - Making tutorials more engaging, interactive, and educational
 2. **Authoring Experience** - Making it easier and faster to create high-quality tutorials
@@ -592,12 +592,12 @@ Related: State 'counter-state' defined at line 20
 **Current:**
 - Edit markdown
 - Kill server (Ctrl+C)
-- Restart `livemdtools serve`
+- Restart `tinkerdown serve`
 - Refresh browser
 
 **Improved:**
 ```bash
-livemdtools serve --watch examples/counter
+tinkerdown serve --watch examples/counter
 ```
 
 - Watches for `.md` file changes ✅
@@ -701,7 +701,7 @@ livemdtools new my-tutorial
 
 🚀 Next steps:
    cd my-tutorial
-   livemdtools serve
+   tinkerdown serve
 
 📚 Your tutorial will be available at http://localhost:8080
 ```
@@ -807,7 +807,7 @@ Block: lvt-1
 **Effort**: Medium-High (6-8 hours)
 **Status**: COMPLETED (2025-11-16)
 
-**File:** `livemdtools.yaml`
+**File:** `tinkerdown.yaml`
 
 ```yaml
 title: "LiveTemplate Tutorial"
@@ -1145,7 +1145,7 @@ The prioritization balances:
 - **Technical debt** (fix pain points now vs. later)
 - **Time investment** (quick wins vs. long-term projects)
 
-With Phase 1 complete, Livemdtools will be a genuinely delightful tool for creating interactive tutorials.
+With Phase 1 complete, Tinkerdown will be a genuinely delightful tool for creating interactive tutorials.
 
 ---
 
@@ -1162,7 +1162,7 @@ Build capability to create documentation sites with multiple pages, home page, a
 **Site Structure:**
 ```
 docs/
-├── livemdtools.yaml           # Site configuration
+├── tinkerdown.yaml           # Site configuration
 ├── index.md                # Home page (landing/overview)
 ├── getting-started/
 │   ├── index.md           # Section home
@@ -1178,9 +1178,9 @@ docs/
     └── configuration.md
 ```
 
-**Configuration Format (livemdtools.yaml):**
+**Configuration Format (tinkerdown.yaml):**
 ```yaml
-title: "Livemdtools Documentation"
+title: "Tinkerdown Documentation"
 description: "Interactive documentation platform"
 type: site  # NEW: "site" vs "tutorial"
 
@@ -1268,7 +1268,7 @@ navigation:
   - Professional styling
 
 **Success Criteria:**
-- ✓ Serve multi-page site from `livemdtools serve docs/`
+- ✓ Serve multi-page site from `tinkerdown serve docs/`
 - ✓ Home page with hero, features, navigation
 - ✓ Hierarchical sidebar with sections
 - ✓ Breadcrumbs and prev/next navigation

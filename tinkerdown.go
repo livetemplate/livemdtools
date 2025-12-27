@@ -1,8 +1,8 @@
-// Package livemdtools provides the core library for building interactive documentation
+// Package tinkerdown provides the core library for building interactive documentation
 // with markdown files and embedded executable code blocks.
-package livemdtools
+package tinkerdown
 
-// Page represents a parsed livemdtools tutorial/guide/playground.
+// Page represents a parsed tinkerdown tutorial/guide/playground.
 type Page struct {
 	ID                string
 	Title             string

@@ -1,4 +1,4 @@
-module github.com/livetemplate/livemdtools
+module github.com/livetemplate/tinkerdown
 
 go 1.25.3
 

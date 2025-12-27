@@ -1,10 +1,10 @@
-# Livemdtools PMF: The One-File AI App Builder
+# Tinkerdown PMF: The One-File AI App Builder
 
 ## Executive Summary
 
-Livemdtools is positioned to be the **only AI app builder that outputs working apps in a single markdown file with no build step**. While competitors like v0, Bolt.new, and Lovable generate complex React projects requiring npm/build pipelines, Livemdtools targets the 700M "code-generators" who want: **Type → Works**.
+Tinkerdown is positioned to be the **only AI app builder that outputs working apps in a single markdown file with no build step**. While competitors like v0, Bolt.new, and Lovable generate complex React projects requiring npm/build pipelines, Tinkerdown targets the 700M "code-generators" who want: **Type → Works**.
 
-**Tagline**: Livemdtools: AI builds tools in one file. No React. No build step. Just run.
+**Tagline**: Tinkerdown: AI builds tools in one file. No React. No build step. Just run.
 
 ---
 
@@ -38,9 +38,9 @@ What Exists:  Prompt → AI → [React App (10+ files)] → npm install → buil
 What's Missing: Prompt → AI → [Single markdown file] → run → works
 ```
 
-### Livemdtools's Unique Position
+### Tinkerdown's Unique Position
 
-| Factor | v0/Bolt/Lovable | Livemdtools |
+| Factor | v0/Bolt/Lovable | Tinkerdown |
 |--------|-----------------|----------|
 | Output format | React (10+ files) | Single markdown file |
 | Build step | Required (npm) | None |
@@ -54,7 +54,7 @@ What's Missing: Prompt → AI → [Single markdown file] → run → works
 
 ## The Declarative Trifecta
 
-Why Livemdtools wins for LLMs:
+Why Tinkerdown wins for LLMs:
 
 | Layer | What It Does | LLM Benefit |
 |-------|--------------|-------------|
@@ -65,7 +65,7 @@ Why Livemdtools wins for LLMs:
 **Result:**
 
 ```
-Livemdtools:    Prompt → LLM → [Component + Source declaration] → Works
+Tinkerdown:    Prompt → LLM → [Component + Source declaration] → Works
 Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install → Build → Deploy → Works
 ```
 
@@ -124,7 +124,7 @@ Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install
 
 | Task | Effort |
 |------|--------|
-| Register component templates in Livemdtools template engine | Small |
+| Register component templates in Tinkerdown template engine | Small |
 | Add component CSS to default styles | Small |
 | Wire component actions to server state | Medium |
 | Document component usage for LLMs | Small |
@@ -142,14 +142,14 @@ Competitors: Prompt → LLM → [React + API routes + SQL + CSS] → npm install
 
 **⚠️ SECURITY RULE: Never allow SQL/queries in HTML attributes.**
 
-All queries MUST be defined server-side in `livemdtools.yaml`. HTML only references sources by name.
+All queries MUST be defined server-side in `tinkerdown.yaml`. HTML only references sources by name.
 
 ##### Mode 1: HTML Attributes (Simplest - No Go Template Knowledge)
 
 Pure HTML with `lvt-*` attributes. No Go template syntax required. Queries defined in YAML.
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: pg
@@ -169,7 +169,7 @@ sources:
 Define everything in YAML, reference by name in HTML with minimal Go template for iteration.
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   users:
     type: pg
@@ -207,7 +207,7 @@ For users comfortable with Go templates. Full control over component configurati
 Use Python, Bash, Node, or any language as a data source. Write a script that outputs JSON.
 
 ```yaml
-# livemdtools.yaml
+# tinkerdown.yaml
 sources:
   sales:
     type: exec
@@ -224,7 +224,7 @@ sources:
 </table>
 ```
 
-**Why Mode 4 is critical**: Python/Bash/Node developers can write a 10-line script to fetch data and use Livemdtools just for UI. They don't need to learn Go.
+**Why Mode 4 is critical**: Python/Bash/Node developers can write a 10-line script to fetch data and use Tinkerdown just for UI. They don't need to learn Go.
 
 **Marketing angle**: "Build a UI for your Python/Bash scripts in 30 seconds."
 
@@ -252,7 +252,7 @@ type Source interface {
 
 ##### Real-Time Updates
 
-Livemdtools already has WebSocket infrastructure. Extend for sources:
+Tinkerdown already has WebSocket infrastructure. Extend for sources:
 
 - **PostgreSQL**: `LISTEN/NOTIFY` - push when data changes
 - **REST API**: Webhooks or polling with `lvt-data-interval`
@@ -278,7 +278,7 @@ It stays "no build", just "read file at runtime".
 
 | Task | Description |
 |------|-------------|
-| LLM Testing | Test if Claude/GPT-4 can reliably generate Livemdtools markdown |
+| LLM Testing | Test if Claude/GPT-4 can reliably generate Tinkerdown markdown |
 | Reference Doc | Create LLM reference doc (components + sources + lvt-* attributes) |
 | Prompt Library | Create 10 example prompts → working outputs ("Copy-Paste App Store") |
 
@@ -316,10 +316,10 @@ It stays "no build", just "read file at runtime".
 
 **Impact**: Critical for enterprise adoption. Removes biggest barrier to deploying internal tools safely.
 
-### 2. Compile to Binary (`livemdtools build`)
+### 2. Compile to Binary (`tinkerdown build`)
 
 ```bash
-livemdtools build my-app.md -o my-app
+tinkerdown build my-app.md -o my-app
 ```
 
 Send `my-app.exe` to a Product Manager. They double-click, it opens in browser. No installation.
@@ -346,7 +346,7 @@ Build UI, get API as side effect. Trigger from Slack bot or cron job.
 
 **Impact**: High. Unique differentiator vs Retool.
 
-### 5. Livemdtools Hub
+### 5. Tinkerdown Hub
 
 ```bash
 livemdtools run github.com/user/repo/postgres-admin.md
@@ -377,7 +377,7 @@ Single-file apps become unmanageable at 500+ lines.
 **Mitigations**:
 
 1. **Seamless Partials**: `{{template "sidebar.md"}}` without build step
-2. **Eject Strategy**: Document how to convert Livemdtools to standard Go web server
+2. **Eject Strategy**: Document how to convert Tinkerdown to standard Go web server
 
 ### Risk 2: Security Perception
 
@@ -406,8 +406,8 @@ Real-time preview like Markdown preview. Type on left, see app update on right. 
 ### 3. "Internal Tool Killer" Positioning
 
 - **Competitor**: Retool ($50/user, proprietary)
-- **Livemdtools**: Free, local, text-based (git-friendly)
-- **Wedge**: "Don't pay $50/user for Retool. Just write a Livemdtools."
+- **Tinkerdown**: Free, local, text-based (git-friendly)
+- **Wedge**: "Don't pay $50/user for Retool. Just write a Tinkerdown."
 
 ---
 

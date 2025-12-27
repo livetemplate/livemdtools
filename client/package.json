@@ -1,13 +1,13 @@
 {
-  "name": "@livetemplate/livemdtools-client",
+  "name": "@livetemplate/tinkerdown-client",
   "version": "0.1.0",
-  "description": "Client runtime for interactive Livemdtools documentation",
-  "main": "dist/livemdtools-client.js",
+  "description": "Client runtime for interactive Tinkerdown documentation",
+  "main": "dist/tinkerdown-client.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "npm run build:lib && npm run build:browser",
     "build:lib": "tsc",
-    "build:browser": "esbuild src/browser.ts --bundle --minify --sourcemap --outfile=dist/livemdtools-client.browser.js --global-name=LivemdtoolsClient --format=iife --loader:.ttf=file --loader:.woff=file --loader:.woff2=file --external:*.ttf --external:*.woff --external:*.woff2 --external:monaco-editor --splitting=false --metafile=dist/meta.json --main-fields=main,module",
+    "build:browser": "esbuild src/browser.ts --bundle --minify --sourcemap --outfile=dist/tinkerdown-client.browser.js --global-name=TinkerdownClient --format=iife --loader:.ttf=file --loader:.woff=file --loader:.woff2=file --external:*.ttf --external:*.woff --external:*.woff2 --external:monaco-editor --splitting=false --metafile=dist/meta.json --main-fields=main,module",
     "build:esm": "esbuild src/browser.ts --bundle --minify --sourcemap --outdir=dist/esm --format=esm --splitting --loader:.ttf=file --loader:.woff=file --loader:.woff2=file --external:*.ttf --external:*.woff --external:*.woff2 --metafile=dist/esm/meta.json",
     "dev": "tsc --watch",
     "test": "jest",
@@ -31,7 +31,7 @@
   },
   "keywords": [
     "livetemplate",
-    "livemdtools",
+    "tinkerdown",
     "interactive",
     "documentation",
     "wasm",

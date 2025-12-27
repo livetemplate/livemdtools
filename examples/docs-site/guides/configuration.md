@@ -4,11 +4,11 @@ title: "Configuration"
 
 # Configuration
 
-Configure your Livemdtools site using `livemdtools.yaml`.
+Configure your Livemdtools site using `tinkerdown.yaml`.
 
 ## Configuration File
 
-Create a `livemdtools.yaml` file in your project root:
+Create a `tinkerdown.yaml` file in your project root:
 
 ```yaml
 title: "My Documentation"
