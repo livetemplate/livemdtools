@@ -202,14 +202,40 @@ func (h *WebSocketHandler) compileServerBlocks() {
 				}
 			}
 		} else if block.Metadata["auto-persist"] == "true" {
-			// Auto-persist block - generate code from form fields
+			// Auto-persist block - use sqlite source (no compilation needed!)
+			tableName := block.Metadata["lvt-persist"]
+			if tableName == "" {
+				tableName = blockID // Use block ID as table name if not specified
+			}
 			dbPath := filepath.Join(h.rootDir, "site.sqlite")
 			if h.debug {
-				log.Printf("[WS] Compiling auto-persist block: %s (db: %s)", blockID, dbPath)
+				log.Printf("[WS] Creating runtime state for auto-persist block: %s (table: %s, db: %s)", blockID, tableName, dbPath)
 			}
-			factory, err = h.compiler.CompileAutoPersist(blockID, block.Content, dbPath)
+
+			// Create a sqlite source config
+			readonly := false
+			srcCfg := config.SourceConfig{
+				Type:     "sqlite",
+				DB:       dbPath,
+				Table:    tableName,
+				Readonly: &readonly,
+			}
+
+			// Capture variables for closure
+			srcName, cfg, rootDir := tableName, srcCfg, h.rootDir
+			factory = func() compiler.Store {
+				state, err := runtime.NewGenericState(srcName, cfg, rootDir, "")
+				if err != nil {
+					log.Printf("[WS] Failed to create runtime state for auto-persist %s: %v", srcName, err)
+					return nil
+				}
+				return state
+			}
+			err = nil
 		} else {
-			// Regular server block
+			// Regular server block - deprecated, requires Go toolchain
+			// TODO: Remove this path once migration is complete
+			log.Printf("[WS] WARNING: Server block %s uses deprecated plugin compilation. Consider migrating to lvt-source.", blockID)
 			factory, err = h.compiler.CompileServerBlock(block)
 		}
 

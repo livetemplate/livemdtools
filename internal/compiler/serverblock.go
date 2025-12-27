@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/livetemplate/tinkerdown"
-	"github.com/livetemplate/tinkerdown/internal/config"
 	tinkerdownplugin "github.com/livetemplate/tinkerdown/plugin"
 )
 
@@ -789,75 +788,6 @@ func (c *ServerBlockCompiler) Cleanup() {
 	os.RemoveAll(c.buildDir)
 }
 
-// CompileAutoPersist compiles an auto-persist form into a Go plugin
-// This generates all the boilerplate code (State struct, NewState, action methods)
-// based on form fields extracted from the LVT template
-func (c *ServerBlockCompiler) CompileAutoPersist(blockID string, lvtContent string, siteDBPath string) (func() Store, error) {
-	if c.debug {
-		fmt.Printf("[Compiler] Compiling auto-persist block: %s\n", blockID)
-	}
-
-	// Parse form fields from LVT content
-	config, err := ParseFormFields(lvtContent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse form fields: %w", err)
-	}
-	if config == nil {
-		return nil, fmt.Errorf("no lvt-persist form found in block %s", blockID)
-	}
-
-	if c.debug {
-		fmt.Printf("[Compiler] Found %d form fields for table '%s'\n", len(config.Fields), config.TableName)
-		for _, f := range config.Fields {
-			fmt.Printf("[Compiler]   - %s: %s (%s)\n", f.Name, f.Type, f.HTMLType)
-		}
-	}
-
-	// Generate the server block code
-	generatedCode := GenerateAutoPersistCode(config, siteDBPath)
-
-	// Create a virtual ServerBlock with the generated code
-	block := &tinkerdown.ServerBlock{
-		ID:       blockID,
-		Language: "go",
-		Content:  generatedCode,
-		Metadata: map[string]string{
-			"auto-persist": config.TableName,
-		},
-	}
-
-	// Compile using the standard flow
-	return c.CompileServerBlock(block)
-}
-
-// CompileLvtSource compiles an lvt-source block into a Go plugin
-// This generates code that fetches data from the configured source
-// currentFile is the absolute path to the current markdown file (for same-file sources)
-func (c *ServerBlockCompiler) CompileLvtSource(blockID string, sourceName string, sourceCfg config.SourceConfig, siteDir string, currentFile string, metadata map[string]string) (func() Store, error) {
-	if c.debug {
-		fmt.Printf("[Compiler] Compiling lvt-source block: %s (source: %s, type: %s)\n", blockID, sourceName, sourceCfg.Type)
-	}
-
-	// Generate code for the source
-	// Pass element type and other metadata for component-aware code generation
-	generatedCode, err := GenerateLvtSourceCode(sourceName, sourceCfg, siteDir, currentFile, metadata)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate lvt-source code: %w", err)
-	}
-
-	if c.debug {
-		fmt.Printf("[Compiler] Generated lvt-source code:\n%s\n", generatedCode)
-	}
-
-	// Create a synthetic server block with the generated code
-	// Preserve all metadata from the original block
-	block := &tinkerdown.ServerBlock{
-		ID:       blockID,
-		Language: "go",
-		Content:  generatedCode,
-		Metadata: metadata,
-	}
-
-	// Compile using the standard flow
-	return c.CompileServerBlock(block)
-}
+// NOTE: CompileAutoPersist and CompileLvtSource have been removed.
+// lvt-source and auto-persist blocks now use runtime.GenericState directly,
+// eliminating the need for code generation and plugin compilation.
