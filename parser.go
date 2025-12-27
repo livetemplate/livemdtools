@@ -19,15 +19,17 @@ import (
 
 // SourceConfig represents a data source configuration for lvt-source blocks.
 type SourceConfig struct {
-	Type     string            `yaml:"type"`              // exec, pg, rest, csv, json, markdown
-	Cmd      string            `yaml:"cmd,omitempty"`     // For exec type
-	Query    string            `yaml:"query,omitempty"`   // For pg type
-	URL      string            `yaml:"url,omitempty"`     // For rest type
-	File     string            `yaml:"file,omitempty"`    // For csv/json/markdown types
-	Anchor   string            `yaml:"anchor,omitempty"`  // For markdown: section anchor (e.g., "#todos")
-	Readonly *bool             `yaml:"readonly,omitempty"` // For markdown: read-only mode (default: true)
+	Type     string            `yaml:"type"`               // exec, pg, rest, csv, json, markdown, sqlite
+	Cmd      string            `yaml:"cmd,omitempty"`      // For exec type
+	Query    string            `yaml:"query,omitempty"`    // For pg type
+	URL      string            `yaml:"url,omitempty"`      // For rest type
+	File     string            `yaml:"file,omitempty"`     // For csv/json/markdown types
+	Anchor   string            `yaml:"anchor,omitempty"`   // For markdown: section anchor (e.g., "#todos")
+	DB       string            `yaml:"db,omitempty"`       // For sqlite: database file path
+	Table    string            `yaml:"table,omitempty"`    // For sqlite: table name
+	Readonly *bool             `yaml:"readonly,omitempty"` // For markdown/sqlite: read-only mode (default: true)
 	Options  map[string]string `yaml:"options,omitempty"`
-	Manual   bool              `yaml:"manual,omitempty"`  // For exec: require Run button click
+	Manual   bool              `yaml:"manual,omitempty"`   // For exec: require Run button click
 }
 
 // StylingConfig represents styling/theme configuration.

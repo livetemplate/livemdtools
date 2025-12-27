@@ -18,6 +18,7 @@ import (
 	"github.com/livetemplate/tinkerdown"
 	"github.com/livetemplate/tinkerdown/internal/compiler"
 	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/runtime"
 )
 
 var upgrader = websocket.Upgrader{
@@ -141,7 +142,7 @@ func (h *WebSocketHandler) compileServerBlocks() {
 
 		// Check if this is an lvt-source block (takes precedence if both are present)
 		if sourceName := block.Metadata["lvt-source"]; sourceName != "" {
-			// lvt-source block - generate code to fetch from source
+			// lvt-source block - use runtime.GenericState (no compilation needed!)
 			// Check page-level sources first (from frontmatter), then site-level (from tinkerdown.yaml)
 			sourceCfg, found := h.getEffectiveSource(sourceName)
 			if !found {
@@ -149,14 +150,26 @@ func (h *WebSocketHandler) compileServerBlocks() {
 				continue
 			}
 			if h.debug {
-				log.Printf("[WS] Compiling lvt-source block: %s (source: %s, type: %s)", blockID, sourceName, sourceCfg.Type)
+				log.Printf("[WS] Creating runtime state for lvt-source block: %s (source: %s, type: %s)", blockID, sourceName, sourceCfg.Type)
 			}
 			// Pass the current markdown file path for same-file markdown sources
 			currentFile := ""
 			if h.page != nil {
 				currentFile = h.page.SourceFile
 			}
-			factory, err = h.compiler.CompileLvtSource(blockID, sourceName, sourceCfg, h.rootDir, currentFile, block.Metadata)
+
+			// Use the new runtime-based GenericState instead of compiling plugins
+			// Capture variables for closure
+			srcName, srcCfg, rootDir, curFile := sourceName, sourceCfg, h.rootDir, currentFile
+			factory = func() compiler.Store {
+				state, err := runtime.NewGenericState(srcName, srcCfg, rootDir, curFile)
+				if err != nil {
+					log.Printf("[WS] Failed to create runtime state for %s: %v", srcName, err)
+					return nil
+				}
+				return state
+			}
+			err = nil // No compilation error possible with runtime approach
 
 			// Track source files for markdown sources (for live refresh)
 			if sourceCfg.Type == "markdown" {
@@ -236,6 +249,8 @@ func (h *WebSocketHandler) getEffectiveSource(name string) (config.SourceConfig,
 				URL:      src.URL,
 				File:     src.File,
 				Anchor:   src.Anchor,
+				DB:       src.DB,
+				Table:    src.Table,
 				Readonly: src.Readonly,
 				Options:  src.Options,
 				Manual:   src.Manual,

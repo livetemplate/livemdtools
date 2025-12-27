@@ -23,6 +23,20 @@ type Source interface {
 	Close() error
 }
 
+// WritableSource extends Source with write capability.
+// Sources like markdown and sqlite implement this to support Add, Update, Delete actions.
+type WritableSource interface {
+	Source
+
+	// WriteItem performs a write operation on the source.
+	// action is one of: "add", "toggle", "delete", "update"
+	// data contains the item data (e.g., form fields, id for delete)
+	WriteItem(ctx context.Context, action string, data map[string]interface{}) error
+
+	// IsReadonly returns whether the source is in read-only mode
+	IsReadonly() bool
+}
+
 // Registry holds configured sources for a site
 type Registry struct {
 	sources map[string]Source
@@ -87,6 +101,8 @@ func createSource(name string, cfg config.SourceConfig, siteDir, currentFile str
 	case "markdown":
 		// Use IsReadonly() which defaults to true if not specified
 		return NewMarkdownSource(name, cfg.File, cfg.Anchor, siteDir, currentFile, cfg.IsReadonly())
+	case "sqlite":
+		return NewSQLiteSource(name, cfg.DB, cfg.Table, siteDir, cfg.IsReadonly())
 	default:
 		return nil, &UnsupportedSourceError{Type: cfg.Type}
 	}
