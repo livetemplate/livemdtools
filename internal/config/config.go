@@ -25,7 +25,7 @@ type Config struct {
 
 // SourceConfig defines a data source for lvt-source blocks
 type SourceConfig struct {
-	Type     string            `yaml:"type"`               // "exec", "pg", "rest", "csv", "json", "markdown", "sqlite"
+	Type     string            `yaml:"type"`               // "exec", "pg", "rest", "csv", "json", "markdown", "sqlite", "wasm"
 	Cmd      string            `yaml:"cmd,omitempty"`      // For exec: command to run
 	Query    string            `yaml:"query,omitempty"`    // For pg: SQL query
 	URL      string            `yaml:"url,omitempty"`      // For rest: API endpoint
@@ -33,8 +33,9 @@ type SourceConfig struct {
 	Anchor   string            `yaml:"anchor,omitempty"`   // For markdown: section anchor (e.g., "#todos")
 	DB       string            `yaml:"db,omitempty"`       // For sqlite: database file path (default: ./tinkerdown.db)
 	Table    string            `yaml:"table,omitempty"`    // For sqlite: table name
+	Path     string            `yaml:"path,omitempty"`     // For wasm: path to .wasm file
 	Readonly *bool             `yaml:"readonly,omitempty"` // For markdown/sqlite: read-only mode (default: true, set to false for writes)
-	Options  map[string]string `yaml:"options,omitempty"`  // Type-specific options
+	Options  map[string]string `yaml:"options,omitempty"`  // Type-specific options (also used for wasm init config)
 	Manual   bool              `yaml:"manual,omitempty"`   // For exec: require Run button click
 }
 

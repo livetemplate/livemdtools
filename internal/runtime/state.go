@@ -11,6 +11,7 @@ import (
 
 	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/source"
+	"github.com/livetemplate/tinkerdown/internal/wasm"
 )
 
 // Store is the interface for state objects that can handle actions.
@@ -110,6 +111,8 @@ func createSource(name string, cfg config.SourceConfig, siteDir, currentFile str
 		return source.NewMarkdownSource(name, cfg.File, cfg.Anchor, siteDir, currentFile, cfg.IsReadonly())
 	case "sqlite":
 		return source.NewSQLiteSource(name, cfg.DB, cfg.Table, siteDir, cfg.IsReadonly())
+	case "wasm":
+		return wasm.NewWasmSource(name, cfg.Path, siteDir, cfg.Options)
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", cfg.Type)
 	}

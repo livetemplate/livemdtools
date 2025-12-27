@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/livetemplate/tinkerdown/internal/config"
+	"github.com/livetemplate/tinkerdown/internal/wasm"
 )
 
 // Source is the interface for data providers.
@@ -103,6 +104,8 @@ func createSource(name string, cfg config.SourceConfig, siteDir, currentFile str
 		return NewMarkdownSource(name, cfg.File, cfg.Anchor, siteDir, currentFile, cfg.IsReadonly())
 	case "sqlite":
 		return NewSQLiteSource(name, cfg.DB, cfg.Table, siteDir, cfg.IsReadonly())
+	case "wasm":
+		return wasm.NewWasmSource(name, cfg.Path, siteDir, cfg.Options)
 	default:
 		return nil, &UnsupportedSourceError{Type: cfg.Type}
 	}
