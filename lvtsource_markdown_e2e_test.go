@@ -394,6 +394,104 @@ func TestLvtSourceMarkdownToggle(t *testing.T) {
 	t.Log("Toggle test passed!")
 }
 
+// TestLvtSourceMarkdownToggleBack tests toggling a completed task back to incomplete
+func TestLvtSourceMarkdownToggleBack(t *testing.T) {
+	// Create temp example
+	tempDir, cleanup := createTempMarkdownExample(t)
+	defer cleanup()
+
+	ts, ctx, cancel, consoleLogs := setupMarkdownTest(t, tempDir)
+	defer cancel()
+
+	t.Logf("Test server URL: %s", ts.URL)
+	t.Logf("Temp dir: %s", tempDir)
+
+	// Navigate and wait for content
+	var hasTaskList bool
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(ts.URL+"/"),
+		chromedp.Sleep(10*time.Second), // Wait for plugin compilation
+		chromedp.Evaluate(`document.querySelector('[lvt-source="tasks"] ul') !== null`, &hasTaskList),
+	)
+	if err != nil {
+		t.Fatalf("Failed to navigate: %v", err)
+	}
+
+	if !hasTaskList {
+		var htmlContent string
+		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
+		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Task list was not rendered")
+	}
+	t.Log("Task list rendered")
+
+	// Get initial state - second task (task2) starts CHECKED
+	var initialChecked bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`
+			(() => {
+				const li = document.querySelector('[data-task-id="task2"]');
+				const checkbox = li ? li.querySelector('input[type="checkbox"]') : null;
+				return checkbox ? checkbox.checked : false;
+			})()
+		`, &initialChecked),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get initial state: %v", err)
+	}
+
+	if !initialChecked {
+		t.Fatal("Second task should start CHECKED")
+	}
+	t.Log("Second task starts checked (as expected)")
+
+	// Click the checkbox to toggle it OFF
+	err = chromedp.Run(ctx,
+		chromedp.Click(`[data-task-id="task2"] input[type="checkbox"]`, chromedp.ByQuery),
+		chromedp.Sleep(2*time.Second), // Wait for WebSocket response
+	)
+	if err != nil {
+		t.Fatalf("Failed to click checkbox: %v", err)
+	}
+	t.Log("Clicked checkbox")
+
+	// Verify the checkbox is now UNCHECKED
+	var afterChecked bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`
+			(() => {
+				const li = document.querySelector('[data-task-id="task2"]');
+				const checkbox = li ? li.querySelector('input[type="checkbox"]') : null;
+				return checkbox ? checkbox.checked : false;
+			})()
+		`, &afterChecked),
+	)
+	if err != nil {
+		t.Fatalf("Failed to get state after toggle: %v", err)
+	}
+
+	if afterChecked {
+		t.Logf("Console logs: %v", *consoleLogs)
+		t.Fatal("Checkbox should be UNCHECKED after toggle")
+	}
+	t.Log("Checkbox is now unchecked")
+
+	// Verify the file was updated - should now have [ ] instead of [x]
+	content, err := os.ReadFile(filepath.Join(tempDir, "index.md"))
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+
+	if !strings.Contains(string(content), "- [ ] Second task completed <!-- id:task2 -->") {
+		t.Logf("File content:\n%s", string(content))
+		t.Fatal("File should contain UNCHECKED second task after toggle back")
+	}
+	t.Log("File was updated with unchecked task")
+
+	t.Log("Toggle back test passed!")
+}
+
 // TestLvtSourceMarkdownAdd tests adding a new task
 func TestLvtSourceMarkdownAdd(t *testing.T) {
 	// Create temp example

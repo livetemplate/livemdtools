@@ -1,7 +1,7 @@
 # Tasks
 
-- [ ] Buy groceries
-- [x] Clean the house
-- [ ] Walk the dog
-- [x] Call mom
+- [ ] Clean the house
+- [x] Walk the dog
+- [ ] Call mom
 - [ ] Finish project report
+- [ ] sasas <!-- id:0a556327 -->

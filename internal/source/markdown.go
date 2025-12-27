@@ -598,19 +598,30 @@ func (s *MarkdownSource) toggleItem(sectionContent, format string, data map[stri
 
 	// Find the line with this ID and toggle it
 	lines := strings.Split(sectionContent, "\n")
+	taskPattern := regexp.MustCompile(`^\s*-\s+\[([ xX])\]\s+(.+?)(?:\s*<!--\s*id:(\w+)\s*-->)?$`)
+
 	found := false
 	for i, line := range lines {
+		// First try explicit ID comment
 		if strings.Contains(line, "<!-- id:"+id+" -->") {
-			// Toggle the checkbox
-			if strings.Contains(line, "[ ]") {
-				lines[i] = strings.Replace(line, "[ ]", "[x]", 1)
-			} else if strings.Contains(line, "[x]") {
-				lines[i] = strings.Replace(line, "[x]", "[ ]", 1)
-			} else if strings.Contains(line, "[X]") {
-				lines[i] = strings.Replace(line, "[X]", "[ ]", 1)
-			}
+			lines[i] = s.toggleCheckbox(line)
 			found = true
 			break
+		}
+
+		// Fall back to content-based ID matching
+		matches := taskPattern.FindStringSubmatch(line)
+		if matches != nil {
+			explicitID := matches[3]
+			if explicitID == "" {
+				// No explicit ID - check if content-based ID matches
+				text := strings.TrimSpace(matches[2])
+				if generateContentID(text) == id {
+					lines[i] = s.toggleCheckbox(line)
+					found = true
+					break
+				}
+			}
 		}
 	}
 
@@ -619,6 +630,18 @@ func (s *MarkdownSource) toggleItem(sectionContent, format string, data map[stri
 	}
 
 	return strings.Join(lines, "\n"), nil
+}
+
+// toggleCheckbox toggles the checkbox state in a task line
+func (s *MarkdownSource) toggleCheckbox(line string) string {
+	if strings.Contains(line, "[ ]") {
+		return strings.Replace(line, "[ ]", "[x]", 1)
+	} else if strings.Contains(line, "[x]") {
+		return strings.Replace(line, "[x]", "[ ]", 1)
+	} else if strings.Contains(line, "[X]") {
+		return strings.Replace(line, "[X]", "[ ]", 1)
+	}
+	return line
 }
 
 // deleteItem removes an item from the section
@@ -633,10 +656,21 @@ func (s *MarkdownSource) deleteItem(sectionContent, format string, data map[stri
 	found := false
 
 	for _, line := range lines {
+		// First try explicit ID comment
 		if strings.Contains(line, "<!-- id:"+id+" -->") {
 			found = true
 			continue // Skip this line (delete it)
 		}
+
+		// Check for content-based ID match
+		if !found {
+			itemID := s.extractItemID(line, format)
+			if itemID == id {
+				found = true
+				continue // Skip this line (delete it)
+			}
+		}
+
 		newLines = append(newLines, line)
 	}
 
@@ -645,6 +679,43 @@ func (s *MarkdownSource) deleteItem(sectionContent, format string, data map[stri
 	}
 
 	return strings.Join(newLines, "\n"), nil
+}
+
+// extractItemID extracts the ID from a line, using content-based ID if no explicit ID
+func (s *MarkdownSource) extractItemID(line, format string) string {
+	switch format {
+	case "task":
+		taskPattern := regexp.MustCompile(`^\s*-\s+\[([ xX])\]\s+(.+?)(?:\s*<!--\s*id:(\w+)\s*-->)?$`)
+		if matches := taskPattern.FindStringSubmatch(line); matches != nil {
+			if matches[3] != "" {
+				return matches[3] // Explicit ID
+			}
+			return generateContentID(strings.TrimSpace(matches[2])) // Content-based ID
+		}
+	case "bullet":
+		bulletPattern := regexp.MustCompile(`^\s*-\s+(.+?)(?:\s*<!--\s*id:(\w+)\s*-->)?$`)
+		if matches := bulletPattern.FindStringSubmatch(line); matches != nil {
+			text := strings.TrimSpace(matches[1])
+			// Skip task list items
+			if strings.HasPrefix(text, "[ ]") || strings.HasPrefix(text, "[x]") || strings.HasPrefix(text, "[X]") {
+				return ""
+			}
+			if matches[2] != "" {
+				return matches[2] // Explicit ID
+			}
+			return generateContentID(text) // Content-based ID
+		}
+	case "table":
+		tableRowPattern := regexp.MustCompile(`^\s*\|(.+)\|(?:\s*<!--\s*id:(\w+)\s*-->)?`)
+		if matches := tableRowPattern.FindStringSubmatch(line); matches != nil {
+			if matches[2] != "" {
+				return matches[2] // Explicit ID
+			}
+			cells := s.parseTableCells(matches[1])
+			return generateContentID(strings.Join(cells, "|")) // Content-based ID
+		}
+	}
+	return ""
 }
 
 // updateItem updates fields of an existing item
@@ -658,7 +729,11 @@ func (s *MarkdownSource) updateItem(sectionContent, format string, data map[stri
 	found := false
 
 	for i, line := range lines {
-		if !strings.Contains(line, "<!-- id:"+id+" -->") {
+		// Check for explicit ID or content-based ID match
+		hasExplicitID := strings.Contains(line, "<!-- id:"+id+" -->")
+		matchesByContent := !hasExplicitID && s.extractItemID(line, format) == id
+
+		if !hasExplicitID && !matchesByContent {
 			continue
 		}
 		found = true
@@ -667,9 +742,15 @@ func (s *MarkdownSource) updateItem(sectionContent, format string, data map[stri
 		case "task":
 			// Update text and/or done state
 			if text, ok := data["text"].(string); ok {
-				// Replace text between checkbox and ID comment
-				taskPattern := regexp.MustCompile(`^(\s*-\s+\[[ xX]\]\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
-				lines[i] = taskPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+				if hasExplicitID {
+					// Replace text between checkbox and ID comment
+					taskPattern := regexp.MustCompile(`^(\s*-\s+\[[ xX]\]\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
+					lines[i] = taskPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+				} else {
+					// No ID comment - just replace the text
+					taskPattern := regexp.MustCompile(`^(\s*-\s+\[[ xX]\]\s+)(.+)$`)
+					lines[i] = taskPattern.ReplaceAllString(line, "${1}"+text)
+				}
 			}
 			if done, ok := data["done"].(bool); ok {
 				if done {
@@ -683,8 +764,13 @@ func (s *MarkdownSource) updateItem(sectionContent, format string, data map[stri
 		case "bullet":
 			// Update text
 			if text, ok := data["text"].(string); ok {
-				bulletPattern := regexp.MustCompile(`^(\s*-\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
-				lines[i] = bulletPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+				if hasExplicitID {
+					bulletPattern := regexp.MustCompile(`^(\s*-\s+)(.+?)(\s*<!--\s*id:\w+\s*-->)`)
+					lines[i] = bulletPattern.ReplaceAllString(line, "${1}"+text+"${3}")
+				} else {
+					bulletPattern := regexp.MustCompile(`^(\s*-\s+)(.+)$`)
+					lines[i] = bulletPattern.ReplaceAllString(line, "${1}"+text)
+				}
 			}
 
 		case "table":
@@ -699,8 +785,12 @@ func (s *MarkdownSource) updateItem(sectionContent, format string, data map[stri
 				}
 			}
 
-			// Reconstruct line
-			lines[i] = "| " + strings.Join(cells, " | ") + " | <!-- id:" + id + " -->"
+			// Reconstruct line (with or without ID comment)
+			if hasExplicitID {
+				lines[i] = "| " + strings.Join(cells, " | ") + " | <!-- id:" + id + " -->"
+			} else {
+				lines[i] = "| " + strings.Join(cells, " | ") + " |"
+			}
 		}
 		break
 	}
