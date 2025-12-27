@@ -1,8 +1,0 @@
-title: "SQLite Data Source"
-
-sources:
-  tasks:
-    type: sqlite
-    db: "./tasks.db"
-    table: tasks
-    readonly: false

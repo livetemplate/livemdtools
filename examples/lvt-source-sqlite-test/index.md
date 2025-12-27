@@ -1,5 +1,6 @@
 ---
 title: "SQLite Data Source"
+sidebar: false
 sources:
   tasks:
     type: sqlite
