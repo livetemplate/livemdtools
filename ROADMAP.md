@@ -58,26 +58,42 @@ HTML to client
 ### Current Attribute Ownership
 
 **Already in `@livetemplate/client` (core):**
+
+*Event Handling:*
+- `lvt-click`, `lvt-submit`, `lvt-change` - Event handlers
+- `lvt-click-away` - Click outside detection
+- `lvt-key` - Keyboard key filtering
+- `lvt-throttle`, `lvt-debounce` - Rate limiting
+- `lvt-window-{event}` - Window-level events
+
+*Lifecycle & Reactive:*
 - `lvt-{action}-on:{event}` - Lifecycle hooks (reset, addClass, disable, etc.)
 - `lvt-confirm` - Confirmation dialogs
-- `lvt-data-*` - Data extraction
+- `lvt-data-*`, `lvt-value-*` - Data extraction
 - `lvt-preserve` - Preserve form fields during DOM updates
+- `lvt-disable-with` - Button text during submit
+
+*UI Directives:*
 - `lvt-scroll` - Scroll behavior (bottom, top, sticky)
 - `lvt-highlight` - Flash highlight animation
 - `lvt-animate` - Entry animations (fade, slide, scale)
-
-**Move from Tinkerdown → Core:**
-- `lvt-click`, `lvt-submit`, `lvt-change` - Event handlers (client-side)
+- `lvt-autofocus` - Auto-focus on visibility
+- `lvt-focus-trap` - Modal focus trapping
+- `lvt-modal-open`, `lvt-modal-close` - Modal controls
 
 **New for Core (server-side template sugar):**
 - `lvt-for`, `lvt-if`, `lvt-text` - Loop/conditional/text binding
 - `lvt-checked`, `lvt-disabled`, `lvt-selected` - Boolean attributes
 - `lvt-class` - Dynamic class binding
 
-**Stay in Tinkerdown (micro-app specific):**
+**Tinkerdown-specific (micro-app data binding):**
 - `lvt-source` - Data source binding
 - `lvt-columns`, `lvt-actions` - Auto-table generation
-- `lvt-value`, `lvt-label` - Select field mapping (works with lvt-source)
+- `lvt-value`, `lvt-label` - Select field mapping (for lvt-source)
+- `lvt-template`, `lvt-empty` - Custom rendering
+
+**⚠️ Cleanup: Remove duplicates from Tinkerdown client**
+- `lvt-click`, `lvt-submit`, `lvt-change` handlers already in core
 
 ---
 
