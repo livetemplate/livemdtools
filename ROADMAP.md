@@ -32,9 +32,15 @@ The biggest barrier to adoption is requiring users to learn Go's `html/template`
 
 ### Implementation Approach
 
+**Where:** Core LiveTemplate library (not Tinkerdown-specific)
+
+This ensures the same `lvt-*` attributes work for both:
+- **Full apps** built directly with LiveTemplate
+- **Micro apps** built with Tinkerdown
+
 ```
-Markdown with lvt-* attributes
-        ↓ (parse time)
+lvt-* attributes in HTML
+        ↓ (LiveTemplate core: parse time)
 Transform to Go templates
         ↓
 Server-side rendering (unchanged)
@@ -43,9 +49,10 @@ HTML to client
 ```
 
 **Benefits:**
+- Single implementation in core library
+- Consistent syntax across full and micro apps
 - No new rendering engine
 - Client remains lightweight
-- Power users can still use raw Go templates
 - SSR advantages preserved (security, performance, no JS required)
 
 ---
@@ -113,15 +120,15 @@ lvt-checked="item.done"     → {{if .done}}checked{{end}}
 lvt-class="done: item.done" → class="{{if .done}}done{{end}}"
 ```
 
-**Work Required:**
+**Work Required (in LiveTemplate core):**
 - [ ] `lvt-for="item in source"` - Loop over data
 - [ ] `lvt-text="field"` - Set text content
 - [ ] `lvt-if="condition"` - Conditional rendering
 - [ ] `lvt-checked`, `lvt-disabled`, `lvt-selected` - Boolean attributes
 - [ ] `lvt-class="name: condition"` - Dynamic classes
-- [ ] Parser transforms in `parser.go` or new `transform.go`
+- [ ] Attribute transformer in LiveTemplate's template processing
 
-**Impact:** Familiar syntax for frontend developers, zero runtime overhead
+**Impact:** Familiar syntax for frontend developers, zero runtime overhead, works in both full and micro apps
 
 ---
 
