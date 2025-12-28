@@ -55,6 +55,25 @@ HTML to client
 - Client remains lightweight
 - SSR advantages preserved (security, performance, no JS required)
 
+### Migration: Tinkerdown → Core
+
+These attributes are currently in Tinkerdown but belong in LiveTemplate core:
+
+**Client-side (move from `tinkerdown-client` to `@livetemplate/client`):**
+- `lvt-click`, `lvt-submit`, `lvt-change` - Event handlers
+- `lvt-data-*` - Data passing
+- `lvt-confirm` - Confirmation dialogs
+- `lvt-reset-on:{event}` - Lifecycle hooks
+
+**Server-side (implement in LiveTemplate core):**
+- `lvt-for`, `lvt-if`, `lvt-text` - Template sugar (new)
+- `lvt-value`, `lvt-label` - Select bindings (move from Tinkerdown)
+- `lvt-checked`, `lvt-disabled` - Boolean attributes (new)
+
+**Stay in Tinkerdown (micro-app specific):**
+- `lvt-source` - Data source binding (ties to Tinkerdown's source system)
+- `lvt-columns`, `lvt-actions` - Auto-table generation
+
 ---
 
 ### 1.1 Auto-Rendering Components
