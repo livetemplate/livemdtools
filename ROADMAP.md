@@ -12,6 +12,83 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
+## For AI Assistants: How to Use This Roadmap
+
+This roadmap is designed to be followed and updated by LLMs. Here's how to work with it:
+
+### Selecting a Task
+1. Check **Current Sprint** below for active work
+2. If empty, pick from **Quick Wins** section or **Implementation Priorities**
+3. Find the corresponding **Detailed Implementation Plan** at the end of this document
+
+### Executing a Task
+1. Read the implementation plan for the task
+2. Follow the **Implementation Steps** in order
+3. Run the **E2E Tests** specified (or write them if missing)
+4. Update **Documentation** as specified
+5. Update **Examples** as specified
+
+### After Completing a Task
+1. Mark the checkbox as done: `- [ ]` → `- [x]`
+2. Update **Current Sprint** section below (move to completed, add next task)
+3. Commit with message format: `feat(<phase>): <description>`
+4. If implementation plan needs updates based on learnings, update it
+
+### Checkbox Legend
+- `- [ ]` = Not started
+- `- [~]` = In progress (add your name/date: `- [~] @claude 2025-01-15`)
+- `- [x]` = Completed
+
+### Common Commands
+```bash
+# Run all tests
+go test ./...
+
+# Run specific test
+go test ./... -v -run TestName
+
+# Start dev server
+tinkerdown serve examples/your-example
+
+# Validate markdown
+tinkerdown validate examples/your-example
+
+# Build for production
+go build -o tinkerdown ./cmd/tinkerdown
+```
+
+### Commit Message Format
+```
+feat(phase-N): brief description
+
+- Detail 1
+- Detail 2
+
+Refs: #issue-number (if applicable)
+```
+
+---
+
+## Current Sprint
+
+> **Instructions:** Keep this section updated with current work. Maximum 3 active tasks.
+
+### In Progress
+<!-- Add tasks here when starting work -->
+_No tasks currently in progress_
+
+### Recently Completed
+<!-- Move completed tasks here, keep last 5 -->
+_No tasks completed yet_
+
+### Next Up
+<!-- Queue of next 3-5 tasks to tackle -->
+1. 1.1 Auto-rendering tables
+2. 1.3 Document existing select auto-rendering
+3. 3.6A Docs cleanup
+
+---
+
 ## Priority Framework
 
 | Level | Criteria | Focus |
@@ -1000,9 +1077,26 @@ Each feature should have:
 
 # Detailed Implementation Plans
 
+> **For AI Assistants:** Each implementation plan follows this structure:
+> - **Prerequisites**: What must exist before starting
+> - **Files to Modify**: Exact paths to change
+> - **Implementation Steps**: Ordered tasks with checkboxes
+> - **Verification**: How to confirm it works
+> - **Definition of Done**: Exit criteria for completion
+
+---
+
 ## Phase 1: Auto-Rendering - Implementation Plan
 
 ### 1.1 Auto-Rendering Tables
+
+**Prerequisites:**
+- [ ] Understand current `page.go` structure (read `internal/page/page.go`)
+- [ ] Review existing lvt-source handling (grep for `lvt-source` in codebase)
+
+**Files to Modify:**
+- `internal/page/page.go` - Add table auto-generation logic
+- `internal/page/page_test.go` - Unit tests for parsing
 
 #### Implementation Steps
 
@@ -1069,9 +1163,39 @@ func TestAutoTableWithData(t *testing.T) {
 - [ ] `examples/auto-table/` - Table with lvt-source and lvt-columns
 - [ ] Update `examples/lvt-source-sqlite-test/` to demonstrate auto-table
 
+#### Verification
+
+Run these commands to verify the implementation:
+```bash
+# Unit tests
+go test ./internal/page/... -v -run TestAutoTable
+
+# E2E tests
+go test ./... -v -run TestAutoTable
+
+# Manual verification
+cd examples/auto-table && tinkerdown serve
+# Open browser, verify table renders with headers and data
+```
+
+#### Definition of Done
+
+- [ ] All checkboxes above are checked
+- [ ] All E2E tests pass
+- [ ] Example app runs without errors
+- [ ] Documentation updated
+- [ ] Code reviewed/committed
+- [ ] Update **Current Sprint** section in this file
+
 ---
 
 ### 1.2 Auto-Rendering Lists
+
+**Prerequisites:**
+- [ ] 1.1 Auto-Rendering Tables completed (shares parsing logic)
+
+**Files to Modify:**
+- `internal/page/page.go` - Add list auto-generation logic
 
 #### Implementation Steps
 
@@ -1112,6 +1236,17 @@ func TestAutoListEmptyState(t *testing.T) {
 #### Example Updates
 
 - [ ] `examples/auto-list/` - List rendering demo
+
+#### Verification
+```bash
+go test ./... -v -run TestAutoList
+cd examples/auto-list && tinkerdown serve
+```
+
+#### Definition of Done
+- [ ] All E2E tests pass
+- [ ] Example runs without errors
+- [ ] Update **Current Sprint** section
 
 ---
 
