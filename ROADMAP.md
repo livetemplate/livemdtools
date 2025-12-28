@@ -28,7 +28,27 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 ### Value Proposition
 > "Build interactive apps without learning Go templates"
 
-The biggest barrier to adoption is requiring users to learn Go's `html/template` syntax. This phase eliminates that requirement for common use cases.
+The biggest barrier to adoption is requiring users to learn Go's `html/template` syntax. This phase introduces `lvt-*` attributes as **compile-time sugar** that transforms to Go templates during parsing. Server-side rendering remains the core—the client stays simple.
+
+### Implementation Approach
+
+```
+Markdown with lvt-* attributes
+        ↓ (parse time)
+Transform to Go templates
+        ↓
+Server-side rendering (unchanged)
+        ↓
+HTML to client
+```
+
+**Benefits:**
+- No new rendering engine
+- Client remains lightweight
+- Power users can still use raw Go templates
+- SSR advantages preserved (security, performance, no JS required)
+
+---
 
 ### 1.1 Auto-Rendering Components
 
@@ -84,16 +104,24 @@ The biggest barrier to adoption is requiring users to learn Go's `html/template`
 <div lvt-if="!data.length">No items yet</div>
 ```
 
+**Transformations:**
+```
+lvt-for="item in tasks"     → {{range .tasks}}...{{end}}
+lvt-text="item.text"        → {{.text}}
+lvt-if="item.done"          → {{if .done}}...{{end}}
+lvt-checked="item.done"     → {{if .done}}checked{{end}}
+lvt-class="done: item.done" → class="{{if .done}}done{{end}}"
+```
+
 **Work Required:**
 - [ ] `lvt-for="item in source"` - Loop over data
 - [ ] `lvt-text="field"` - Set text content
 - [ ] `lvt-if="condition"` - Conditional rendering
-- [ ] `lvt-class="{'name': condition}"` - Dynamic classes
 - [ ] `lvt-checked`, `lvt-disabled`, `lvt-selected` - Boolean attributes
-- [ ] `lvt-style="{'color': value}"` - Dynamic styles
-- [ ] `lvt-bind="attr:value"` - Generic attribute binding
+- [ ] `lvt-class="name: condition"` - Dynamic classes
+- [ ] Parser transforms in `parser.go` or new `transform.go`
 
-**Impact:** Familiar syntax for React/Vue/Alpine developers
+**Impact:** Familiar syntax for frontend developers, zero runtime overhead
 
 ---
 
