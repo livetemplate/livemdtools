@@ -23,12 +23,144 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 1: Foundation & Stability (P0)
+## Phase 1: Zero-Template Development (P0)
+
+### Value Proposition
+> "Build interactive apps without learning Go templates"
+
+The biggest barrier to adoption is requiring users to learn Go's `html/template` syntax. This phase eliminates that requirement for common use cases.
+
+### 1.1 Auto-Rendering Components
+
+**Problem:** Users must write `{{range .Data}}...{{end}}` loops manually.
+
+**Solution:** HTML elements that auto-render from data sources:
+
+```html
+<!-- Instead of writing Go template loops -->
+<table lvt-source="tasks" lvt-columns="done,text,priority">
+  <!-- Auto-generates thead, tbody, and rows -->
+</table>
+
+<ul lvt-source="items" lvt-template="card">
+  <!-- Auto-generates list items -->
+</ul>
+
+<select lvt-source="categories" lvt-value="id" lvt-label="name">
+  <!-- Auto-populates options -->
+</select>
+```
+
+**Work Required:**
+- [ ] `<table lvt-source>` auto-generates full table from data
+- [ ] `<ul/ol lvt-source>` auto-generates list items
+- [ ] `<select lvt-source>` already works - document it
+- [ ] `lvt-template` attribute for card/row/custom layouts
+- [ ] `lvt-columns` for table column selection and ordering
+- [ ] `lvt-empty` for empty state message
+
+**Impact:** 80% of apps need no template knowledge
+
+---
+
+### 1.2 Declarative Attributes (Alpine.js-style)
+
+**Problem:** Go template syntax `{{if .Done}}checked{{end}}` is unfamiliar.
+
+**Solution:** HTML attributes that express logic declaratively:
+
+```html
+<!-- Instead of Go templates -->
+<tr lvt-for="item in tasks">
+  <td lvt-text="item.text"></td>
+  <td lvt-if="item.done">✓</td>
+  <td lvt-class="{'completed': item.done}"></td>
+  <input type="checkbox" lvt-checked="item.done">
+  <button lvt-click="Delete" lvt-data-id="item.id">Delete</button>
+</tr>
+
+<!-- Conditionals -->
+<div lvt-if="error" class="error" lvt-text="error"></div>
+<div lvt-if="!data.length">No items yet</div>
+```
+
+**Work Required:**
+- [ ] `lvt-for="item in source"` - Loop over data
+- [ ] `lvt-text="field"` - Set text content
+- [ ] `lvt-if="condition"` - Conditional rendering
+- [ ] `lvt-class="{'name': condition}"` - Dynamic classes
+- [ ] `lvt-checked`, `lvt-disabled`, `lvt-selected` - Boolean attributes
+- [ ] `lvt-style="{'color': value}"` - Dynamic styles
+- [ ] `lvt-bind="attr:value"` - Generic attribute binding
+
+**Impact:** Familiar syntax for React/Vue/Alpine developers
+
+---
+
+### 1.3 Form Auto-Binding
+
+**Problem:** Forms require manual wiring of inputs to actions.
+
+**Solution:** Smart form components that infer behavior:
+
+```html
+<!-- Auto-generates Add form from source schema -->
+<form lvt-source="tasks" lvt-action="Add">
+  <!-- Auto-creates inputs based on table columns -->
+</form>
+
+<!-- Or explicit but simple -->
+<form lvt-submit="Add" lvt-source="tasks">
+  <input lvt-field="text" placeholder="Task...">
+  <select lvt-field="priority" lvt-options="low,medium,high">
+  <button type="submit">Add</button>
+</form>
+```
+
+**Work Required:**
+- [ ] `lvt-field` auto-binds input name and validation
+- [ ] `lvt-options` for simple select options
+- [ ] Form schema inference from SQLite tables
+- [ ] Built-in validation display
+
+**Impact:** CRUD apps in minutes without template code
+
+---
+
+### 1.4 Markdown-Native Data Binding
+
+**Problem:** Users want to stay in markdown, not write HTML.
+
+**Solution:** Extend markdown syntax for data display:
+
+```markdown
+## Tasks
+
+<!-- Markdown table that binds to source -->
+| Done | Task | Priority |
+|------|------|----------|
+{tasks}
+
+<!-- Or a simple list -->
+- {tasks: text} ({tasks: priority})
+```
+
+**Work Required:**
+- [ ] `{source}` syntax in markdown tables
+- [ ] `{source: field}` for inline field access
+- [ ] Automatic table generation from source
+- [ ] List binding syntax
+
+**Impact:** True markdown-first development
+
+---
+
+## Phase 2: Stability & Performance (P0)
 
 ### Value Proposition
 > "Make what exists work reliably in production"
 
-### 1.1 Data Source Error Handling
+### 2.1 Data Source Error Handling
 **Files:** `internal/source/*.go`, `internal/runtime/state.go`
 
 **Current State:** Errors can crash or hang; no retry logic; silent failures possible.
@@ -81,7 +213,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 2: Developer Experience (P1)
+## Phase 3: Developer Experience (P1)
 
 ### Value Proposition
 > "Reduce time from idea to working app by 10x"
@@ -166,7 +298,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 3: Data Ecosystem (P1)
+## Phase 4: Data Ecosystem (P1)
 
 ### Value Proposition
 > "Connect to any data source in minutes, not days"
@@ -239,7 +371,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 4: Production Readiness (P1)
+## Phase 5: Production Readiness (P1)
 
 ### Value Proposition
 > "Deploy with confidence to real users"
@@ -313,7 +445,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 5: UI & Components (P2)
+## Phase 6: UI & Components (P2)
 
 ### Value Proposition
 > "Beautiful apps without CSS expertise"
@@ -389,7 +521,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 6: Advanced Features (P2)
+## Phase 7: Advanced Features (P2)
 
 ### Value Proposition
 > "Handle complex real-world scenarios"
@@ -470,7 +602,7 @@ Transform Tinkerdown into a **full-featured platform for building micro apps and
 
 ---
 
-## Phase 7: Polish & Optimization (P3)
+## Phase 8: Polish & Optimization (P3)
 
 ### Value Proposition
 > "Production-grade performance and reliability"
@@ -581,12 +713,16 @@ MEDIUM IMPACT (Nice to Have)
 
 These high-impact, low-effort items can be tackled immediately:
 
-1. **Add `--debug` flag** - Expose debug logging via CLI
-2. **Add code copy buttons** - Simple client-side enhancement
-3. **Source reference validation** - Check sources exist in validate command
-4. **CLI templates** - Add todo and dashboard templates to `new` command
-5. **Document WASM interface** - Full guide for building WASM sources
-6. **Add caching** - Simple TTL cache for REST/exec sources
+**Zero-Template (Highest Priority):**
+1. **Auto-table rendering** - `<table lvt-source="x" lvt-columns="a,b,c">` generates full table
+2. **Document existing `<select lvt-source>`** - Already works, just undocumented
+3. **`lvt-for` attribute** - Simple loop syntax without Go templates
+4. **`lvt-text` attribute** - Set text content from field
+
+**Developer Experience:**
+5. **Add `--debug` flag** - Expose debug logging via CLI
+6. **CLI templates** - Add todo and dashboard templates to `new` command
+7. **Source reference validation** - Check sources exist in validate command
 
 ---
 
