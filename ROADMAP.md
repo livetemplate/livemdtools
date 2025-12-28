@@ -55,24 +55,29 @@ HTML to client
 - Client remains lightweight
 - SSR advantages preserved (security, performance, no JS required)
 
-### Migration: Tinkerdown → Core
+### Current Attribute Ownership
 
-These attributes are currently in Tinkerdown but belong in LiveTemplate core:
-
-**Client-side (move from `tinkerdown-client` to `@livetemplate/client`):**
-- `lvt-click`, `lvt-submit`, `lvt-change` - Event handlers
-- `lvt-data-*` - Data passing
+**Already in `@livetemplate/client` (core):**
+- `lvt-{action}-on:{event}` - Lifecycle hooks (reset, addClass, disable, etc.)
 - `lvt-confirm` - Confirmation dialogs
-- `lvt-reset-on:{event}` - Lifecycle hooks
+- `lvt-data-*` - Data extraction
+- `lvt-preserve` - Preserve form fields during DOM updates
+- `lvt-scroll` - Scroll behavior (bottom, top, sticky)
+- `lvt-highlight` - Flash highlight animation
+- `lvt-animate` - Entry animations (fade, slide, scale)
 
-**Server-side (implement in LiveTemplate core):**
-- `lvt-for`, `lvt-if`, `lvt-text` - Template sugar (new)
-- `lvt-value`, `lvt-label` - Select bindings (move from Tinkerdown)
-- `lvt-checked`, `lvt-disabled` - Boolean attributes (new)
+**Move from Tinkerdown → Core:**
+- `lvt-click`, `lvt-submit`, `lvt-change` - Event handlers (client-side)
+
+**New for Core (server-side template sugar):**
+- `lvt-for`, `lvt-if`, `lvt-text` - Loop/conditional/text binding
+- `lvt-checked`, `lvt-disabled`, `lvt-selected` - Boolean attributes
+- `lvt-class` - Dynamic class binding
 
 **Stay in Tinkerdown (micro-app specific):**
-- `lvt-source` - Data source binding (ties to Tinkerdown's source system)
+- `lvt-source` - Data source binding
 - `lvt-columns`, `lvt-actions` - Auto-table generation
+- `lvt-value`, `lvt-label` - Select field mapping (works with lvt-source)
 
 ---
 
