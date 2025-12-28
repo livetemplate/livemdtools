@@ -50,7 +50,7 @@ func TestUXEnhancements(t *testing.T) {
 	})
 
 	t.Run("GzipCompressionEnabled", func(t *testing.T) {
-		req, err := http.NewRequest("GET", ts.URL+"/asset./tinkerdown-client.js", nil)
+		req, err := http.NewRequest("GET", ts.URL+"/assets/tinkerdown-client.js", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -150,7 +150,7 @@ func TestUXEnhancements(t *testing.T) {
 
 	t.Run("CompressionRatio", func(t *testing.T) {
 		// Test without compression
-		respNoComp, err := http.Get(ts.URL + "/asset./tinkerdown-client.js")
+		respNoComp, err := http.Get(ts.URL + "/assets/tinkerdown-client.js")
 		if err != nil {
 			t.Fatalf("Failed to fetch asset: %v", err)
 		}
@@ -167,7 +167,7 @@ func TestUXEnhancements(t *testing.T) {
 		}
 
 		// Test with compression
-		req, err := http.NewRequest("GET", ts.URL+"/asset./tinkerdown-client.js", nil)
+		req, err := http.NewRequest("GET", ts.URL+"/assets/tinkerdown-client.js", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -278,7 +278,7 @@ func BenchmarkCompression(b *testing.B) {
 	defer ts.Close()
 
 	b.Run("WithCompression", func(b *testing.B) {
-		req, _ := http.NewRequest("GET", ts.URL+"/asset./tinkerdown-client.js", nil)
+		req, _ := http.NewRequest("GET", ts.URL+"/assets/tinkerdown-client.js", nil)
 		req.Header.Set("Accept-Encoding", "gzip")
 
 		b.ResetTimer()
@@ -294,7 +294,7 @@ func BenchmarkCompression(b *testing.B) {
 	b.Run("WithoutCompression", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			resp, err := http.Get(fmt.Sprintf("%s/asset./tinkerdown-client.js", ts.URL))
+			resp, err := http.Get(fmt.Sprintf("%s/assets/tinkerdown-client.js", ts.URL))
 			if err != nil {
 				b.Fatal(err)
 			}

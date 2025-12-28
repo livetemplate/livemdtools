@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,24 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/livetemplate/tinkerdown/internal/server"
 )
+
+// threadSafeLogs provides thread-safe access to console logs
+type threadSafeLogs struct {
+	mu   sync.RWMutex
+	logs []string
+}
+
+func (l *threadSafeLogs) append(msg string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.logs = append(l.logs, msg)
+}
+
+func (l *threadSafeLogs) get() []string {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return append([]string{}, l.logs...)
+}
 
 // createTempMarkdownExample creates a temporary copy of the markdown-data-todo example
 // for testing write operations without modifying the original files.
@@ -114,17 +133,17 @@ sources:
 }
 
 // setupMarkdownTest creates a test server and chromedp context for markdown tests
-func setupMarkdownTest(t *testing.T, exampleDir string) (*httptest.Server, context.Context, context.CancelFunc, *[]string) {
+func setupMarkdownTest(t *testing.T, exampleDir string) (*httptest.Server, context.Context, context.CancelFunc, *threadSafeLogs) {
 	return setupMarkdownTestInternal(t, exampleDir, false)
 }
 
 // setupMarkdownTestWithWatch creates a test server with file watching enabled
-func setupMarkdownTestWithWatch(t *testing.T, exampleDir string) (*httptest.Server, context.Context, context.CancelFunc, *[]string) {
+func setupMarkdownTestWithWatch(t *testing.T, exampleDir string) (*httptest.Server, context.Context, context.CancelFunc, *threadSafeLogs) {
 	return setupMarkdownTestInternal(t, exampleDir, true)
 }
 
 // setupMarkdownTestInternal is the internal helper for setting up test servers
-func setupMarkdownTestInternal(t *testing.T, exampleDir string, enableWatch bool) (*httptest.Server, context.Context, context.CancelFunc, *[]string) {
+func setupMarkdownTestInternal(t *testing.T, exampleDir string, enableWatch bool) (*httptest.Server, context.Context, context.CancelFunc, *threadSafeLogs) {
 	t.Helper()
 
 	// Create test server - sources are defined in frontmatter
@@ -163,12 +182,12 @@ func setupMarkdownTestInternal(t *testing.T, exampleDir string, enableWatch bool
 		ts.Close()
 	}
 
-	// Store console logs for debugging
-	consoleLogs := &[]string{}
+	// Store console logs for debugging (thread-safe)
+	consoleLogs := &threadSafeLogs{}
 	chromedp.ListenTarget(ctx, func(ev interface{}) {
 		if ev, ok := ev.(*runtime.EventConsoleAPICalled); ok {
 			for _, arg := range ev.Args {
-				*consoleLogs = append(*consoleLogs, fmt.Sprintf("[Console] %s", arg.Value))
+				consoleLogs.append(fmt.Sprintf("[Console] %s", arg.Value))
 			}
 		}
 	})
@@ -336,7 +355,7 @@ func TestLvtSourceMarkdownToggle(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Task list was not rendered")
 	}
 	t.Log("Task list rendered")
@@ -387,7 +406,7 @@ func TestLvtSourceMarkdownToggle(t *testing.T) {
 	}
 
 	if !afterChecked {
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Checkbox should be checked after toggle")
 	}
 	t.Log("Checkbox is now checked")
@@ -434,7 +453,7 @@ func TestLvtSourceMarkdownToggleBack(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Task list was not rendered")
 	}
 	t.Log("Task list rendered")
@@ -485,7 +504,7 @@ func TestLvtSourceMarkdownToggleBack(t *testing.T) {
 	}
 
 	if afterChecked {
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Checkbox should be UNCHECKED after toggle")
 	}
 	t.Log("Checkbox is now unchecked")
@@ -531,7 +550,7 @@ func TestLvtSourceMarkdownAdd(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Add form was not rendered")
 	}
 	t.Log("Add form rendered")
@@ -570,7 +589,7 @@ func TestLvtSourceMarkdownAdd(t *testing.T) {
 	}
 
 	if newCount != initialCount+1 {
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatalf("Expected %d tasks after add, got %d", initialCount+1, newCount)
 	}
 	t.Logf("Task count increased to %d", newCount)
@@ -640,7 +659,7 @@ func TestLvtSourceMarkdownDelete(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Task list was not rendered")
 	}
 	t.Log("Task list rendered")
@@ -689,7 +708,7 @@ func TestLvtSourceMarkdownDelete(t *testing.T) {
 	}
 
 	if newCount != initialCount-1 {
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatalf("Expected %d tasks after delete, got %d", initialCount-1, newCount)
 	}
 	t.Logf("Task count decreased to %d", newCount)
@@ -823,7 +842,7 @@ func TestLvtSourceMarkdownBulletList(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Item list was not rendered")
 	}
 	t.Log("Bullet list rendered")
@@ -967,7 +986,7 @@ func TestLvtSourceMarkdownTable(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Table was not rendered")
 	}
 	t.Log("Table rendered")
@@ -1111,7 +1130,7 @@ func TestLvtSourceMarkdownExternalFile(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Note list was not rendered")
 	}
 	t.Log("External file data rendered")
@@ -1303,7 +1322,7 @@ func TestLvtSourceMarkdownUpdate(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Update button not found")
 	}
 	t.Log("Update button rendered")
@@ -1409,7 +1428,7 @@ sources:
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Tasks not rendered")
 	}
 	t.Log("Tasks rendered")
@@ -1516,7 +1535,7 @@ sources:
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Items not rendered")
 	}
 	t.Log("Items with special chars rendered")
@@ -1575,7 +1594,7 @@ func TestLvtSourceMarkdownExternalEdit(t *testing.T) {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
 		t.Logf("HTML (first 2000 chars): %s", htmlContent[:min(2000, len(htmlContent))])
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		t.Fatal("Notes list not rendered initially")
 	}
 	t.Log("Initial notes rendered")
@@ -1637,7 +1656,7 @@ func TestLvtSourceMarkdownExternalEdit(t *testing.T) {
 
 	if finalCount != 3 {
 		t.Logf("Expected 3 notes after external edit, got %d", finalCount)
-		t.Logf("Console logs: %v", *consoleLogs)
+		t.Logf("Console logs: %v", consoleLogs.get())
 		// This is expected if file watching is not working yet
 		t.Skip("File watching not fully implemented - test would pass when Phase 3 is complete")
 	}
@@ -1724,7 +1743,7 @@ func TestLvtSourceMarkdownConflictCopy(t *testing.T) {
 	}
 
 	// Log console for debugging
-	t.Logf("Console logs: %v", *consoleLogs)
+	t.Logf("Console logs: %v", consoleLogs.get())
 
 	if len(files) > 0 {
 		t.Logf("Conflict file(s) created: %v", files)

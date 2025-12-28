@@ -28,6 +28,15 @@ import (
 //   - write(action_ptr i32, action_len i32, data_ptr i32, data_len i32) -> i32 (0=success, 1=error)
 //   - get_error() -> i32 (ptr to error string if write failed)
 //   - get_error_len() -> i32 (length of error string)
+// Memory offsets for WASM string passing.
+// These are fixed offsets used for simple string passing to WASM modules.
+// TODO: Implement proper memory allocation via malloc/free exports for
+// production use with larger data or concurrent access.
+const (
+	wasmActionOffset = uint32(1024) // Offset for action string in WASM memory
+	wasmDataOffset   = uint32(2048) // Offset for data string in WASM memory
+)
+
 type WasmSource struct {
 	name     string
 	runtime  wazero.Runtime
@@ -131,20 +140,20 @@ func (s *WasmSource) Fetch(ctx context.Context) ([]map[string]interface{}, error
 	// Call fetch() to get pointer to result
 	results, err := s.fetchFn.Call(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("WASM fetch failed: %w", err)
+		return nil, fmt.Errorf("WASM fetch failed [%s]: %w", s.wasmPath, err)
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("WASM fetch returned no pointer")
+		return nil, fmt.Errorf("WASM fetch returned no pointer [%s]", s.wasmPath)
 	}
 	resultPtr := uint32(results[0])
 
 	// Get result length
 	lenResults, err := s.getResultLenFn.Call(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("WASM get_result_len failed: %w", err)
+		return nil, fmt.Errorf("WASM get_result_len failed [%s]: %w", s.wasmPath, err)
 	}
 	if len(lenResults) == 0 {
-		return nil, fmt.Errorf("WASM get_result_len returned no value")
+		return nil, fmt.Errorf("WASM get_result_len returned no value [%s]", s.wasmPath)
 	}
 	resultLen := uint32(lenResults[0])
 
@@ -195,20 +204,20 @@ func (s *WasmSource) WriteItem(ctx context.Context, action string, data map[stri
 	// Allocate memory for action and data strings
 	memory := s.module.Memory()
 	if memory == nil {
-		return fmt.Errorf("WASM module has no memory export")
+		return fmt.Errorf("WASM module has no memory export [%s]", s.wasmPath)
 	}
 
-	// For now, use a simple approach: write strings to a fixed location
-	// In production, you'd want proper memory allocation via malloc export
+	// Use fixed memory offsets for simple string passing
+	// See TODO in constants for future malloc-based implementation
 	actionBytes := []byte(action)
-	actionPtr := uint32(1024) // Fixed offset for action
-	dataPtr := uint32(2048)   // Fixed offset for data
+	actionPtr := wasmActionOffset
+	dataPtr := wasmDataOffset
 
 	if !memory.Write(actionPtr, actionBytes) {
-		return fmt.Errorf("failed to write action to WASM memory")
+		return fmt.Errorf("failed to write action to WASM memory [%s]", s.wasmPath)
 	}
 	if !memory.Write(dataPtr, dataBytes) {
-		return fmt.Errorf("failed to write data to WASM memory")
+		return fmt.Errorf("failed to write data to WASM memory [%s]", s.wasmPath)
 	}
 
 	// Call write(action_ptr, action_len, data_ptr, data_len)
@@ -216,7 +225,7 @@ func (s *WasmSource) WriteItem(ctx context.Context, action string, data map[stri
 		uint64(actionPtr), uint64(len(actionBytes)),
 		uint64(dataPtr), uint64(len(dataBytes)))
 	if err != nil {
-		return fmt.Errorf("WASM write failed: %w", err)
+		return fmt.Errorf("WASM write failed [%s]: %w", s.wasmPath, err)
 	}
 
 	// Check return value (0 = success)
@@ -229,11 +238,11 @@ func (s *WasmSource) WriteItem(ctx context.Context, action string, data map[stri
 				errPtr := uint32(errPtrResults[0])
 				errLen := uint32(errLenResults[0])
 				if errBytes, ok := memory.Read(errPtr, errLen); ok {
-					return fmt.Errorf("WASM write error: %s", string(errBytes))
+					return fmt.Errorf("WASM write error [%s]: %s", s.wasmPath, string(errBytes))
 				}
 			}
 		}
-		return fmt.Errorf("WASM write returned error code: %d", results[0])
+		return fmt.Errorf("WASM write returned error code %d [%s]", results[0], s.wasmPath)
 	}
 
 	return nil

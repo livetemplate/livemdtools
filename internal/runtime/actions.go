@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/livetemplate/tinkerdown/internal/source"
@@ -165,9 +166,7 @@ func (s *GenericState) sortData(column string) error {
 		return fmt.Errorf("column %q not found in data", column)
 	}
 
-	// Simple bubble sort (can be optimized)
-	// For now, we'll toggle between ascending and descending
-	// based on a simple heuristic (check if first < last for strings/numbers)
+	// Toggle between ascending and descending based on current order
 	ascending := true
 	if len(s.Data) >= 2 {
 		first := s.Data[0][column]
@@ -175,16 +174,16 @@ func (s *GenericState) sortData(column string) error {
 		ascending = compareValues(first, last) > 0 // If already desc, make it asc
 	}
 
-	for i := 0; i < len(s.Data)-1; i++ {
-		for j := 0; j < len(s.Data)-i-1; j++ {
-			a := s.Data[j][column]
-			b := s.Data[j+1][column]
-			cmp := compareValues(a, b)
-			if (ascending && cmp > 0) || (!ascending && cmp < 0) {
-				s.Data[j], s.Data[j+1] = s.Data[j+1], s.Data[j]
-			}
+	// Use sort.Slice for O(n log n) performance
+	sort.Slice(s.Data, func(i, j int) bool {
+		a := s.Data[i][column]
+		b := s.Data[j][column]
+		cmp := compareValues(a, b)
+		if ascending {
+			return cmp < 0
 		}
-	}
+		return cmp > 0
+	})
 
 	return nil
 }
