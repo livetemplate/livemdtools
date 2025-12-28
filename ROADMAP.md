@@ -488,6 +488,10 @@ docs/
       filter: "status == 'active'"
       sort: "name asc"
   ```
+- [ ] Expression language: [CEL (Common Expression Language)](https://github.com/google/cel-spec)
+  - Simple, safe, fast evaluation
+  - Go implementation available: `github.com/google/cel-go`
+  - Examples: `status == 'active'`, `age > 18 && role in ['admin', 'editor']`
 - [ ] Join sources on common fields
 - [ ] Aggregation (count, sum, avg)
 
@@ -908,7 +912,7 @@ MEDIUM IMPACT (Nice to Have)
 
 ### Phase 1-2 Complete
 **Functionality:**
-- [ ] All 8 example apps work reliably
+- [ ] All example apps work reliably (currently 14 in `examples/`)
 - [ ] Zero crashes on source errors (graceful degradation)
 - [ ] New app scaffolded in <1 minute
 - [ ] 90% of config errors caught at validation time
@@ -963,28 +967,28 @@ MEDIUM IMPACT (Nice to Have)
 
 ## Quick Wins (Start Immediately)
 
-These high-impact, low-effort items can be tackled immediately:
+These high-impact, low-effort items can be tackled immediately. See referenced sections for full details.
 
 **Auto-Rendering (Highest Priority):**
-1. **Auto-table rendering** - `<table lvt-source="x" lvt-columns="a,b,c">` generates full table
-2. **Auto-list rendering** - `<ul lvt-source="x">` generates list items
-3. **Document existing `<select lvt-source>`** - Already works, just undocumented
+1. **Auto-table rendering** → See [Phase 1, Section 1.1](#11-auto-rendering-tables)
+2. **Auto-list rendering** → See [Phase 1, Section 1.2](#12-auto-rendering-lists)
+3. **Document existing `<select lvt-source>`** → See [Phase 1, Section 1.3](#13-auto-rendering-selects)
 
 **Developer Experience:**
-4. **Add `--debug` flag** - Expose debug logging via CLI
-5. **CLI templates** - Add todo and dashboard templates to `new` command
-6. **Source reference validation** - Check sources exist in validate command
+4. **Add `--debug` flag** → See [Phase 3, Section 2.3](#23-debug-mode--logging)
+5. **CLI templates** → See [Phase 3, Section 2.1](#21-enhanced-cli-scaffolding)
+6. **Source reference validation** → See [Phase 3, Section 2.2](#22-expanded-validation)
 
 **Documentation Cleanup:**
-7. **Delete redundant docs** - Remove PROGRESS.md, UX_IMPROVEMENTS.md after merging
-8. **Create docs structure** - Set up `docs/getting-started/`, `docs/guides/`, `docs/reference/`
-9. **Write quickstart guide** - 5-minute first app tutorial
+7. **Delete redundant docs** → See [Phase 3, Section 2.6 Phase A](#26-documentation-cleanup--consolidation)
+8. **Create docs structure** → See [Phase 3, Section 2.6 Phase B](#26-documentation-cleanup--consolidation)
+9. **Write quickstart guide** → See [Phase 3, Section 2.6 Phase C](#26-documentation-cleanup--consolidation)
 
 ---
 
 ## Contributing
 
-See `CONTRIBUTING.md` for development setup and guidelines.
+> **TODO:** Create `CONTRIBUTING.md` with development setup and contribution guidelines.
 
 Each feature should have:
 1. Design document before implementation
