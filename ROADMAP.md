@@ -100,6 +100,109 @@ _No tasks completed yet_
 
 ---
 
+## Version Milestones
+
+| Phase | Target Version | Key Deliverables |
+|-------|---------------|------------------|
+| Phase 1 | **v0.2.0** | Auto-rendering tables, lists, selects |
+| Phase 2 | **v0.3.0** | Error handling, caching, multi-page WebSocket |
+| Phase 3 | **v0.4.0** | CLI templates, validation, WASM SDK, docs cleanup |
+| Phase 4 | **v0.5.0** | GraphQL, MongoDB, source composition |
+| Phase 5 | **v1.0.0** | Auth, rate limiting, health endpoints, security hardening |
+| Phase 6 | **v1.1.0** | Component library, pagination, themes |
+| Phase 7 | **v1.2.0** | Multi-user broadcasting, scheduled tasks, API mode |
+| Phase 8 | **v1.3.0** | Bundle optimization, accessibility, comprehensive tests |
+
+> **Note:** v1.0.0 marks production readiness. Earlier versions are for development/testing.
+
+---
+
+## Feature Dependencies
+
+```
+Phase 1 (Auto-Rendering)
+└── No dependencies - can start immediately
+
+Phase 2 (Stability)
+├── 2.1 Error Handling ← None
+├── 2.2 Source Caching ← 2.1 (needs error types)
+└── 2.3 Multi-Page WS ← None
+
+Phase 3 (Developer Experience)
+├── 3.1 CLI Templates ← Phase 1 (uses auto-rendering)
+├── 3.2 Validation ← None
+├── 3.3 Debug Mode ← None
+├── 3.4 Hot Reload ← None
+├── 3.5 WASM SDK ← None
+└── 3.6 Docs Cleanup ← None
+
+Phase 4 (Data Ecosystem)
+├── 4.1 GraphQL ← 2.1, 2.2 (error handling, caching)
+├── 4.2 MongoDB ← 2.1, 2.2
+├── 4.3 Source Composition ← 2.1 (needs error handling)
+├── 4.4 Webhook Source ← 2.3 (WebSocket support)
+└── 4.5 S3 Source ← 2.1, 2.2
+
+Phase 5 (Production Readiness)
+├── 5.1 Authentication ← None (core middleware)
+├── 5.2 Rate Limiting ← None
+├── 5.3 Health Endpoints ← 2.1 (error states)
+├── 5.4 Graceful Shutdown ← 2.3 (WebSocket tracking)
+├── 5.5 Single Binary ← None
+└── 5.6 Security ← 5.1 (CSRF needs session)
+
+Phase 6 (UI & Components)
+├── 6.1 Components ← Phase 1 (uses auto-rendering)
+├── 6.2 Pagination ← 2.2 (uses caching)
+├── 6.3 Sorting/Filter ← 6.2 (pagination)
+├── 6.4 Themes ← None
+└── 6.5 UX Improvements ← None
+
+Phase 7 (Advanced Features)
+├── 7.1 Broadcasting ← 2.3 (multi-page WS)
+├── 7.2 Scheduled Tasks ← 2.1 (error handling)
+├── 7.3 API Mode ← 5.1 (authentication)
+├── 7.4 Offline Support ← None
+└── 7.5 WASM Marketplace ← 3.5 (WASM SDK)
+
+Phase 8 (Polish)
+└── All items ← Phases 1-7
+```
+
+---
+
+## Compatibility Guarantees
+
+### Semantic Versioning
+This project follows [Semantic Versioning 2.0.0](https://semver.org/):
+- **MAJOR** (1.x.x): Breaking changes to markdown syntax, config format, or CLI
+- **MINOR** (x.1.x): New features, backward-compatible
+- **PATCH** (x.x.1): Bug fixes, backward-compatible
+
+### Backward Compatibility Promises
+
+**Go Templates (Always Supported):**
+- Existing `{{range}}`, `{{if}}`, `{{.field}}` syntax will always work
+- Auto-rendering is additive; manual templates are never required
+- No breaking changes to template helpers
+
+**Configuration (tinkerdown.yaml):**
+- New fields are optional with sensible defaults
+- Deprecated fields emit warnings for 2 minor versions before removal
+- Breaking config changes only in major versions
+
+**lvt-* Attributes:**
+- Core attributes (`lvt-click`, `lvt-submit`, etc.) are stable
+- New attributes don't affect existing ones
+- Deprecated attributes work for 2 minor versions with warnings
+
+### Migration Support
+- Breaking changes include migration guide in release notes
+- `tinkerdown migrate` command for automated config updates (future)
+- Deprecation warnings in CLI output
+
+---
+
 ## Phase 1: Auto-Rendering & Go Template Ergonomics (P0)
 
 ### Value Proposition
