@@ -2,7 +2,7 @@
 
 ## Vision
 
-Transform Tinkerdown from an interactive documentation tool into a **full-featured platform for building micro apps and internal tooling** using markdown as the primary interface.
+Transform Tinkerdown into a **full-featured platform for building micro apps and internal tooling** using markdown as the primary interface.
 
 **Target Users:**
 - Developers building internal tools, dashboards, and admin panels
@@ -12,34 +12,7 @@ Transform Tinkerdown from an interactive documentation tool into a **full-featur
 
 ---
 
-## Recent Architecture Changes (v1.0)
-
-The architecture was significantly simplified with the removal of Go plugin compilation:
-
-### What Changed
-| Before | After |
-|--------|-------|
-| Go plugins compiled at runtime | `GenericState` handles all state in-process |
-| `lvt-persist` for forms | `lvt-source type: sqlite` with auto-schema |
-| Go code blocks for custom logic | WASM sources for extensibility |
-| Code generation (3,500+ lines) | Runtime-based state handling |
-
-### New Capabilities
-- **SQLite source**: Built-in, pure Go, auto-schema from form fields
-- **WASM sources**: Community-extensible via wazero (pure Go WASM runtime)
-- **Simpler deployment**: No Go toolchain required at runtime
-- **Faster startup**: No compilation step
-
-### Migration Notes
-- `lvt-persist="items"` → `lvt-source="items"` with `type: sqlite, table: items`
-- Go server blocks → Use data sources or WASM extensions
-- Counter/state examples → Use sqlite source with Add/Toggle/Delete actions
-
----
-
-## Strategic Priorities
-
-### Priority Framework
+## Priority Framework
 
 | Level | Criteria | Focus |
 |-------|----------|-------|
@@ -614,52 +587,6 @@ These high-impact, low-effort items can be tackled immediately:
 4. **CLI templates** - Add todo and dashboard templates to `new` command
 5. **Document WASM interface** - Full guide for building WASM sources
 6. **Add caching** - Simple TTL cache for REST/exec sources
-
----
-
-## Architecture Diagram (Current)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Markdown File                            │
-│  (Frontmatter + lvt-source blocks)                          │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-                 v
-        ┌─────────────────┐
-        │   Parser.go     │
-        └────────┬────────┘
-                 │
-     ┌───────────┴────────────┐
-     v                        v
-  SourceConfigs          InteractiveBlocks
-     │                        │
-     v                        v
-┌────────────────────────────────────────────────────────┐
-│              runtime.GenericState                       │
-│  (In-process state handling, no plugin compilation)     │
-└────────────────────────┬───────────────────────────────┘
-                         │
-   ┌─────────────────────┼─────────────────────┐
-   v                     v                     v
-Built-in Sources    WASM Sources         SQLite Source
-(exec, pg, rest,    (wazero runtime)     (auto-schema)
- json, csv, md)
-   │                     │                     │
-   v                     v                     v
-┌────────────────────────────────────────────────────────┐
-│                    Data ([]map[string]interface{})      │
-└────────────────────────┬───────────────────────────────┘
-                         │
-                         v
-┌────────────────────────────────────────────────────────┐
-│              Template Rendering                         │
-│  (Go html/template with titlecase key support)          │
-└────────────────────────┬───────────────────────────────┘
-                         │
-                         v
-                   WebSocket → Client
-```
 
 ---
 
