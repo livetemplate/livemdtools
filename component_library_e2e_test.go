@@ -162,7 +162,46 @@ func TestAutoTableRendering(t *testing.T) {
 		t.Logf("Found %d simple tables", tableCount)
 	})
 
-	t.Log("All auto-table rendering tests passed!")
+	// Test 9: Simple string array list (ul)
+	t.Run("simple_list", func(t *testing.T) {
+		if !strings.Contains(htmlContent, "test-tags") {
+			t.Fatal("Tags list not found")
+		}
+		// Check for list items from tags.json
+		if !strings.Contains(htmlContent, "<li>") {
+			t.Fatal("No list items found")
+		}
+		t.Log("Simple list rendered correctly")
+	})
+
+	// Test 10: Object list with field
+	t.Run("list_with_field", func(t *testing.T) {
+		if !strings.Contains(htmlContent, "test-tasks") {
+			t.Fatal("Tasks list not found")
+		}
+		t.Log("List with field rendered correctly")
+	})
+
+	// Test 11: List with actions
+	t.Run("list_with_actions", func(t *testing.T) {
+		if !strings.Contains(htmlContent, "test-actions-list") {
+			t.Fatal("Actions list not found")
+		}
+		t.Log("List with actions rendered correctly")
+	})
+
+	// Test 12: Ordered list with empty state
+	t.Run("ordered_list_empty", func(t *testing.T) {
+		if !strings.Contains(htmlContent, "test-empty-list") {
+			t.Fatal("Empty list not found")
+		}
+		if !strings.Contains(htmlContent, "No items available") {
+			t.Fatal("Empty state message not found")
+		}
+		t.Log("Ordered list with empty state rendered correctly")
+	})
+
+	t.Log("All auto-rendering tests passed!")
 }
 
 // TestAutoTableGeneration tests the autoGenerateTableTemplate function directly
@@ -323,6 +362,105 @@ func TestAutoSelectGeneration(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Parse the input as a page to trigger autoGenerateSelectTemplate
 			page, err := tinkerdown.ParseString(fmt.Sprintf("---\ntitle: test\nsources:\n  countries:\n    type: json\n    file: test.json\n  items:\n    type: json\n    file: test.json\n---\n```lvt\n%s\n```", tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+
+			// Get the generated content from the interactive block
+			var generatedContent string
+			for _, block := range page.InteractiveBlocks {
+				generatedContent = block.Content
+				break
+			}
+
+			t.Logf("Generated content:\n%s", generatedContent)
+
+			// Check contains
+			for _, want := range tt.contains {
+				if !strings.Contains(generatedContent, want) {
+					t.Errorf("Expected generated content to contain %q", want)
+				}
+			}
+		})
+	}
+}
+
+// TestAutoListGeneration tests the list auto-generation function
+func TestAutoListGeneration(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		contains []string
+	}{
+		{
+			name:  "simple string array",
+			input: `<ul lvt-source="tags"></ul>`,
+			contains: []string{
+				"{{range .Data}}",
+				"<li>",
+				"{{.}}",
+				"</li>",
+			},
+		},
+		{
+			name:  "with field",
+			input: `<ul lvt-source="tasks" lvt-field="title"></ul>`,
+			contains: []string{
+				"{{range .Data}}",
+				"<li>",
+				"{{.Title}}",
+				"</li>",
+			},
+		},
+		{
+			name:  "with actions",
+			input: `<ul lvt-source="tasks" lvt-field="title" lvt-actions="delete:Delete"></ul>`,
+			contains: []string{
+				"{{range .Data}}",
+				"{{.Title}}",
+				`lvt-click="delete"`,
+				`lvt-data-id="{{.Id}}"`,
+				">Delete</button>",
+			},
+		},
+		{
+			name:  "with empty state",
+			input: `<ul lvt-source="items" lvt-empty="No items yet"></ul>`,
+			contains: []string{
+				"{{if not .Data}}",
+				"No items yet",
+				"{{else}}",
+				"{{range .Data}}",
+				"{{end}}",
+			},
+		},
+		{
+			name:  "ordered list",
+			input: `<ol lvt-source="steps"></ol>`,
+			contains: []string{
+				"<ol",
+				"{{range .Data}}",
+				"<li>",
+				"{{.}}",
+				"</li>",
+				"</ol>",
+			},
+		},
+		{
+			name:  "preserves other attributes",
+			input: `<ul lvt-source="tags" class="my-list" id="tag-list"></ul>`,
+			contains: []string{
+				`class="my-list"`,
+				`id="tag-list"`,
+				"{{range .Data}}",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse the input as a page to trigger autoGenerateListTemplate
+			page, err := tinkerdown.ParseString(fmt.Sprintf("---\ntitle: test\nsources:\n  tags:\n    type: json\n    file: test.json\n  tasks:\n    type: json\n    file: test.json\n  items:\n    type: json\n    file: test.json\n  steps:\n    type: json\n    file: test.json\n---\n```lvt\n%s\n```", tt.input))
 			if err != nil {
 				t.Fatalf("Failed to parse: %v", err)
 			}

@@ -1,5 +1,5 @@
 ---
-title: "Auto-Rendering Tables"
+title: "Auto-Rendering Components"
 sources:
   users:
     type: json
@@ -10,11 +10,17 @@ sources:
   empty_source:
     type: json
     file: empty.json
+  tags:
+    type: json
+    file: tags.json
+  tasks:
+    type: json
+    file: tasks.json
 ---
 
-# Auto-Rendering Tables
+# Auto-Rendering Components
 
-This page demonstrates auto-table generation for simple data display.
+This page demonstrates auto-rendering for tables, selects, and lists.
 
 ## Simple Tables
 
@@ -56,4 +62,36 @@ This page demonstrates auto-table generation for simple data display.
   <select lvt-source="countries" lvt-value="code" lvt-label="name" class="test-select">
   </select>
 </div>
+```
+
+---
+
+## Auto Lists
+
+### Test 5: Simple String Array List
+
+```lvt
+<ul lvt-source="tags" class="test-tags">
+</ul>
+```
+
+### Test 6: Object Array with Field
+
+```lvt
+<ul lvt-source="tasks" lvt-field="title" class="test-tasks">
+</ul>
+```
+
+### Test 7: List with Actions
+
+```lvt
+<ul lvt-source="tasks" lvt-field="title" lvt-actions="delete:×,edit:Edit" class="test-actions-list">
+</ul>
+```
+
+### Test 8: Ordered List with Empty State
+
+```lvt
+<ol lvt-source="empty_source" lvt-field="name" lvt-empty="No items available" class="test-empty-list">
+</ol>
 ```

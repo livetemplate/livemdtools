@@ -11,15 +11,19 @@ import (
 
 // Pre-compiled regexes for auto-table generation (performance optimization)
 var (
-	tableRegex       = regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
-	lvtSourceRegex   = regexp.MustCompile(`\s*lvt-source="[^"]*"`)
-	lvtColumnsRegex  = regexp.MustCompile(`\s*lvt-columns="[^"]*"`)
-	lvtActionsRegex  = regexp.MustCompile(`\s*lvt-actions="[^"]*"`)
-	lvtEmptyRegex    = regexp.MustCompile(`\s*lvt-empty="[^"]*"`)
+	tableRegex        = regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
+	ulListRegex       = regexp.MustCompile(`(?s)<ul([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ul>`)
+	olListRegex       = regexp.MustCompile(`(?s)<ol([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ol>`)
+	lvtSourceRegex    = regexp.MustCompile(`\s*lvt-source="[^"]*"`)
+	lvtColumnsRegex   = regexp.MustCompile(`\s*lvt-columns="[^"]*"`)
+	lvtActionsRegex   = regexp.MustCompile(`\s*lvt-actions="[^"]*"`)
+	lvtEmptyRegex     = regexp.MustCompile(`\s*lvt-empty="[^"]*"`)
+	lvtFieldRegex     = regexp.MustCompile(`\s*lvt-field="[^"]*"`)
 	lvtDatatableRegex = regexp.MustCompile(`\s*lvt-datatable`)
-	columnsAttrRegex = regexp.MustCompile(`lvt-columns="([^"]+)"`)
-	actionsAttrRegex = regexp.MustCompile(`lvt-actions="([^"]+)"`)
-	emptyAttrRegex   = regexp.MustCompile(`lvt-empty="([^"]+)"`)
+	columnsAttrRegex  = regexp.MustCompile(`lvt-columns="([^"]+)"`)
+	actionsAttrRegex  = regexp.MustCompile(`lvt-actions="([^"]+)"`)
+	emptyAttrRegex    = regexp.MustCompile(`lvt-empty="([^"]+)"`)
+	fieldAttrRegex    = regexp.MustCompile(`lvt-field="([^"]+)"`)
 )
 
 // ParseFile parses a markdown file and creates a Page.
@@ -178,9 +182,10 @@ func (p *Page) buildBlocks(codeBlocks []*CodeBlock, sourceFile string) error {
 			columns := getTableColumns(cb.Content)
 			actions := getTableActions(cb.Content)
 
-			// Apply smart template generation for tables/selects with lvt-source
+			// Apply smart template generation for tables/selects/lists with lvt-source
 			processedContent := autoGenerateTableTemplate(cb.Content)
 			processedContent = autoGenerateSelectTemplate(processedContent)
+			processedContent = autoGenerateListTemplate(processedContent)
 
 			if stateRef == "" && sourceName != "" {
 				// Create auto-generated server block for lvt-source
@@ -308,17 +313,22 @@ func getLvtSource(content string) string {
 }
 
 // getLvtSourceElementType detects what kind of element has the lvt-source attribute
-// Returns "table", "select", or "div" (default)
+// Returns "table", "select", "list", or "div" (default)
 func getLvtSourceElementType(content string) string {
 	// Check if lvt-source is on a table element
-	tableRegex := regexp.MustCompile(`(?i)<table[^>]*lvt-source=`)
-	if tableRegex.MatchString(content) {
+	tableDetectRegex := regexp.MustCompile(`(?i)<table[^>]*lvt-source=`)
+	if tableDetectRegex.MatchString(content) {
 		return "table"
 	}
 	// Check if lvt-source is on a select element
-	selectRegex := regexp.MustCompile(`(?i)<select[^>]*lvt-source=`)
-	if selectRegex.MatchString(content) {
+	selectDetectRegex := regexp.MustCompile(`(?i)<select[^>]*lvt-source=`)
+	if selectDetectRegex.MatchString(content) {
 		return "select"
+	}
+	// Check if lvt-source is on a ul or ol element
+	listDetectRegex := regexp.MustCompile(`(?i)<(ul|ol)[^>]*lvt-source=`)
+	if listDetectRegex.MatchString(content) {
+		return "list"
 	}
 	return "div"
 }
@@ -619,4 +629,117 @@ func autoGenerateSelectTemplate(content string) string {
 
 	// Use ReplaceAllLiteralString to avoid special chars being interpreted as backreferences
 	return selectRegex.ReplaceAllLiteralString(content, generated.String())
+}
+
+// autoGenerateListTemplate transforms <ul lvt-source="..."> or <ol lvt-source="..."> into a full template
+// if the list is empty. Supports lvt-field, lvt-actions, and lvt-empty attributes.
+func autoGenerateListTemplate(content string) string {
+	// Try ul first, then ol
+	listTag := ""
+	var match []string
+	var activeRegex *regexp.Regexp
+
+	match = ulListRegex.FindStringSubmatch(content)
+	if match != nil {
+		listTag = "ul"
+		activeRegex = ulListRegex
+	} else {
+		match = olListRegex.FindStringSubmatch(content)
+		if match != nil {
+			listTag = "ol"
+			activeRegex = olListRegex
+		}
+	}
+
+	if match == nil {
+		return content
+	}
+
+	attrs := match[1]
+	innerContent := strings.TrimSpace(match[2])
+
+	// If list has substantial inner content (like {{range}} or <li>), don't override
+	if strings.Contains(innerContent, "{{range") || strings.Contains(innerContent, "<li") {
+		return content
+	}
+
+	// Parse lvt-field="fieldName" - if not specified, use {{.}} for simple values
+	field := ""
+	fieldMatch := fieldAttrRegex.FindStringSubmatch(attrs)
+	if fieldMatch != nil && len(fieldMatch) > 1 {
+		field = titleCase(fieldMatch[1])
+	}
+
+	// Parse lvt-actions="action:Label,action2:Label2"
+	actions := ""
+	actionsMatch := actionsAttrRegex.FindStringSubmatch(attrs)
+	if actionsMatch != nil && len(actionsMatch) > 1 {
+		actions = actionsMatch[1]
+	}
+
+	// Parse lvt-empty="message"
+	emptyMsg := ""
+	emptyMatch := emptyAttrRegex.FindStringSubmatch(attrs)
+	if emptyMatch != nil && len(emptyMatch) > 1 {
+		emptyMsg = emptyMatch[1]
+	}
+
+	// Build cleaned attributes (remove lvt-* attributes)
+	cleanedAttrs := attrs
+	cleanedAttrs = lvtSourceRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtFieldRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtActionsRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtEmptyRegex.ReplaceAllString(cleanedAttrs, "")
+
+	// Generate the template
+	var generated strings.Builder
+	generated.WriteString("<")
+	generated.WriteString(listTag)
+	generated.WriteString(cleanedAttrs)
+	generated.WriteString(">\n")
+
+	// Handle empty state
+	if emptyMsg != "" {
+		generated.WriteString("{{if not .Data}}\n")
+		generated.WriteString(fmt.Sprintf("  <li>%s</li>\n", html.EscapeString(emptyMsg)))
+		generated.WriteString("{{else}}\n")
+	}
+
+	generated.WriteString("  {{range .Data}}\n")
+	generated.WriteString("  <li>\n")
+
+	// Add field value
+	if field != "" {
+		generated.WriteString(fmt.Sprintf("    {{.%s}}\n", field))
+	} else {
+		generated.WriteString("    {{.}}\n")
+	}
+
+	// Add action buttons if specified
+	if actions != "" {
+		actionPairs := strings.Split(actions, ",")
+		for _, pair := range actionPairs {
+			parts := strings.SplitN(pair, ":", 2)
+			if len(parts) == 2 {
+				action := strings.TrimSpace(parts[0])
+				label := strings.TrimSpace(parts[1])
+				generated.WriteString(fmt.Sprintf("    <button lvt-click=\"%s\" lvt-data-id=\"{{.Id}}\">%s</button>\n",
+					html.EscapeString(action), html.EscapeString(label)))
+			}
+		}
+	}
+
+	generated.WriteString("  </li>\n")
+	generated.WriteString("  {{end}}\n")
+
+	if emptyMsg != "" {
+		generated.WriteString("{{end}}\n")
+	}
+
+	generated.WriteString("</")
+	generated.WriteString(listTag)
+	generated.WriteString(">")
+
+	// Replace the original list with the generated template
+	return activeRegex.ReplaceAllLiteralString(content, generated.String())
 }
