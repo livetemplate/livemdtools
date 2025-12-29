@@ -359,6 +359,68 @@ func TestAutoSelectGeneration(t *testing.T) {
 	}
 }
 
+// TestXSSPrevention verifies that user-provided strings are HTML-escaped
+func TestXSSPrevention(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		shouldContain []string // Escaped versions that should be in table cells/headers
+	}{
+		{
+			name:  "XSS in empty message is escaped",
+			input: `<table lvt-source="users" lvt-columns="name:Name" lvt-empty="<script>alert(1)</script>"></table>`,
+			shouldContain: []string{
+				"&lt;script&gt;alert(1)&lt;/script&gt;", // Escaped in empty state td
+			},
+		},
+		{
+			name:  "script tag in column label is escaped",
+			input: `<table lvt-source="users" lvt-columns="name:Test<b>Bold</b>"></table>`,
+			shouldContain: []string{
+				"<th>Test&lt;b&gt;Bold&lt;/b&gt;</th>", // Escaped in th
+			},
+		},
+		{
+			name:  "ampersand in column label is escaped",
+			input: `<table lvt-source="users" lvt-columns="name:Name & Title"></table>`,
+			shouldContain: []string{
+				"<th>Name &amp; Title</th>", // Escaped in th
+			},
+		},
+		{
+			name:  "quotes in action label are escaped",
+			input: `<table lvt-source="users" lvt-columns="name:Name" lvt-actions="delete:Delete &quot;Item&quot;"></table>`,
+			shouldContain: []string{
+				"Delete &amp;quot;Item&amp;quot;</button>", // Escaped in button
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			page, err := tinkerdown.ParseString(fmt.Sprintf("---\ntitle: test\nsources:\n  users:\n    type: json\n    file: test.json\n---\n```lvt\n%s\n```", tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+
+			var generatedContent string
+			for _, block := range page.InteractiveBlocks {
+				generatedContent = block.Content
+				break
+			}
+
+			t.Logf("Generated content:\n%s", generatedContent)
+
+			// Verify escaped versions ARE present
+			for _, want := range tt.shouldContain {
+				if !strings.Contains(generatedContent, want) {
+					t.Errorf("Expected escaped content to contain %q", want)
+				}
+			}
+		})
+	}
+}
+
 // Legacy test for backward compatibility
 func TestComponentLibrary(t *testing.T) {
 	// This test is kept for backward compatibility but delegates to the new test

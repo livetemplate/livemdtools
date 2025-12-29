@@ -2,10 +2,24 @@ package tinkerdown
 
 import (
 	"fmt"
+	"html"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+)
+
+// Pre-compiled regexes for auto-table generation (performance optimization)
+var (
+	tableRegex       = regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
+	lvtSourceRegex   = regexp.MustCompile(`\s*lvt-source="[^"]*"`)
+	lvtColumnsRegex  = regexp.MustCompile(`\s*lvt-columns="[^"]*"`)
+	lvtActionsRegex  = regexp.MustCompile(`\s*lvt-actions="[^"]*"`)
+	lvtEmptyRegex    = regexp.MustCompile(`\s*lvt-empty="[^"]*"`)
+	lvtDatatableRegex = regexp.MustCompile(`\s*lvt-datatable`)
+	columnsAttrRegex = regexp.MustCompile(`lvt-columns="([^"]+)"`)
+	actionsAttrRegex = regexp.MustCompile(`lvt-actions="([^"]+)"`)
+	emptyAttrRegex   = regexp.MustCompile(`lvt-empty="([^"]+)"`)
 )
 
 // ParseFile parses a markdown file and creates a Page.
@@ -312,8 +326,7 @@ func getLvtSourceElementType(content string) string {
 // getTableColumns extracts lvt-columns from a table element
 // Returns a comma-separated list like "name:Name,email:Email"
 func getTableColumns(content string) string {
-	columnsRegex := regexp.MustCompile(`lvt-columns="([^"]+)"`)
-	match := columnsRegex.FindStringSubmatch(content)
+	match := columnsAttrRegex.FindStringSubmatch(content)
 	if match != nil && len(match) > 1 {
 		return match[1]
 	}
@@ -323,8 +336,7 @@ func getTableColumns(content string) string {
 // getTableActions extracts lvt-actions from a table element
 // Returns a comma-separated list like "edit:Edit,delete:Delete"
 func getTableActions(content string) string {
-	actionsRegex := regexp.MustCompile(`lvt-actions="([^"]+)"`)
-	match := actionsRegex.FindStringSubmatch(content)
+	match := actionsAttrRegex.FindStringSubmatch(content)
 	if match != nil && len(match) > 1 {
 		return match[1]
 	}
@@ -345,7 +357,6 @@ func getTableActions(content string) string {
 //   - lvt-datatable - Opt-in to rich datatable component mode
 func autoGenerateTableTemplate(content string) string {
 	// Check if this is a table with lvt-source and empty/minimal content
-	tableRegex := regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
 	match := tableRegex.FindStringSubmatch(content)
 	if match == nil {
 		return content
@@ -373,11 +384,11 @@ func autoGenerateTableTemplate(content string) string {
 
 	// Clean attributes (remove lvt-* attributes we've processed)
 	cleanedAttrs := attrs
-	cleanedAttrs = regexp.MustCompile(`\s*lvt-source="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
-	cleanedAttrs = regexp.MustCompile(`\s*lvt-columns="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
-	cleanedAttrs = regexp.MustCompile(`\s*lvt-actions="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
-	cleanedAttrs = regexp.MustCompile(`\s*lvt-empty="[^"]*"`).ReplaceAllString(cleanedAttrs, "")
-	cleanedAttrs = regexp.MustCompile(`\s*lvt-datatable`).ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtSourceRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtColumnsRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtActionsRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtEmptyRegex.ReplaceAllString(cleanedAttrs, "")
+	cleanedAttrs = lvtDatatableRegex.ReplaceAllString(cleanedAttrs, "")
 	cleanedAttrs = strings.TrimSpace(cleanedAttrs)
 
 	var generated strings.Builder
@@ -472,7 +483,9 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 		if len(acts) > 0 {
 			w.WriteString("      <td>\n")
 			for _, act := range acts {
-				w.WriteString(fmt.Sprintf("        <button lvt-click=\"%s\" lvt-data-id=\"{{.Id}}\">%s</button>\n", act.action, act.label))
+				// HTML-escape action label to prevent XSS
+				w.WriteString(fmt.Sprintf("        <button lvt-click=\"%s\" lvt-data-id=\"{{.Id}}\">%s</button>\n",
+					html.EscapeString(act.action), html.EscapeString(act.label)))
 			}
 			w.WriteString("      </td>\n")
 		}
@@ -480,7 +493,8 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 		w.WriteString("  </tbody>\n")
 		w.WriteString("{{else}}\n")
 		if emptyMessage != "" {
-			w.WriteString(fmt.Sprintf("  <tbody><tr><td>%s</td></tr></tbody>\n", emptyMessage))
+			// HTML-escape empty message to prevent XSS
+			w.WriteString(fmt.Sprintf("  <tbody><tr><td>%s</td></tr></tbody>\n", html.EscapeString(emptyMessage)))
 		} else {
 			w.WriteString("  <tbody><tr><td>No data</td></tr></tbody>\n")
 		}
@@ -491,7 +505,8 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 	// Generate with explicit columns
 	w.WriteString("  <thead>\n    <tr>\n")
 	for _, col := range cols {
-		w.WriteString(fmt.Sprintf("      <th>%s</th>\n", col.label))
+		// HTML-escape column label to prevent XSS
+		w.WriteString(fmt.Sprintf("      <th>%s</th>\n", html.EscapeString(col.label)))
 	}
 	if len(acts) > 0 {
 		w.WriteString("      <th>Actions</th>\n")
@@ -505,7 +520,8 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 		if len(acts) > 0 {
 			colSpan++
 		}
-		w.WriteString(fmt.Sprintf("  <tbody><tr><td colspan=\"%d\">%s</td></tr></tbody>\n", colSpan, emptyMessage))
+		// HTML-escape empty message to prevent XSS
+		w.WriteString(fmt.Sprintf("  <tbody><tr><td colspan=\"%d\">%s</td></tr></tbody>\n", colSpan, html.EscapeString(emptyMessage)))
 		w.WriteString("  {{else}}\n")
 	}
 
@@ -518,7 +534,9 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 	if len(acts) > 0 {
 		w.WriteString("      <td>\n")
 		for _, act := range acts {
-			w.WriteString(fmt.Sprintf("        <button lvt-click=\"%s\" lvt-data-id=\"{{.Id}}\">%s</button>\n", act.action, act.label))
+			// HTML-escape action label to prevent XSS
+			w.WriteString(fmt.Sprintf("        <button lvt-click=\"%s\" lvt-data-id=\"{{.Id}}\">%s</button>\n",
+				html.EscapeString(act.action), html.EscapeString(act.label)))
 		}
 		w.WriteString("      </td>\n")
 	}
@@ -532,8 +550,7 @@ func generateSimpleTable(w *strings.Builder, columns, actions, emptyMessage stri
 
 // getTableEmpty extracts lvt-empty attribute value
 func getTableEmpty(content string) string {
-	emptyRegex := regexp.MustCompile(`lvt-empty="([^"]+)"`)
-	match := emptyRegex.FindStringSubmatch(content)
+	match := emptyAttrRegex.FindStringSubmatch(content)
 	if match != nil && len(match) > 1 {
 		return match[1]
 	}
