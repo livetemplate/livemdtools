@@ -9,21 +9,24 @@ import (
 	"strings"
 )
 
-// Pre-compiled regexes for auto-table generation (performance optimization)
+// Pre-compiled regexes for auto-rendering (tables, lists, selects) (performance optimization)
 var (
-	tableRegex        = regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
-	ulListRegex       = regexp.MustCompile(`(?s)<ul([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ul>`)
-	olListRegex       = regexp.MustCompile(`(?s)<ol([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ol>`)
-	lvtSourceRegex    = regexp.MustCompile(`\s*lvt-source="[^"]*"`)
-	lvtColumnsRegex   = regexp.MustCompile(`\s*lvt-columns="[^"]*"`)
-	lvtActionsRegex   = regexp.MustCompile(`\s*lvt-actions="[^"]*"`)
-	lvtEmptyRegex     = regexp.MustCompile(`\s*lvt-empty="[^"]*"`)
-	lvtFieldRegex     = regexp.MustCompile(`\s*lvt-field="[^"]*"`)
-	lvtDatatableRegex = regexp.MustCompile(`\s*lvt-datatable`)
-	columnsAttrRegex  = regexp.MustCompile(`lvt-columns="([^"]+)"`)
-	actionsAttrRegex  = regexp.MustCompile(`lvt-actions="([^"]+)"`)
-	emptyAttrRegex    = regexp.MustCompile(`lvt-empty="([^"]+)"`)
-	fieldAttrRegex    = regexp.MustCompile(`lvt-field="([^"]+)"`)
+	tableRegex          = regexp.MustCompile(`(?s)<table([^>]*lvt-source="[^"]+[^>]*)>(.*?)</table>`)
+	ulListRegex         = regexp.MustCompile(`(?s)<ul([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ul>`)
+	olListRegex         = regexp.MustCompile(`(?s)<ol([^>]*lvt-source="[^"]+[^>]*)>(.*?)</ol>`)
+	lvtSourceRegex      = regexp.MustCompile(`\s*lvt-source="[^"]*"`)
+	lvtColumnsRegex     = regexp.MustCompile(`\s*lvt-columns="[^"]*"`)
+	lvtActionsRegex     = regexp.MustCompile(`\s*lvt-actions="[^"]*"`)
+	lvtEmptyRegex       = regexp.MustCompile(`\s*lvt-empty="[^"]*"`)
+	lvtFieldRegex       = regexp.MustCompile(`\s*lvt-field="[^"]*"`)
+	lvtDatatableRegex   = regexp.MustCompile(`\s*lvt-datatable`)
+	columnsAttrRegex    = regexp.MustCompile(`lvt-columns="([^"]+)"`)
+	actionsAttrRegex    = regexp.MustCompile(`lvt-actions="([^"]+)"`)
+	emptyAttrRegex      = regexp.MustCompile(`lvt-empty="([^"]+)"`)
+	fieldAttrRegex      = regexp.MustCompile(`lvt-field="([^"]+)"`)
+	tableDetectRegex    = regexp.MustCompile(`(?i)<table[^>]*lvt-source=`)
+	selectDetectRegex   = regexp.MustCompile(`(?i)<select[^>]*lvt-source=`)
+	listDetectRegex     = regexp.MustCompile(`(?i)<(ul|ol)[^>]*lvt-source=`)
 )
 
 // ParseFile parses a markdown file and creates a Page.
@@ -315,18 +318,12 @@ func getLvtSource(content string) string {
 // getLvtSourceElementType detects what kind of element has the lvt-source attribute
 // Returns "table", "select", "list", or "div" (default)
 func getLvtSourceElementType(content string) string {
-	// Check if lvt-source is on a table element
-	tableDetectRegex := regexp.MustCompile(`(?i)<table[^>]*lvt-source=`)
 	if tableDetectRegex.MatchString(content) {
 		return "table"
 	}
-	// Check if lvt-source is on a select element
-	selectDetectRegex := regexp.MustCompile(`(?i)<select[^>]*lvt-source=`)
 	if selectDetectRegex.MatchString(content) {
 		return "select"
 	}
-	// Check if lvt-source is on a ul or ol element
-	listDetectRegex := regexp.MustCompile(`(?i)<(ul|ol)[^>]*lvt-source=`)
 	if listDetectRegex.MatchString(content) {
 		return "list"
 	}
@@ -715,8 +712,8 @@ func autoGenerateListTemplate(content string) string {
 		generated.WriteString("    {{.}}\n")
 	}
 
-	// Add action buttons if specified
-	if actions != "" {
+	// Add action buttons if specified (requires lvt-field since actions need .Id from object arrays)
+	if actions != "" && field != "" {
 		actionPairs := strings.Split(actions, ",")
 		for _, pair := range actionPairs {
 			parts := strings.SplitN(pair, ":", 2)

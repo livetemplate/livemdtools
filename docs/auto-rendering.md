@@ -316,6 +316,8 @@ Renders action buttons alongside each item:
 </ul>
 ```
 
+**Note:** `lvt-actions` requires `lvt-field` to be specified (object arrays only). Each object must have an `id` field, which is used for the `lvt-data-id` attribute on action buttons. Actions are ignored for simple string arrays.
+
 ### Empty State
 
 Show a message when the data source is empty:
