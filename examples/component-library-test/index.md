@@ -1,5 +1,5 @@
 ---
-title: "Component Library Test"
+title: "Auto-Rendering Tables"
 sources:
   users:
     type: json
@@ -7,27 +7,48 @@ sources:
   countries:
     type: json
     file: countries.json
+  empty_source:
+    type: json
+    file: empty.json
 ---
 
-# Component Library Test
+# Auto-Rendering Tables
 
-This page demonstrates smart table and select auto-generation using the components library.
+This page demonstrates auto-table generation for simple data display.
 
-## Test 1: Datatable with Explicit Columns
+## Simple Tables
+
+### Test 1: Table with Explicit Columns
 
 ```lvt
 <table lvt-source="users" lvt-columns="name:Name,email:Email">
 </table>
 ```
 
-## Test 2: Datatable with Different Columns
+### Test 2: Table with Actions
 
 ```lvt
-<table lvt-source="users" lvt-columns="name:Name,role:Role">
+<table lvt-source="users" lvt-columns="name:Name,role:Role" lvt-actions="delete:Delete,edit:Edit">
 </table>
 ```
 
-## Test 3: Auto Select Dropdown
+### Test 3: Table with Empty State
+
+```lvt
+<table lvt-source="empty_source" lvt-columns="name:Name,email:Email" lvt-empty="No users found">
+</table>
+```
+
+### Test 4: Table with Auto-Discovery (No Columns)
+
+```lvt
+<table lvt-source="users">
+</table>
+```
+
+---
+
+## Auto Select Dropdown
 
 ```lvt
 <div class="select-container">
@@ -35,11 +56,4 @@ This page demonstrates smart table and select auto-generation using the componen
   <select lvt-source="countries" lvt-value="code" lvt-label="name" class="test-select">
   </select>
 </div>
-```
-
-## Test 4: Auto Table with Auto-Discovery (No Columns)
-
-```lvt
-<table lvt-source="users">
-</table>
 ```
