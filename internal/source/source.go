@@ -6,6 +6,7 @@ package source
 import (
 	"context"
 
+	"github.com/livetemplate/tinkerdown/internal/cache"
 	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/wasm"
 )
@@ -41,6 +42,8 @@ type WritableSource interface {
 // Registry holds configured sources for a site
 type Registry struct {
 	sources map[string]Source
+	cache   cache.Cache
+	cfg     *config.Config
 }
 
 // NewRegistry creates a source registry from config
@@ -51,8 +54,11 @@ func NewRegistry(cfg *config.Config, siteDir string) (*Registry, error) {
 // NewRegistryWithFile creates a source registry with knowledge of the current markdown file
 // This is needed for markdown sources that reference anchors in the current file
 func NewRegistryWithFile(cfg *config.Config, siteDir, currentFile string) (*Registry, error) {
+	memCache := cache.NewMemoryCache()
 	r := &Registry{
 		sources: make(map[string]Source),
+		cache:   memCache,
+		cfg:     cfg,
 	}
 
 	if cfg.Sources == nil {
@@ -62,8 +68,20 @@ func NewRegistryWithFile(cfg *config.Config, siteDir, currentFile string) (*Regi
 	for name, srcCfg := range cfg.Sources {
 		src, err := createSource(name, srcCfg, siteDir, currentFile)
 		if err != nil {
+			// Stop cache cleanup goroutine to avoid leak on initialization error
+			memCache.Stop()
 			return nil, err
 		}
+
+		// Wrap with caching if enabled
+		if srcCfg.IsCacheEnabled() {
+			if ws, ok := src.(WritableSource); ok {
+				src = NewCachedWritableSource(ws, r.cache, srcCfg)
+			} else {
+				src = NewCachedSource(src, r.cache, srcCfg)
+			}
+		}
+
 		r.sources[name] = src
 	}
 
@@ -76,14 +94,39 @@ func (r *Registry) Get(name string) (Source, bool) {
 	return src, ok
 }
 
-// Close releases all sources
+// Close releases all sources and stops the cache
 func (r *Registry) Close() error {
+	// Stop the cache cleanup goroutine
+	if mc, ok := r.cache.(*cache.MemoryCache); ok {
+		mc.Stop()
+	}
+
 	for _, src := range r.sources {
 		if err := src.Close(); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// InvalidateCache invalidates the cache for a specific source
+func (r *Registry) InvalidateCache(name string) {
+	src, ok := r.sources[name]
+	if !ok {
+		// Source not found; nothing to invalidate
+		return
+	}
+
+	if cs, ok := src.(*CachedSource); ok {
+		cs.Invalidate()
+	} else if cws, ok := src.(*CachedWritableSource); ok {
+		cws.Invalidate()
+	}
+}
+
+// InvalidateAllCaches invalidates all cached data
+func (r *Registry) InvalidateAllCaches() {
+	r.cache.InvalidateAll()
 }
 
 // createSource instantiates a source based on config type
