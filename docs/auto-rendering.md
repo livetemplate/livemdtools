@@ -233,9 +233,126 @@ This uses the [datatable component](https://github.com/livetemplate/components/t
 
 ---
 
+## Lists
+
+Transform an empty `<ul>` or `<ol>` element into a fully populated list from a data source.
+
+### Basic Usage
+
+```html
+<ul lvt-source="tags" lvt-field="name">
+</ul>
+```
+
+With a `tags.json` data file:
+```json
+[
+  {"id": 1, "name": "alpha"},
+  {"id": 2, "name": "beta"},
+  {"id": 3, "name": "gamma"}
+]
+```
+
+This renders as:
+```html
+<ul>
+  <li>alpha</li>
+  <li>beta</li>
+  <li>gamma</li>
+</ul>
+```
+
+**Note:** Data sources must be arrays of objects. Raw string arrays are not currently supported by the runtime.
+
+### Attributes
+
+| Attribute | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `lvt-source` | Yes | - | Name of the data source |
+| `lvt-field` | No | `{{.}}` | Field name to display for object arrays |
+| `lvt-actions` | No | - | Action buttons: `action:Label,action2:Label2` |
+| `lvt-empty` | No | - | Message to show when data is empty |
+
+### Object Arrays with Field
+
+For arrays of objects, use `lvt-field` to specify which field to display:
+
+```html
+<ul lvt-source="tasks" lvt-field="title">
+</ul>
+```
+
+With `tasks.json`:
+```json
+[
+  {"id": 1, "title": "Complete project setup"},
+  {"id": 2, "title": "Write documentation"},
+  {"id": 3, "title": "Add unit tests"}
+]
+```
+
+Renders as:
+```html
+<ul>
+  <li>Complete project setup</li>
+  <li>Write documentation</li>
+  <li>Add unit tests</li>
+</ul>
+```
+
+### Action Buttons
+
+Add action buttons to each list item:
+
+```html
+<ul lvt-source="tasks" lvt-field="title" lvt-actions="delete:×,edit:Edit">
+</ul>
+```
+
+Renders action buttons alongside each item:
+```html
+<ul>
+  <li>
+    Complete project setup
+    <button lvt-click="delete" lvt-data-id="1">×</button>
+    <button lvt-click="edit" lvt-data-id="1">Edit</button>
+  </li>
+  ...
+</ul>
+```
+
+**Note:** `lvt-actions` requires `lvt-field` to be specified (object arrays only). Each object must have an `id` field, which is used for the `lvt-data-id` attribute on action buttons. Actions are ignored for simple string arrays.
+
+### Empty State
+
+Show a message when the data source is empty:
+
+```html
+<ol lvt-source="steps" lvt-empty="No steps defined yet">
+</ol>
+```
+
+When `steps` is empty, renders:
+```html
+<ol>
+  <li>No steps defined yet</li>
+</ol>
+```
+
+### Ordered Lists
+
+Works with both `<ul>` (unordered) and `<ol>` (ordered) lists:
+
+```html
+<ol lvt-source="steps" lvt-field="description">
+</ol>
+```
+
+---
+
 ## Data Sources
 
-Both select and table auto-rendering work with any Tinkerdown data source:
+Select, table, and list auto-rendering work with any Tinkerdown data source:
 
 ### JSON Files
 
