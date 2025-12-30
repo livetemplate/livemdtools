@@ -79,7 +79,13 @@ _No tasks currently in progress_
 
 ### Recently Completed
 <!-- Move completed tasks here, keep last 5 -->
-1. **1.2 Auto-rendering lists** - Completed 2025-12-30 (PR #14)
+1. **3.6A Docs cleanup** - Completed 2025-12-30
+   - Deleted `PROGRESS.md` (superseded by ROADMAP.md)
+   - Deleted `UX_IMPROVEMENTS.md` (items in Phase 6.5)
+   - Deleted `docs/implementation-plan.md` (superseded by ROADMAP.md)
+   - Archived to `docs/archive/`: product vision and marketing docs
+
+2. **1.2 Auto-rendering lists** - Completed 2025-12-30 (PR #14)
    - `lvt-source` + `lvt-field` on `<ul>` or `<ol>` auto-generates list items
    - `lvt-actions` for action buttons on each item
    - `lvt-empty` for empty state messages
@@ -101,9 +107,9 @@ _No tasks currently in progress_
 
 ### Next Up
 <!-- Queue of next 3-5 tasks to tackle -->
-1. 3.6A Docs cleanup
-2. 2.1 Nested data sources
-3. 2.2 Source caching
+1. 2.1 Nested data sources
+2. 2.2 Source caching
+3. 3.6B External hosting
 
 ---
 
@@ -565,21 +571,20 @@ Auto-rendering is for common patterns only. Use Go templates when you need:
 
 ### 3.6 Documentation Cleanup & Consolidation
 
-**Current State:** Documentation is scattered across root files, `docs/`, `skills/`, and examples. Some docs are outdated or redundant.
+**Current State:** Phase A (cleanup) completed. Redundant files removed, product docs archived.
 
-**Audit of Current Docs:**
+**Audit of Current Docs (after Phase A cleanup):**
 ```
-Root level (review for redundancy):
-├── PROGRESS.md          # May be redundant with ROADMAP.md
-├── UX_IMPROVEMENTS.md   # Should be consolidated into ROADMAP.md
+Root level:
 ├── README.md            # Keep - entry point
 └── ROADMAP.md           # Keep - feature planning
 
-docs/ (needs structure):
-├── implementation-plan.md      # Review - may be outdated
-├── internal-tools-saas.md      # Review - unclear purpose
-├── launch-page.md              # Marketing - consider moving
-├── pmf-one-file-ai-builder.md  # Product - consider moving
+docs/ (current structure):
+├── auto-rendering.md           # Keep - active user documentation
+├── archive/                    # Archived product/marketing docs
+│   ├── internal-tools-saas.md
+│   ├── launch-page.md
+│   └── pmf-one-file-ai-builder.md
 └── plans/                      # Keep - design documents
 
 skills/tinkerdown/ (AI reference):
@@ -2577,20 +2582,20 @@ Each example should include:
 ### Phase A: Cleanup Redundant Docs
 
 #### Step 1: Audit and Merge PROGRESS.md
-- [ ] Review `PROGRESS.md` content
-- [ ] Migrate any uncaptured items to ROADMAP.md
-- [ ] Delete `PROGRESS.md`
+- [x] Review `PROGRESS.md` content
+- [x] Migrate any uncaptured items to ROADMAP.md (none needed - already captured)
+- [x] Delete `PROGRESS.md`
 
 #### Step 2: Audit and Merge UX_IMPROVEMENTS.md
-- [ ] Review `UX_IMPROVEMENTS.md` content
-- [ ] Verify all items are in Phase 6 (UI & Components)
-- [ ] Delete `UX_IMPROVEMENTS.md`
+- [x] Review `UX_IMPROVEMENTS.md` content
+- [x] Verify all items are in Phase 6 (UI & Components)
+- [x] Delete `UX_IMPROVEMENTS.md`
 
 #### Step 3: Audit docs/ folder
-- [ ] Review `docs/implementation-plan.md` - archive if outdated
-- [ ] Review `docs/internal-tools-saas.md` - determine if still relevant
-- [ ] Review `docs/launch-page.md` - move to marketing/ or archive
-- [ ] Review `docs/pmf-one-file-ai-builder.md` - move to marketing/ or archive
+- [x] Review `docs/implementation-plan.md` - deleted (superseded by ROADMAP.md)
+- [x] Review `docs/internal-tools-saas.md` - archived to `docs/archive/`
+- [x] Review `docs/launch-page.md` - archived to `docs/archive/`
+- [x] Review `docs/pmf-one-file-ai-builder.md` - archived to `docs/archive/`
 
 ### Phase B: Create Documentation Structure
 
