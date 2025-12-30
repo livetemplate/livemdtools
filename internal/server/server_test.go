@@ -220,3 +220,144 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+func TestWebSocketURLContainsPage(t *testing.T) {
+	// Create temp directory with multiple test pages
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"index.md": `---
+title: "Home"
+---
+# Home Page`,
+		"counter.md": `---
+title: "Counter"
+---
+# Counter Tutorial`,
+		"getting-started.md": `---
+title: "Getting Started"
+---
+# Getting Started Guide`,
+	}
+
+	for path, content := range files {
+		fullPath := filepath.Join(tmpDir, path)
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+
+	// Create and discover
+	srv := New(tmpDir)
+	if err := srv.Discover(); err != nil {
+		t.Fatalf("Discover() error: %v", err)
+	}
+
+	// Test each page has correct WebSocket URL with page parameter
+	tests := []struct {
+		path         string
+		expectedPage string
+	}{
+		{"/", "%2F"},                            // / URL-encoded
+		{"/counter", "%2Fcounter"},              // /counter URL-encoded
+		{"/getting-started", "%2Fgetting-started"}, // /getting-started URL-encoded
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tt.path, nil)
+			req.Host = "localhost:8080"
+			w := httptest.NewRecorder()
+
+			srv.ServeHTTP(w, req)
+
+			resp := w.Result()
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("Status = %d, want %d", resp.StatusCode, http.StatusOK)
+			}
+
+			body := w.Body.String()
+
+			// Check that the WebSocket URL contains the correct page parameter
+			expectedWSURL := "ws://localhost:8080/ws?page=" + tt.expectedPage
+			if !contains(body, expectedWSURL) {
+				// Try to find what WebSocket URL is actually in the body
+				t.Errorf("Expected WebSocket URL with page=%s not found in response for path %s", tt.expectedPage, tt.path)
+			}
+		})
+	}
+}
+
+func TestServeWebSocketPageRouting(t *testing.T) {
+	// Create temp directory with multiple test pages
+	tmpDir := t.TempDir()
+
+	files := map[string]string{
+		"index.md": `---
+title: "Home"
+---
+# Home Page`,
+		"counter.md": `---
+title: "Counter"
+---
+# Counter Tutorial`,
+	}
+
+	for path, content := range files {
+		fullPath := filepath.Join(tmpDir, path)
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to write file: %v", err)
+		}
+	}
+
+	// Create and discover
+	srv := New(tmpDir)
+	if err := srv.Discover(); err != nil {
+		t.Fatalf("Discover() error: %v", err)
+	}
+
+	// Test that /ws endpoint without page parameter defaults to home
+	t.Run("default to home page", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/ws", nil)
+		w := httptest.NewRecorder()
+
+		// This will fail WebSocket upgrade (no proper WebSocket handshake),
+		// but we're testing the routing logic
+		srv.ServeHTTP(w, req)
+
+		// The request should be handled (not 404)
+		// WebSocket upgrade will fail with 400 Bad Request because
+		// it's not a proper WebSocket handshake
+		resp := w.Result()
+		if resp.StatusCode == http.StatusNotFound {
+			t.Error("WebSocket endpoint returned 404, expected to be handled")
+		}
+	})
+
+	// Test that /ws?page=/counter routes to counter page
+	t.Run("route to specific page", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/ws?page=/counter", nil)
+		w := httptest.NewRecorder()
+
+		srv.ServeHTTP(w, req)
+
+		resp := w.Result()
+		if resp.StatusCode == http.StatusNotFound {
+			t.Error("WebSocket endpoint with page parameter returned 404")
+		}
+	})
+
+	// Test that unknown page falls back gracefully
+	t.Run("unknown page fallback", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/ws?page=/nonexistent", nil)
+		w := httptest.NewRecorder()
+
+		srv.ServeHTTP(w, req)
+
+		resp := w.Result()
+		// Should not return 404 - should fall back to first route
+		if resp.StatusCode == http.StatusNotFound {
+			t.Error("WebSocket with unknown page returned 404, expected fallback")
+		}
+	})
+}

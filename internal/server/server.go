@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -221,8 +222,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // serveWebSocket handles WebSocket connections for interactive blocks.
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Get the page from query parameter (for now, use first route)
-	// TODO: Support multiple pages via query param or path
+	// Get the page from query parameter
+	pagePath := r.URL.Query().Get("page")
+	if pagePath == "" {
+		pagePath = "/" // Default to home page
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -231,11 +236,25 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the first route's page for now
-	route := s.routes[0]
+	// Find the route matching the requested page
+	var route *Route
+	for _, rt := range s.routes {
+		if rt.Pattern == pagePath {
+			route = rt
+			break
+		}
+	}
+
+	// Fall back to first route if page not found
+	if route == nil {
+		log.Printf("[WS] Page %q not found, falling back to first route", pagePath)
+		route = s.routes[0]
+	}
+
+	log.Printf("[WS] WebSocket connection for page: %s (pattern: %s)", pagePath, route.Pattern)
 
 	// Create WebSocket handler for this page
-	wsHandler := NewWebSocketHandler(route.Page, s, true, s.rootDir, s.config) // debug=true
+	wsHandler := NewWebSocketHandler(route.Page, s, true, s.rootDir, s.config)
 	wsHandler.ServeHTTP(w, r)
 }
 
@@ -337,8 +356,8 @@ func (s *Server) renderPage(page *tinkerdown.Page, currentPath string, host stri
 		%s
 	`, breadcrumbsHTML, content, prevNextHTML)
 
-	// Build WebSocket URL from host
-	wsURL := fmt.Sprintf("ws://%s/ws", host)
+	// Build WebSocket URL from host with page path for multi-page routing
+	wsURL := fmt.Sprintf("ws://%s/ws?page=%s", host, url.QueryEscape(currentPath))
 
 	// Basic HTML wrapper with the static content
 	html := fmt.Sprintf(`<!DOCTYPE html>
