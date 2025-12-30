@@ -240,13 +240,17 @@ Transform an empty `<ul>` or `<ol>` element into a fully populated list from a d
 ### Basic Usage
 
 ```html
-<ul lvt-source="tags">
+<ul lvt-source="tags" lvt-field="name">
 </ul>
 ```
 
-With a `tags.json` data file containing a string array:
+With a `tags.json` data file:
 ```json
-["alpha", "beta", "gamma", "delta"]
+[
+  {"id": 1, "name": "alpha"},
+  {"id": 2, "name": "beta"},
+  {"id": 3, "name": "gamma"}
+]
 ```
 
 This renders as:
@@ -255,9 +259,10 @@ This renders as:
   <li>alpha</li>
   <li>beta</li>
   <li>gamma</li>
-  <li>delta</li>
 </ul>
 ```
+
+**Note:** Data sources must be arrays of objects. Raw string arrays are not currently supported by the runtime.
 
 ### Attributes
 

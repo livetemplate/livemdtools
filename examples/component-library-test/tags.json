@@ -1,1 +1,6 @@
-["alpha", "beta", "gamma", "delta"]
+[
+  {"id": 1, "name": "alpha"},
+  {"id": 2, "name": "beta"},
+  {"id": 3, "name": "gamma"},
+  {"id": 4, "name": "delta"}
+]

@@ -68,10 +68,10 @@ This page demonstrates auto-rendering for tables, selects, and lists.
 
 ## Auto Lists
 
-### Test 5: Simple String Array List
+### Test 5: Object Array List
 
 ```lvt
-<ul lvt-source="tags" class="test-tags">
+<ul lvt-source="tags" lvt-field="name" class="test-tags">
 </ul>
 ```
 
