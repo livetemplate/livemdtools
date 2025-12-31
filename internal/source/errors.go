@@ -92,6 +92,20 @@ func (e *HTTPError) IsRetryable() bool {
 	return e.StatusCode >= 500 || e.StatusCode == 429
 }
 
+// GraphQLError represents an error returned by a GraphQL API
+type GraphQLError struct {
+	Source  string
+	Message string
+	Path    []string
+}
+
+func (e *GraphQLError) Error() string {
+	if len(e.Path) > 0 {
+		return fmt.Sprintf("source %q: graphql error at %v: %s", e.Source, e.Path, e.Message)
+	}
+	return fmt.Sprintf("source %q: graphql error: %s", e.Source, e.Message)
+}
+
 // CircuitOpenError indicates the circuit breaker is open
 type CircuitOpenError struct {
 	Source string
