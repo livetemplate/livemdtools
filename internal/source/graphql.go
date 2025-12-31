@@ -2,9 +2,14 @@
 package source
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/livetemplate/tinkerdown/internal/config"
@@ -110,6 +115,136 @@ func (s *GraphQLSource) Name() string {
 // Close is a no-op for GraphQL sources
 func (s *GraphQLSource) Close() error {
 	return nil
+}
+
+// Fetch makes a GraphQL request and parses the response
+func (s *GraphQLSource) Fetch(ctx context.Context) ([]map[string]interface{}, error) {
+	// Use circuit breaker + retry
+	return s.circuitBreaker.Execute(ctx, func(ctx context.Context) ([]map[string]interface{}, error) {
+		return WithRetry(ctx, s.name, s.retryConfig, func(ctx context.Context) ([]map[string]interface{}, error) {
+			return s.doFetch(ctx)
+		})
+	})
+}
+
+// doFetch performs the actual GraphQL request
+func (s *GraphQLSource) doFetch(ctx context.Context) ([]map[string]interface{}, error) {
+	// Read query from file
+	queryPath := filepath.Join(s.siteDir, s.queryFile)
+	queryBytes, err := os.ReadFile(queryPath)
+	if err != nil {
+		return nil, &SourceError{
+			Source:    s.name,
+			Operation: "read query file",
+			Err:       err,
+			Retryable: false,
+		}
+	}
+
+	// Build request body
+	body := map[string]interface{}{
+		"query": string(queryBytes),
+	}
+	if len(s.variables) > 0 {
+		body["variables"] = s.variables
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, &SourceError{
+			Source:    s.name,
+			Operation: "marshal request",
+			Err:       err,
+			Retryable: false,
+		}
+	}
+
+	// Create request with context
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, &SourceError{
+			Source:    s.name,
+			Operation: "create request",
+			Err:       err,
+			Retryable: false,
+		}
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	for key, value := range s.headers {
+		req.Header.Set(key, value)
+	}
+
+	// Execute request
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, NewSourceError(s.name, "request", err)
+	}
+	defer resp.Body.Close()
+
+	// Check HTTP status code
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return nil, &HTTPError{
+			Source:     s.name,
+			StatusCode: resp.StatusCode,
+			Status:     resp.Status,
+			Body:       strings.TrimSpace(string(bodyBytes)),
+		}
+	}
+
+	// Read response body with size limit
+	const maxResponseSize = 10 * 1024 * 1024 // 10MB
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
+	if err != nil {
+		return nil, &SourceError{
+			Source:    s.name,
+			Operation: "read response",
+			Err:       err,
+			Retryable: false,
+		}
+	}
+
+	// Parse GraphQL response
+	var gqlResp struct {
+		Data   map[string]interface{} `json:"data"`
+		Errors []struct {
+			Message string        `json:"message"`
+			Path    []interface{} `json:"path"`
+		} `json:"errors"`
+	}
+
+	if err := json.Unmarshal(respBody, &gqlResp); err != nil {
+		return nil, &ValidationError{
+			Source: s.name,
+			Reason: "could not parse response as JSON",
+		}
+	}
+
+	// Check for GraphQL errors
+	if len(gqlResp.Errors) > 0 {
+		// Convert path to []string
+		pathStrings := make([]string, 0, len(gqlResp.Errors[0].Path))
+		for _, p := range gqlResp.Errors[0].Path {
+			if s, ok := p.(string); ok {
+				pathStrings = append(pathStrings, s)
+			}
+		}
+		return nil, &GraphQLError{
+			Source:  s.name,
+			Message: gqlResp.Errors[0].Message,
+			Path:    pathStrings,
+		}
+	}
+
+	// Extract data using result_path
+	if gqlResp.Data == nil {
+		return []map[string]interface{}{}, nil
+	}
+
+	return extractPath(gqlResp.Data, s.resultPath)
 }
 
 // extractPath extracts an array from nested data using dot-notation path.
