@@ -108,23 +108,23 @@ The heading names the data. No anchors needed:
 
 ### Automatic Schema Inference
 
-Types inferred from data patterns:
+Types inferred from data patterns, mapped to SQL types:
 
-| Pattern | Type | Input UI |
-|---------|------|----------|
-| `2024-01-15` | date | Date picker |
-| `14:30` / `2:30pm` | time | Time picker |
-| `123` / `45.67` | number | Number input |
-| `$123.45` | currency | Currency input |
-| `true` / `false` | boolean | Checkbox |
-| `hello@example.com` | email | Email input |
-| `https://...` | url | URL input |
-| 3-10 unique strings | select | Dropdown |
-| Everything else | text | Text input |
+| Pattern | SQL Type | Input UI |
+|---------|----------|----------|
+| `2024-01-15` | `DATE` | Date picker |
+| `14:30` / `2:30pm` | `TIME` | Time picker |
+| `123` / `45.67` | `DECIMAL` | Number input |
+| `$123.45` | `DECIMAL(10,2)` | Currency input |
+| `true` / `false` | `BOOLEAN` | Checkbox |
+| `hello@example.com` | `TEXT` | Email input |
+| `https://...` | `TEXT` | URL input |
+| 3-10 unique strings | `TEXT` + enum constraint | Dropdown |
+| Everything else | `TEXT` | Text input |
 
-**Validation inference:**
-- Value in every row → required
-- Some rows empty → optional
+**Validation inference (SQL constraints):**
+- Value in every row → `NOT NULL`
+- Some rows empty → nullable (no constraint)
 
 ### Scheduling with @mentions
 
@@ -334,6 +334,102 @@ HTML + Go templates when you need:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Unified SQL Layer
+
+All data sources use SQL as the universal interface:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    UNIFIED SQL LAYER                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  DATA SOURCES                        SQL ENGINE                 │
+│  ────────────                        ──────────                 │
+│                                                                 │
+│  Markdown Table ──┐                  ┌──────────────────────┐   │
+│  (## Expenses)    │                  │                      │   │
+│                   │   sync/query     │   dialect: sqlite    │   │
+│  SQLite File ─────┼─────────────────▶│   dialect: postgres  │   │
+│  (./data.db)      │                  │   dialect: mysql     │   │
+│                   │                  │                      │   │
+│  PostgreSQL ──────┘                  └──────────────────────┘   │
+│  (connection)                                  │                │
+│                                                │                │
+│                                                ▼                │
+│                                    ┌──────────────────────┐     │
+│                                    │  SELECT, INSERT,     │     │
+│                                    │  UPDATE, DELETE      │     │
+│                                    │  + JOINs across      │     │
+│                                    │    all sources       │     │
+│                                    └──────────────────────┘     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Schema definition with SQL:**
+
+```yaml
+---
+database:
+  dialect: sqlite                    # sqlite | postgres | mysql
+  connection: ./app.db               # file path or connection string
+  schema: ./schema.sql               # external schema file (optional)
+
+sources:
+  # Markdown table synced to SQL
+  expenses:
+    type: markdown
+    anchor: "#expenses"
+    table: expenses                  # SQL table name
+    sync: both                       # read | write | both
+
+  # External SQLite
+  users:
+    type: sqlite
+    database: ./users.db
+    table: users
+
+  # PostgreSQL
+  orders:
+    type: postgres
+    connection: ${DATABASE_URL}
+    table: orders
+
+  # Cross-source query
+  report:
+    query: |
+      SELECT e.date, e.amount, u.name
+      FROM expenses e
+      JOIN users u ON e.user_id = u.id
+---
+```
+
+**schema.sql:**
+
+```sql
+CREATE TABLE expenses (
+  id INTEGER PRIMARY KEY,
+  date DATE NOT NULL,
+  category TEXT DEFAULT 'misc',
+  amount DECIMAL(10,2) NOT NULL CHECK(amount > 0)
+);
+
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE
+);
+```
+
+**Sync modes for markdown sources:**
+
+| Mode | Behavior |
+|------|----------|
+| `sync: read` | Markdown → SQL (markdown is source of truth) |
+| `sync: write` | SQL → Markdown (changes written back to .md) |
+| `sync: both` | Bidirectional (default) |
+| `sync: none` | SQL only, markdown defines initial data |
+
 ### Data Flow
 
 ```
@@ -344,26 +440,29 @@ HTML + Go templates when you need:
 │  MARKDOWN SOURCES (auto-detected)                               │
 │  ─────────────────────────────────                              │
 │  ## Heading     ──┐                                             │
-│  - [ ] tasks    ──┼──▶  Parse  ──▶  Infer Schema  ──▶  State   │
+│  - [ ] tasks    ──┼──▶  Parse  ──▶  SQL Schema  ──▶  SQL DB    │
 │  | table |      ──┤                                    │        │
 │  - list         ──┘                                    │        │
 │                                                        │        │
 │  EXTERNAL SOURCES (YAML config)                        │        │
 │  ──────────────────────────────                        │        │
-│  rest: url      ──┐                                    │        │
-│  sqlite: db     ──┼──▶  Fetch  ────────────────────────┘        │
-│  postgres: dsn  ──┘                                             │
+│  sqlite: db     ──┐                                    │        │
+│  postgres: dsn  ──┼──▶  SQL Query  ────────────────────┘        │
+│  mysql: dsn     ──┘                                             │
 │                                                                 │
-│  State  ──▶  Render  ──▶  UI / API / CLI                       │
+│  SQL DB  ──▶  Render  ──▶  UI / API / CLI                      │
 │    │                                                            │
-│    │  ACTIONS (modify state)                                    │
+│    │  ACTIONS (SQL operations)                                  │
 │    │  ────────────────────────                                  │
-│    └──  add, delete, update, toggle  ◀──  User / Trigger       │
+│    └──  INSERT, UPDATE, DELETE  ◀──  User / Trigger            │
+│              │                                                  │
+│              ▼ (if sync: write | both)                          │
+│         Update markdown file                                    │
 │                                                                 │
 │  TRIGGERS (invoke actions)                                      │
 │  ─────────────────────────                                      │
 │  @daily:9am     ──┐                                             │
-│  @friday        ──┼──▶  Execute Action  ──▶  Update State      │
+│  @friday        ──┼──▶  Execute SQL  ──▶  Update State         │
 │  webhook: /hook ──┤                              │              │
 │  watch: *.pdf   ──┘                              ▼              │
 │                                              OUTPUTS            │
@@ -526,7 +625,7 @@ tinkerdown/
 | 1 | 1.1 Heading-as-Anchor | `[ ]` |
 | 1 | 1.2 Table Parsing | `[ ]` |
 | 1 | 1.3 List Parsing | `[ ]` |
-| 1 | 1.4 Schema Inference | `[ ]` |
+| 1 | 1.4 SQL Schema Inference | `[ ]` |
 | 1 | 1.5 Auto-CRUD UI | `[ ]` |
 | 2 | 2.1 Auto-Timestamp | `[ ]` |
 | 2 | 2.2 Operator Identity | `[ ]` |
@@ -730,65 +829,100 @@ go test ./internal/markdown/... -v -run TestParse
 
 ---
 
-#### Task 1.4: Schema Inference
+#### Task 1.4: SQL Schema Inference
 
 **Status:** `[ ] Not Started`
 
-**Goal:** Automatically infer field types from data values.
+**Goal:** Automatically infer SQL DDL from data values; generate CREATE TABLE statements.
 
 **Prerequisites:** Tasks 1.2 and 1.3 complete
 
 **Files to create:**
-- `internal/markdown/schema.go` - Schema inference logic
+- `internal/sql/schema.go` - SQL schema inference logic
+- `internal/sql/dialect.go` - Dialect-specific DDL generation
 
 **Implementation steps:**
 
 ```go
-package markdown
+package sql
 
 import "regexp"
 
-type FieldType int
+// SQLType maps to standard SQL types
+type SQLType string
 
 const (
-    FieldTypeText FieldType = iota
-    FieldTypeNumber
-    FieldTypeCurrency
-    FieldTypeDate
-    FieldTypeTime
-    FieldTypeBoolean
-    FieldTypeEmail
-    FieldTypeURL
-    FieldTypeSelect
+    SQLText    SQLType = "TEXT"
+    SQLInteger SQLType = "INTEGER"
+    SQLDecimal SQLType = "DECIMAL(10,2)"
+    SQLDate    SQLType = "DATE"
+    SQLTime    SQLType = "TIME"
+    SQLBoolean SQLType = "BOOLEAN"
 )
 
-type Field struct {
-    Name     string
-    Type     FieldType
-    Required bool
-    Options  []string // For FieldTypeSelect
+type Dialect string
+
+const (
+    DialectSQLite   Dialect = "sqlite"
+    DialectPostgres Dialect = "postgres"
+    DialectMySQL    Dialect = "mysql"
+)
+
+type Column struct {
+    Name        string
+    Type        SQLType
+    NotNull     bool
+    Default     string
+    Check       string   // e.g., "CHECK(amount > 0)"
+    EnumValues  []string // For generating CHECK IN constraint
+}
+
+type Table struct {
+    Name    string
+    Columns []Column
 }
 
 var (
     datePattern     = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
     currencyPattern = regexp.MustCompile(`^\$[\d,]+(\.\d{2})?$`)
-    // ... other patterns
+    intPattern      = regexp.MustCompile(`^-?\d+$`)
+    decimalPattern  = regexp.MustCompile(`^-?\d+\.\d+$`)
 )
 
-func InferSchema(columns []string, rows []map[string]string) []Field
-func InferFieldType(values []string) FieldType
+// InferTable generates a Table definition from parsed markdown data
+func InferTable(name string, columns []string, rows []map[string]string) Table
+
+// InferSQLType determines SQL type from a set of values
+func InferSQLType(values []string) SQLType
+
+// GenerateDDL creates CREATE TABLE statement for dialect
+func (t Table) GenerateDDL(dialect Dialect) string
+```
+
+**Example output:**
+
+```sql
+-- Generated from ## Expenses markdown table
+CREATE TABLE expenses (
+    id INTEGER PRIMARY KEY,
+    date DATE NOT NULL,
+    category TEXT,
+    amount DECIMAL(10,2) NOT NULL
+);
 ```
 
 **Acceptance criteria:**
-- [ ] Correctly identifies date fields (YYYY-MM-DD format)
-- [ ] Correctly identifies currency fields ($XX.XX format)
-- [ ] Correctly identifies number, boolean, email, URL fields
-- [ ] Identifies select fields when <= 10 unique values
-- [ ] Correctly determines required vs optional fields
+- [ ] Generates valid SQLite CREATE TABLE from markdown table
+- [ ] Generates valid PostgreSQL CREATE TABLE from markdown table
+- [ ] Generates valid MySQL CREATE TABLE from markdown table
+- [ ] Correctly maps patterns: dates→DATE, numbers→DECIMAL/INTEGER, etc.
+- [ ] Adds NOT NULL for columns with values in every row
+- [ ] Generates CHECK IN constraint for columns with ≤10 unique values
 
 **Verification commands:**
 ```bash
-go test ./internal/markdown/... -v -run TestInferSchema
+go test ./internal/sql/... -v -run TestInferSchema
+go test ./internal/sql/... -v -run TestGenerateDDL
 ```
 
 ---
@@ -1231,14 +1365,34 @@ API Key                  → Definition list: {term, definition}
 #tag                     → Tag/category
 ```
 
-### YAML Schema (Optional Overrides)
+### YAML Configuration (Optional Overrides)
 
 ```yaml
 ---
 # Only needed for advanced features
 
-# External data sources
+# Database configuration (SQL-first)
+database:
+  dialect: sqlite                      # sqlite | postgres | mysql
+  connection: ./app.db                 # file or connection string
+  schema: ./schema.sql                 # external SQL schema file
+
+# Data sources
 sources:
+  # Markdown table synced to SQL
+  tasks:
+    type: markdown
+    anchor: "#tasks"
+    table: tasks
+    sync: both
+
+  # External database
+  users:
+    type: postgres
+    connection: ${DATABASE_URL}
+    table: users
+
+  # REST API (non-SQL source)
   api_data:
     type: rest
     url: https://api.example.com/data
@@ -1246,16 +1400,13 @@ sources:
       Authorization: Bearer ${API_TOKEN}
     cache: 5m
 
-  database:
-    type: postgres
-    connection: ${DATABASE_URL}
-    query: SELECT * FROM items
-
-# Custom validation (override inferred schema)
-  tasks:
-    schema:
-      title: required | min:3 | max:100
-      priority: select | Critical, High, Medium, Low
+  # Cross-source SQL query
+  report:
+    query: |
+      SELECT t.title, u.name as assignee
+      FROM tasks t
+      LEFT JOIN users u ON t.user_id = u.id
+      WHERE t.done = false
 
 # Webhook triggers (can't be expressed in markdown)
 triggers:
@@ -1278,6 +1429,38 @@ title: My App
 icon: 📋
 theme: dark
 ---
+```
+
+**schema.sql** (external file):
+
+```sql
+-- All tables defined in standard SQL DDL
+CREATE TABLE tasks (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL CHECK(length(title) >= 3),
+  priority TEXT DEFAULT 'Medium' CHECK(priority IN ('Critical','High','Medium','Low')),
+  done BOOLEAN DEFAULT false,
+  user_id INTEGER REFERENCES users(id)
+);
+
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE
+);
+```
+
+**Inline schema (alternative to external file):**
+
+```yaml
+database:
+  dialect: sqlite
+  schema: |
+    CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL,
+      done BOOLEAN DEFAULT false
+    );
 ```
 
 ### LVT Attributes (HTML Layer)
