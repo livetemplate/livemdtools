@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/livetemplate/tinkerdown/cmd/tinkerdown/commands"
 )
@@ -28,7 +29,19 @@ func main() {
 	case "fix":
 		err = commands.FixCommand(args)
 	case "new":
-		err = commands.NewCommand(args)
+		// Parse --template flag from args
+		templateName := ""
+		filteredArgs := make([]string, 0, len(args))
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "--template=") {
+				templateName = strings.TrimPrefix(arg, "--template=")
+			} else if strings.HasPrefix(arg, "-t=") {
+				templateName = strings.TrimPrefix(arg, "-t=")
+			} else {
+				filteredArgs = append(filteredArgs, arg)
+			}
+		}
+		err = commands.NewCommand(filteredArgs, templateName)
 	case "blocks":
 		err = commands.BlocksCommand(args)
 	case "version":
@@ -55,7 +68,7 @@ func printUsage() {
 	fmt.Println("  tinkerdown validate [directory]  Validate markdown files")
 	fmt.Println("  tinkerdown fix [directory]       Auto-fix common issues")
 	fmt.Println("  tinkerdown blocks [directory]    Inspect code blocks")
-	fmt.Println("  tinkerdown new <name> [--template=TYPE]  Create new project")
+	fmt.Println("  tinkerdown new <name>            Create new app from template")
 	fmt.Println("  tinkerdown version               Show version")
 	fmt.Println("  tinkerdown help                  Show this help")
 	fmt.Println()
@@ -69,9 +82,8 @@ func printUsage() {
 	fmt.Println("  tinkerdown fix --dry-run         # Preview fixes without applying")
 	fmt.Println("  tinkerdown blocks examples/      # Inspect blocks in examples/")
 	fmt.Println("  tinkerdown blocks . --verbose    # Show detailed block info")
-	fmt.Println("  tinkerdown new my-app                  # Create new app (basic template)")
-	fmt.Println("  tinkerdown new my-app --template=todo  # Create with todo template")
-	fmt.Println("  tinkerdown new --list             # List available templates")
+	fmt.Println("  tinkerdown new my-app            # Create new app (basic template)")
+	fmt.Println("  tinkerdown new my-app --template=todo  # Use todo template")
 	fmt.Println()
 	fmt.Println("Documentation: https://github.com/livetemplate/tinkerdown")
 }
