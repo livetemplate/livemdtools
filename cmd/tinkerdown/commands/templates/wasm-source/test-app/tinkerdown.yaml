@@ -1,0 +1,4 @@
+sources:
+  data:
+    type: wasm
+    module: ../source.wasm

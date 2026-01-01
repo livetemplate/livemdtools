@@ -1,10 +1,11 @@
-# [[.Title]]
+# {{.Title}} - WASM Source
 
-A custom WASM data source for tinkerdown.
+A custom Tinkerdown data source built with TinyGo and WebAssembly.
 
 ## Prerequisites
 
-- [TinyGo](https://tinygo.org/getting-started/install/) - Required to compile Go to WASM
+- [TinyGo](https://tinygo.org/getting-started/install/) installed
+- Tinkerdown CLI
 
 ## Building
 
@@ -12,81 +13,48 @@ A custom WASM data source for tinkerdown.
 make build
 ```
 
-This produces `[[.ProjectName]].wasm`.
+This compiles `source.go` to `source.wasm`.
 
-## Usage
+## Testing
 
-Copy the `.wasm` file to your tinkerdown project and configure it:
-
-```yaml
-sources:
-  mydata:
-    type: wasm
-    path: "./sources/[[.ProjectName]].wasm"
-    options:
-      category: "example"  # Available as os.Getenv("category")
+```bash
+make test
 ```
 
-## Project Structure
+Opens the test app at http://localhost:8080.
 
-```
-[[.ProjectName]]/
-├── source.go     # WASM source implementation
-├── Makefile      # Build commands
-└── README.md     # This file
-```
+## WASM Interface
 
-## Required Exports
+Your source must export these functions:
 
-Your WASM module must export these functions:
+### `fetch() uint64`
 
-| Export | Signature | Description |
-|--------|-----------|-------------|
-| `fetch` | `() -> i32` | Fetch data, return pointer to JSON array |
-| `get_result_len` | `() -> i32` | Return length of last fetch result |
+Fetch data without arguments. Returns pointer+length packed as uint64.
 
-## Optional Exports
+### `fetchWithArgs(argsPtr, argsLen uint32) uint64`
 
-| Export | Signature | Description |
-|--------|-----------|-------------|
-| `free_result` | `() -> void` | Free memory from last result |
-| `write` | `(action_ptr, action_len, data_ptr, data_len) -> i32` | Handle write operations |
-| `get_error` | `() -> i32` | Pointer to error string |
-| `get_error_len` | `() -> i32` | Length of error string |
+Fetch data with JSON arguments. Returns pointer+length packed as uint64.
 
-## Data Format
+### Return Format
 
-The `fetch` function must return a JSON array of objects:
+Return a JSON array of objects:
 
 ```json
 [
-  {"id": 1, "title": "Item One", "category": "example"},
-  {"id": 2, "title": "Item Two", "category": "example"}
+  {"key": "value", "other": "data"},
+  {"key": "value2", "other": "data2"}
 ]
 ```
 
-## Configuration
+Or return an error:
 
-Options passed in the source config are available as environment variables:
-
-```yaml
-sources:
-  mydata:
-    type: wasm
-    path: "./sources/[[.ProjectName]].wasm"
-    options:
-      api_key: "${MY_API_KEY}"  # Env var substitution works
-      category: "products"
+```json
+{"error": "Something went wrong"}
 ```
 
-In your Go code:
-```go
-apiKey := os.Getenv("api_key")
-category := os.Getenv("category")
-```
+## Customizing
 
-## Learn More
-
-- [tinkerdown Documentation](https://github.com/livetemplate/tinkerdown)
-- [WASM Source Reference](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/wasm.md)
-- [TinyGo WASI Documentation](https://tinygo.org/docs/guides/webassembly/)
+1. Edit `source.go` to fetch from your API
+2. Run `make build`
+3. Test with `make test`
+4. Copy `source.wasm` to your Tinkerdown app
