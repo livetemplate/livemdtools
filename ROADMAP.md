@@ -109,7 +109,13 @@ _No tasks currently in progress_
 
 ### Recently Completed
 <!-- Move completed tasks here, keep last 5 -->
-1. **4.1 GraphQL Source** - Completed 2025-12-31
+1. **3.6B Create Documentation Structure** - Completed 2025-12-31 (PR #20)
+   - Created `docs/getting-started/` with installation, quickstart, project-structure
+   - Created `docs/guides/` with auto-rendering, data-sources, go-templates, styling, debugging, deployment
+   - Created `docs/reference/` with cli, config, frontmatter, lvt-attributes
+   - Created `docs/sources/` with docs for all source types (sqlite, rest, exec, json, csv, markdown, wasm, graphql)
+
+2. **4.1 GraphQL Source** - Completed 2025-12-31 (PR #22)
    - Query file support (.graphql files)
    - Variable substitution with environment expansion
    - Result path extraction for nested responses (`result_path` config)
@@ -118,38 +124,32 @@ _No tasks currently in progress_
    - E2E test with public Countries API
    - Full documentation in `docs/sources/graphql.md`
 
-2. **2.3 Multi-page WebSocket Support** - Completed 2025-12-31 (PR #19)
+3. **2.3 Multi-page WebSocket Support** - Completed 2025-12-31 (PR #19)
    - Accept page identifier via query param (`?page=/path`)
    - Route WebSocket messages to correct page's state
    - Handle page transitions gracefully
    - Clean up state on page navigation
 
-3. **2.2 Source Caching Layer** - Completed 2025-12-30 (PR #18)
+4. **2.2 Source Caching Layer** - Completed 2025-12-30 (PR #18)
    - Cache configuration per source (`ttl`, `strategy`)
    - In-memory cache with TTL expiration
    - Two strategies: `simple` and `stale-while-revalidate`
    - Automatic cache invalidation on writes
    - Background revalidation with proper cancellation
 
-4. **2.1 Data Source Error Handling** - Completed 2025-12-30 (PR #17)
+5. **2.1 Data Source Error Handling** - Completed 2025-12-30 (PR #17)
    - Unified error types for all sources (`SourceError`, `ConnectionError`, `TimeoutError`, etc.)
    - Retry with exponential backoff + jitter (±20%)
    - Circuit breaker pattern (opens after 5 failures in 1-minute window)
    - Configurable timeout per source
    - Response body size limit (10MB) for OOM prevention
 
-5. **3.6A Docs cleanup** - Completed 2025-12-30
-   - Deleted `PROGRESS.md` (superseded by ROADMAP.md)
-   - Deleted `UX_IMPROVEMENTS.md` (items in Phase 6.5)
-   - Deleted `docs/implementation-plan.md` (superseded by ROADMAP.md)
-   - Archived to `docs/archive/`: product vision and marketing docs
-
 ### Next Up
 <!-- Queue of next 3-5 tasks to tackle -->
-1. 3.6B Create Documentation Structure
-2. 3.1 Enhanced CLI Scaffolding
-3. 4.2 MongoDB Source
-4. 4.3 Source Composition
+1. 3.1 Enhanced CLI Scaffolding
+2. 4.2 MongoDB Source
+3. 4.3 Source Composition
+4. 3.3 Debug Mode & Logging
 
 ---
 
