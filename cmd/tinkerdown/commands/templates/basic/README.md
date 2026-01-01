@@ -1,39 +1,21 @@
-# [[.Title]]
+# <<.Title>>
 
-A Tinkerdown tutorial project created with `tinkerdown new`.
+A Kubernetes pods dashboard built with [Tinkerdown](https://github.com/livetemplate/tinkerdown).
 
-## Getting Started
+## Prerequisites
 
-1. **Start the development server:**
-   ```bash
-   tinkerdown serve [[.ProjectName]]
-   ```
+- `kubectl` configured with cluster access
+- `jq` installed for JSON processing
 
-2. **Open your browser:**
-   Navigate to `http://localhost:8080`
+## Running
 
-3. **Edit the tutorial:**
-   - Modify `index.md` to customize your tutorial
-   - Changes auto-reload when using `--watch` flag
-
-## Project Structure
-
-```
-[[.ProjectName]]/
-├── index.md      # Main tutorial file
-└── README.md     # This file
+```bash
+cd <<.ProjectName>>
+tinkerdown serve
 ```
 
-## Learn More
+Open http://localhost:8080 in your browser.
 
-- [Tinkerdown Documentation](https://github.com/livetemplate/tinkerdown)
-- [Tutorial Authoring Guide](https://github.com/livetemplate/tinkerdown/docs)
+## Customizing
 
-## Next Steps
-
-- **Add validation** - Validate user inputs in the `Change()` method
-- **Add persistence** - Use the `persist: localstorage` frontmatter option
-- **Add styling** - Customize CSS in the `<style>` blocks
-- **Add more demos** - Create additional interactive examples
-
-Happy coding! 🚀
+Edit `get-pods.sh` to change the kubectl command or jq filter.
