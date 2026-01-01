@@ -221,6 +221,11 @@ func UserFriendlyMessage(err error) string {
 		return fmt.Sprintf("Invalid data: %s", validationErr.Reason)
 	}
 
+	var gqlErr *GraphQLError
+	if errors.As(err, &gqlErr) {
+		return fmt.Sprintf("GraphQL query failed: %s", gqlErr.Message)
+	}
+
 	// Generic fallback
 	return "Failed to load data. Please try again."
 }
