@@ -63,7 +63,7 @@ tinkerdown new [options] <name>
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--template`, `-t` | Template to use | `basic` |
+| `--template` | Template to use | `basic` |
 | `--list` | List available templates | - |
 
 **Available Templates:**

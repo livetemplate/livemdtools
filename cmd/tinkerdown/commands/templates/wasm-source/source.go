@@ -58,6 +58,9 @@ func fetch() int32 {
 
 	lastResult = result
 	lastError = ""
+	if len(lastResult) == 0 {
+		return 0
+	}
 	return int32(uintptr(unsafe.Pointer(&lastResult[0])))
 }
 
