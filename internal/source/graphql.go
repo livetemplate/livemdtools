@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -225,12 +226,10 @@ func (s *GraphQLSource) doFetch(ctx context.Context) ([]map[string]interface{}, 
 
 	// Check for GraphQL errors
 	if len(gqlResp.Errors) > 0 {
-		// Convert path to []string
+		// Convert path to []string (handles both string and numeric indices)
 		pathStrings := make([]string, 0, len(gqlResp.Errors[0].Path))
 		for _, p := range gqlResp.Errors[0].Path {
-			if s, ok := p.(string); ok {
-				pathStrings = append(pathStrings, s)
-			}
+			pathStrings = append(pathStrings, fmt.Sprint(p))
 		}
 		return nil, &GraphQLError{
 			Source:  s.name,
@@ -277,10 +276,17 @@ func extractPath(data map[string]interface{}, path string) ([]map[string]interfa
 	}
 
 	result := make([]map[string]interface{}, 0, len(arr))
+	skippedCount := 0
 	for _, item := range arr {
 		if m, ok := item.(map[string]interface{}); ok {
 			result = append(result, m)
+		} else {
+			skippedCount++
 		}
+	}
+
+	if skippedCount > 0 {
+		log.Printf("[graphql] warning: extractPath skipped %d non-object items at path '%s'", skippedCount, path)
 	}
 
 	return result, nil

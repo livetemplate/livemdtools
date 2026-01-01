@@ -76,11 +76,11 @@ func TestGraphQLSourceE2E(t *testing.T) {
 
 	t.Logf("Test server URL: %s", ts.URL)
 
-	// Test 1: Navigate and wait for WebSocket to render content
+	// Test 1: Navigate and wait for interactive block to appear
 	var hasInteractiveBlock bool
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL+"/"),
-		chromedp.Sleep(3*time.Second),
+		chromedp.WaitVisible(".tinkerdown-interactive-block", chromedp.ByQuery),
 		chromedp.Evaluate(`document.querySelector('.tinkerdown-interactive-block') !== null`, &hasInteractiveBlock),
 	)
 	if err != nil {
@@ -90,16 +90,14 @@ func TestGraphQLSourceE2E(t *testing.T) {
 	if !hasInteractiveBlock {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
-		t.Logf("HTML: %s", htmlContent[:min(2000, len(htmlContent))])
+		t.Logf("HTML: %s", truncateString(htmlContent, 2000))
 		t.Fatal("Page did not load correctly - no interactive block found")
 	}
 
-	// Wait for WebSocket to render the table with country data
-	// The Countries API returns 250+ countries, so we wait for the table to have data
+	// Wait for table to appear inside the interactive block (WebSocket renders the table)
 	var tableRendered bool
 	err = chromedp.Run(ctx,
-		chromedp.Sleep(5*time.Second), // Give time for GraphQL fetch
-		// Check for table inside the interactive block (the table is inside the block wrapper)
+		chromedp.WaitVisible(".tinkerdown-interactive-block table", chromedp.ByQuery),
 		chromedp.Evaluate(`document.querySelector('.tinkerdown-interactive-block table') !== null`, &tableRendered),
 	)
 	if err != nil {
@@ -109,7 +107,7 @@ func TestGraphQLSourceE2E(t *testing.T) {
 	if !tableRendered {
 		var htmlContent string
 		chromedp.Run(ctx, chromedp.OuterHTML("html", &htmlContent))
-		t.Logf("HTML (first 3000 chars): %s", htmlContent[:min(3000, len(htmlContent))])
+		t.Logf("HTML (first 3000 chars): %s", truncateString(htmlContent, 3000))
 		t.Logf("Console logs: %v", consoleLogs)
 		t.Fatal("Table was not rendered by WebSocket - table not found in interactive block")
 	}
@@ -170,27 +168,29 @@ func TestGraphQLSourceE2E(t *testing.T) {
 	}
 	t.Log("Verified US country data is present")
 
-	// Test 5: Verify emoji flags are displayed (check for any emoji)
-	var hasEmoji bool
+	// Test 5: Verify emoji flags are displayed
+	// Country flags are regional indicator symbols (U+1F1E6-U+1F1FF)
+	var hasEmojiFlag bool
 	err = chromedp.Run(ctx,
 		chromedp.Evaluate(`
 			(() => {
 				const cells = document.querySelectorAll('tbody td:nth-child(3)');
+				// Regional indicator symbols range: U+1F1E6 to U+1F1FF
+				const flagRegex = /[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/;
 				for (const cell of cells) {
-					// Check for emoji pattern (flags are emoji)
-					if (cell.textContent && cell.textContent.length > 0) {
+					if (cell.textContent && flagRegex.test(cell.textContent)) {
 						return true;
 					}
 				}
 				return false;
 			})()
-		`, &hasEmoji),
+		`, &hasEmojiFlag),
 	)
 	if err != nil {
 		t.Fatalf("Failed to check emojis: %v", err)
 	}
 
-	if !hasEmoji {
+	if !hasEmojiFlag {
 		t.Fatal("No emoji flags found in table")
 	}
 	t.Log("Emoji flags are displayed in table")
@@ -220,4 +220,12 @@ func TestGraphQLSourceE2E(t *testing.T) {
 	t.Logf("Verified %d of %d sample countries", foundCount, len(expectedCountries))
 
 	t.Log("All GraphQL source E2E tests passed!")
+}
+
+// truncateString returns the first n characters of s, or s if len(s) <= n
+func truncateString(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }

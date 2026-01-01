@@ -100,7 +100,7 @@ GraphQL responses often have nested data. Use `result_path` to extract the array
 result_path: repository.issues.nodes
 ```
 
-The source automatically navigates to `data.repository.issues.nodes` and returns the array.
+The source automatically extracts the `data` field from the GraphQL response, then navigates through the specified path (`repository.issues.nodes`) and returns the array.
 
 ## Authentication
 
