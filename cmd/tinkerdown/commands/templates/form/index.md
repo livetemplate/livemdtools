@@ -1,5 +1,5 @@
 ---
-title: "{{.Title}}"
+title: "<<.Title>>"
 sources:
   submissions:
     type: sqlite
@@ -8,7 +8,7 @@ sources:
     readonly: false
 ---
 
-# {{.Title}}
+# <<.Title>>
 
 A contact form with SQLite persistence.
 

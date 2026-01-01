@@ -1,11 +1,11 @@
-# {{.Title}}
+# <<.Title>>
 
 A GitHub repository search tool built with [Tinkerdown](https://github.com/livetemplate/tinkerdown).
 
 ## Running
 
 ```bash
-cd {{.ProjectName}}
+cd <<.ProjectName>>
 tinkerdown serve
 ```
 

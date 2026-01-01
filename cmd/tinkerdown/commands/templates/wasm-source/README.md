@@ -1,4 +1,4 @@
-# {{.Title}} - WASM Source
+# <<.Title>> - WASM Source
 
 A custom Tinkerdown data source built with TinyGo and WebAssembly.
 

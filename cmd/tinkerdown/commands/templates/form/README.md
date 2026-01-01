@@ -1,11 +1,11 @@
-# {{.Title}}
+# <<.Title>>
 
 A contact form built with [Tinkerdown](https://github.com/livetemplate/tinkerdown) and SQLite.
 
 ## Running
 
 ```bash
-cd {{.ProjectName}}
+cd <<.ProjectName>>
 tinkerdown serve
 ```
 

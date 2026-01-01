@@ -100,8 +100,9 @@ func NewCommand(args []string, templateName string) error {
 		// Determine if file should be processed as template
 		ext := filepath.Ext(path)
 		if ext == ".md" || ext == ".yaml" || ext == ".sh" {
-			// Process as Go template
-			tmpl, err := template.New(filepath.Base(path)).Parse(string(content))
+			// Process as Go template with custom delimiters to avoid conflicts
+			// with Tinkerdown runtime templates that use {{ }}
+			tmpl, err := template.New(filepath.Base(path)).Delims("<<", ">>").Parse(string(content))
 			if err != nil {
 				return fmt.Errorf("failed to parse template %s: %w", path, err)
 			}
@@ -110,11 +111,12 @@ func NewCommand(args []string, templateName string) error {
 			if err != nil {
 				return fmt.Errorf("failed to create %s: %w", targetPath, err)
 			}
-			defer f.Close()
 
 			if err := tmpl.Execute(f, data); err != nil {
+				f.Close()
 				return fmt.Errorf("failed to execute template %s: %w", path, err)
 			}
+			f.Close()
 		} else {
 			// Copy file as-is
 			if err := os.WriteFile(targetPath, content, 0644); err != nil {

@@ -32,11 +32,22 @@ func main() {
 		// Parse --template flag from args
 		templateName := ""
 		filteredArgs := make([]string, 0, len(args))
-		for _, arg := range args {
+		skipNext := false
+		for i, arg := range args {
+			if skipNext {
+				skipNext = false
+				continue
+			}
 			if strings.HasPrefix(arg, "--template=") {
 				templateName = strings.TrimPrefix(arg, "--template=")
 			} else if strings.HasPrefix(arg, "-t=") {
 				templateName = strings.TrimPrefix(arg, "-t=")
+			} else if arg == "--template" || arg == "-t" {
+				// Handle space-separated: -t todo or --template todo
+				if i+1 < len(args) {
+					templateName = args[i+1]
+					skipNext = true
+				}
 			} else {
 				filteredArgs = append(filteredArgs, arg)
 			}

@@ -1,12 +1,12 @@
 ---
-title: "{{.Title}}"
+title: "<<.Title>>"
 sources:
   pods:
     type: exec
     cmd: ./get-pods.sh
 ---
 
-# {{.Title}}
+# <<.Title>>
 
 A simple Kubernetes pods dashboard built with Tinkerdown.
 

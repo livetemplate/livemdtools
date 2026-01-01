@@ -1,5 +1,5 @@
 ---
-title: "{{.Title}}"
+title: "<<.Title>>"
 sources:
   users:
     type: rest
@@ -9,7 +9,7 @@ sources:
     cmd: ./system-info.sh
 ---
 
-# {{.Title}}
+# <<.Title>>
 
 A multi-source dashboard combining REST API data and local system information.
 

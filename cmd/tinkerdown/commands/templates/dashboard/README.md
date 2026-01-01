@@ -1,11 +1,11 @@
-# {{.Title}}
+# <<.Title>>
 
 A multi-source dashboard built with [Tinkerdown](https://github.com/livetemplate/tinkerdown).
 
 ## Running
 
 ```bash
-cd {{.ProjectName}}
+cd <<.ProjectName>>
 tinkerdown serve
 ```
 

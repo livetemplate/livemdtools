@@ -1,5 +1,5 @@
 ---
-title: "{{.Title}}"
+title: "<<.Title>>"
 sources:
   tasks:
     type: sqlite
@@ -8,7 +8,7 @@ sources:
     readonly: false
 ---
 
-# {{.Title}}
+# <<.Title>>
 
 A simple task manager with SQLite persistence.
 

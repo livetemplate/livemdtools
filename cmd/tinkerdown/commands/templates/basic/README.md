@@ -1,4 +1,4 @@
-# {{.Title}}
+# <<.Title>>
 
 A Kubernetes pods dashboard built with [Tinkerdown](https://github.com/livetemplate/tinkerdown).
 
@@ -10,7 +10,7 @@ A Kubernetes pods dashboard built with [Tinkerdown](https://github.com/livetempl
 ## Running
 
 ```bash
-cd {{.ProjectName}}
+cd <<.ProjectName>>
 tinkerdown serve
 ```
 
