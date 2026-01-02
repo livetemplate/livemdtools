@@ -1,7 +1,7 @@
 # Tinkerdown: Unified Design & Implementation Plan
 
 **Date:** 2026-01-02
-**Version:** 3.0 - Tinkering Philosophy
+**Version:** 3.1 - Consistency Pass
 **Status:** Living Document
 
 ---
@@ -519,27 +519,7 @@ No YAML needed. Tinkerdown infers everything from markdown:
 | `## Expenses` | Table: `expenses` (date DATE, category TEXT, amount DECIMAL) |
 | `## Team` | Table: `team` (name TEXT, email TEXT, role TEXT) |
 
-**Pattern detection:**
-
-| Pattern | SQL Type | UI Input |
-|---------|----------|----------|
-| `2024-01-15` | DATE | Date picker |
-| `14:30`, `2:30pm` | TIME | Time picker |
-| `123`, `45.67` | DECIMAL | Number input |
-| `$45.50`, `€100` | DECIMAL(10,2) | Currency input |
-| `true`, `false` | BOOLEAN | Checkbox |
-| `alice@example.com` | TEXT | Email input |
-| `https://...` | TEXT | URL input |
-| ≤10 unique values | TEXT + constraint | Dropdown |
-| Everything else | TEXT | Text input |
-
-**Constraint inference:**
-
-| Pattern | Constraint |
-|---------|------------|
-| Value in every row | NOT NULL |
-| Some rows empty | nullable |
-| All values unique | UNIQUE (suggested) |
+Types and constraints are inferred automatically from data patterns. See [Automatic Schema Inference](#automatic-schema-inference) for the full pattern detection rules.
 
 ---
 
@@ -892,46 +872,47 @@ CREATE TABLE tasks (
 
 ## Feature Dependency Graph
 
+Features build on each other. Each layer unlocks new tinkering capabilities.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    FEATURE DEPENDENCIES                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  LAYER 0: Foundation (unlocks markdown-native)                  │
-│  ─────────────────────────────────────────────                  │
+│  LAYER 0: Foundation (It Works)                                 │
+│  ──────────────────────────────                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
 │  │   Heading   │  │  Table/List │  │   Schema    │             │
 │  │   as Anchor │  │   Parsing   │  │  Inference  │             │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
 │         └────────────────┼────────────────┘                     │
 │                          ▼                                      │
-│  LAYER 1: Core Features                                        │
-│  ──────────────────────                                        │
+│  LAYER 1: Core Features (It Connects)                          │
+│  ────────────────────────────────────                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
 │  │Auto-timestamp│  │  Computed   │  │  HTTP API   │             │
 │  │+ Operator   │  │  Expressions│  │  + CLI mode │             │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
 │         │                │                │                     │
 │         ▼                ▼                ▼                     │
-│  LAYER 2: Pillar Essentials                                    │
-│  ──────────────────────────                                    │
+│  LAYER 2: Interactivity (It Acts)                              │
+│  ────────────────────────────────                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  Snapshot   │  │   Tabs &    │  │  @schedule  │             │
-│  │  + Steps    │  │  Filtering  │  │   Triggers  │             │
-│  │  (Runbook)  │  │  (Product.) │  │  (Automat.) │             │
+│  │  Snapshot   │  │   Tabs &    │  │   Action    │             │
+│  │  + Steps    │  │  Filtering  │  │   Buttons   │             │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
 │         │                │                │                     │
 │         ▼                ▼                ▼                     │
-│  LAYER 3: Pillar Completion                                    │
-│  ──────────────────────────                                    │
+│  LAYER 3: Automation (It Reacts)                               │
+│  ───────────────────────────────                               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │Status Banner│  │   Charts    │  │  Webhooks   │             │
-│  │ + Actions   │  │ + Exports   │  │  + Outputs  │             │
+│  │  @schedule  │  │   Charts    │  │  Webhooks   │             │
+│  │  Triggers   │  │ + Exports   │  │  + Outputs  │             │
 │  └─────────────┘  └─────────────┘  └──────┬──────┘             │
 │                                           │                     │
 │                                           ▼                     │
-│  LAYER 4: Distribution                                         │
-│  ─────────────────────                                         │
+│  LAYER 4: Distribution (It Ships)                              │
+│  ────────────────────────────────                              │
 │  ┌─────────────────────────────────────────────────┐           │
 │  │  Build command / Desktop app / tinkerdown.dev   │           │
 │  └─────────────────────────────────────────────────┘           │
@@ -939,32 +920,29 @@ CREATE TABLE tasks (
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Feature → Pillar Matrix
+### Feature → Tinkering Stories
 
-| Feature | Runbooks | Productivity | Automation | Layer |
-|---------|:--------:|:------------:|:----------:|:-----:|
-| Heading as anchor | ✓ | ✓ | ✓ | 0 |
-| Table/list parsing | ✓ | ✓ | ✓ | 0 |
-| Schema inference | ✓ | ✓ | ✓ | 0 |
-| Auto-timestamp | ✓ | ✓ | ✓ | 1 |
-| Operator identity | ✓ | ○ | ○ | 1 |
-| Computed expressions | ○ | ✓ | ○ | 1 |
-| HTTP API | ✓ | ✓ | ✓ | 1 |
-| CLI mode | ✓ | ○ | ✓ | 1 |
-| Snapshot capture | ✓ | | | 2 |
-| Step buttons | ✓ | | | 2 |
-| Tabs & filtering | ○ | ✓ | ○ | 2 |
-| @schedule triggers | | | ✓ | 2 |
-| Status banners | ✓ | ✓ | ○ | 3 |
-| Action buttons | ✓ | ✓ | ○ | 3 |
-| Charts | | ✓ | | 3 |
-| Exports (CSV/PDF) | ○ | ✓ | ○ | 3 |
-| Webhook triggers | ○ | | ✓ | 3 |
-| Outputs (Slack/Email) | ✓ | ○ | ✓ | 3 |
-| Build command | ✓ | ✓ | ✓ | 4 |
-| Desktop app | ○ | ✓ | | 4 |
+Each feature enables specific tinkering stories:
 
-✓ = Critical, ○ = Useful, blank = Not applicable
+| Feature | Discovery | Learning | Composition | Iteration | Sharing | Layer |
+|---------|:---------:|:--------:|:-----------:|:---------:|:-------:|:-----:|
+| Heading as anchor | ✓ | ✓ | | | | 0 |
+| Table/list parsing | ✓ | ✓ | | | | 0 |
+| Schema inference | ✓ | | | ✓ | | 0 |
+| Auto-timestamp | | ✓ | | | ✓ | 1 |
+| Computed expressions | ✓ | ✓ | ✓ | | | 1 |
+| HTTP API | | | ✓ | | ✓ | 1 |
+| CLI mode | | | ✓ | | | 1 |
+| Tabs & filtering | ✓ | | ✓ | | | 2 |
+| Action buttons | ✓ | ✓ | ✓ | | | 2 |
+| @schedule triggers | ✓ | | ✓ | | | 3 |
+| Webhooks | | | ✓ | | | 3 |
+| Outputs (Slack/Email) | | | ✓ | | ✓ | 3 |
+| Charts/Exports | ✓ | | | | ✓ | 3 |
+| Build command | | | | | ✓ | 4 |
+| Desktop app | | | | | ✓ | 4 |
+
+✓ = Enables this story type
 
 ---
 
@@ -2321,24 +2299,11 @@ go test ./... -cover
 
 ---
 
-### Session Handoff
-
-When ending a session, update this section:
-
-**Last Updated:** [DATE]
-**Last Task Completed:** [TASK ID]
-**Next Task:** [TASK ID]
-**Blockers:** [Any issues encountered]
-**Notes for Next Session:**
-- [Important context]
-- [Decisions made]
-- [Files modified]
-
----
-
 ## Feature Specifications
 
-### Complete Markdown Grammar
+> **Note:** This section provides a quick reference for all tinkerdown syntax. For detailed explanations and examples, see [Markdown-Native Design](#markdown-native-design) and [Architecture](#architecture).
+
+### Complete Markdown Grammar (Quick Reference)
 
 ```
 # DOCUMENT STRUCTURE
@@ -2435,9 +2400,9 @@ outputs:
 #tag                     → Tag/category
 ```
 
-### YAML Configuration (Optional)
+### YAML Configuration (Quick Reference)
 
-Only needed when you want to go beyond zero-config defaults.
+Only needed when you want to go beyond zero-config defaults. For detailed tier explanations, see [Architecture](#architecture).
 
 **Tier 2 - Type Hints:**
 
@@ -2557,16 +2522,18 @@ For Layer 3 full control:
 
 ## Example Apps
 
-See [tinkerdown-example-apps-plan.md](tinkerdown-example-apps-plan.md) for planned examples using the markdown-native syntax.
+See [tinkerdown-example-apps-plan.md](tinkerdown-example-apps-plan.md) for planned examples.
 
-**Implementation milestones:**
+**When examples become functional:**
 
-| Example | Functional After |
-|---------|------------------|
-| Two-Line Todo | Week 2 |
-| Expense Tracker | Week 4 |
-| Team Tasks, Runbook, Meeting Notes, Inventory | Week 6 |
-| Standup Bot, Health Monitor, CRM, Habit Tracker | Week 8 |
+| Example | Requires Milestone |
+|---------|-------------------|
+| Two-Line Todo | 1: Works |
+| Expense Tracker | 2: Connects |
+| Team Tasks, Meeting Notes, Inventory | 3: Acts |
+| Runbook with live data | 3: Acts |
+| Standup Bot, Health Monitor | 4: Reacts |
+| Distributable apps | 5: Ships |
 
 After each milestone, move working examples to `examples/`.
 
