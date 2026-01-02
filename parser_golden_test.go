@@ -14,6 +14,11 @@ import (
 
 var updateGolden = flag.Bool("update", false, "update golden files")
 
+// Known limitations documented in golden tests:
+// - CodeBlock.Line values are byte offsets, not line numbers (pre-existing parser.go bug)
+// - Pandoc-style heading anchors {#id} are not stripped from heading text (goldmark limitation)
+// These behaviors are captured in golden files to detect any changes.
+
 // GoldenOutput represents the serializable output for golden file comparison.
 type GoldenOutput struct {
 	Frontmatter *FrontmatterOutput `json:"frontmatter,omitempty"`
@@ -33,17 +38,18 @@ type FrontmatterOutput struct {
 
 // SourceConfigOutput is a serializable version of SourceConfig.
 type SourceConfigOutput struct {
-	Type     string `json:"type"`
-	Cmd      string `json:"cmd,omitempty"`
-	Query    string `json:"query,omitempty"`
-	URL      string `json:"url,omitempty"`
-	File     string `json:"file,omitempty"`
-	Anchor   string `json:"anchor,omitempty"`
-	DB       string `json:"db,omitempty"`
-	Table    string `json:"table,omitempty"`
-	Path     string `json:"path,omitempty"`
-	Readonly *bool  `json:"readonly,omitempty"`
-	Manual   bool   `json:"manual,omitempty"`
+	Type     string            `json:"type"`
+	Cmd      string            `json:"cmd,omitempty"`
+	Query    string            `json:"query,omitempty"`
+	URL      string            `json:"url,omitempty"`
+	File     string            `json:"file,omitempty"`
+	Anchor   string            `json:"anchor,omitempty"`
+	DB       string            `json:"db,omitempty"`
+	Table    string            `json:"table,omitempty"`
+	Path     string            `json:"path,omitempty"`
+	Readonly *bool             `json:"readonly,omitempty"`
+	Manual   bool              `json:"manual,omitempty"`
+	Options  map[string]string `json:"options,omitempty"`
 }
 
 // CodeBlockOutput is a serializable version of CodeBlock.
@@ -135,6 +141,7 @@ func convertToGoldenOutput(fm *Frontmatter, blocks []*CodeBlock, html string) *G
 					Path:     src.Path,
 					Readonly: src.Readonly,
 					Manual:   src.Manual,
+					Options:  src.Options,
 				}
 			}
 		}

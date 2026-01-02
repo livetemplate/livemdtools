@@ -1,6 +1,6 @@
 # Two-Line Todo
 
-The simplest possible Tinkerdown app - a working todo list in just 4 lines of markdown.
+The simplest possible Tinkerdown app - a working todo list in just 5 lines of markdown.
 
 ## Quick Start
 
