@@ -19,20 +19,48 @@ That's a complete app. Two lines. No YAML. No HTML. No configuration.
 
 ### The Building Blocks
 
-Tinkerdown has a small grammar. These are the pieces you combine:
+Tinkerdown is a tiered system. Start simple, add power as needed:
 
-| Block | What It Does | Example |
-|-------|--------------|---------|
-| `# Heading` | Groups content | Section titles |
-| `- [ ] Task` | Interactive checkbox | Tracks completion |
-| `\| Table \|` | Editable data grid | Add/edit/delete rows |
-| `[Button](action:x)` | Triggers actions | API calls, scripts |
-| `` `expression` `` | Computed values | `count(x)`, `sum(x.field)` |
-| `@schedule` | Runs on schedule | `@daily:9am`, `@friday` |
+**Tier 1: Pure Markdown** (zero config)
 
-That's it. Six building blocks. Everything else is standard markdown rendered as content.
+| Block | What It Does |
+|-------|--------------|
+| `## Heading` | Creates a data source named after the heading |
+| `- [ ] Task` | Interactive checkbox list |
+| `\| Table \|` | Editable data grid with auto-generated forms |
+| `[Button](action:x)` | Triggers actions |
+| `` `count(x)` `` | Computed values from your data |
+| `@daily:9am` | Schedule triggers |
 
-**Tinkering means:** you add a checkbox, see it work, add a table, connect it to a database, add a button, wire it to an API. Each step is small, visible, and reversible. When you read a tinkerdown file, you understand it. When an LLM generates one, you can verify it.
+**Tier 2-3: YAML Frontmatter** (external data)
+
+```yaml
+---
+sources:
+  users: postgres://${DATABASE_URL}
+  orders: ./local.db
+  github: https://api.github.com/repos/...
+types:
+  expenses.amount: currency
+---
+```
+
+Connect to Postgres, SQLite, REST APIs, shell commands. Override type inference.
+
+**Tier 4: HTML + Go Templates** (full control)
+
+```html
+<table lvt-source="users" lvt-columns="name,email" lvt-actions="edit,delete">
+</table>
+
+{{range .items}}
+  <div class="card">{{.title}}</div>
+{{end}}
+```
+
+Custom layouts, conditional rendering, any CSS/JS you want.
+
+**Tinkering means:** start with two lines of markdown, add a YAML source when you need real data, drop to HTML when you need custom UI. Each step is small, visible, and reversible.
 
 ### One Command, Three Modes
 
