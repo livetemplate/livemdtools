@@ -67,6 +67,7 @@ tinkerdown serve app.md --cli        # Terminal interface
 6. [Example Apps](#example-apps)
 7. [Security Considerations](#security-considerations)
 8. [Distribution Strategy](#distribution-strategy)
+9. [Extended Roadmap (Post-v1.0)](#extended-roadmap-post-v10)
 
 ---
 
@@ -2587,6 +2588,110 @@ if __name__ == "__main__":
 | GitHub stars | 500 | 1000 |
 | CLI installs | 200 | 500 |
 | Apps created | 1000 | 5000 |
+
+---
+
+## Extended Roadmap (Post-v1.0)
+
+> **Note:** These are future directions to consider after the 12-week core plan. Features here are **not committed** - they represent ideas that need validation against user demand and tinkerdown's core philosophy of markdown-first simplicity.
+
+### Already Implemented
+
+| Feature | Status | PR |
+|---------|--------|-----|
+| Data Source Error Handling (retry, circuit breaker, timeout) | ✅ Complete | - |
+| Source Caching Layer (TTL, stale-while-revalidate) | ✅ Complete | #18 |
+| Multi-Page WebSocket Support | ✅ Complete | #19 |
+| Enhanced CLI Scaffolding (7 templates) | ✅ Complete | #24 |
+| Documentation Structure | ✅ Complete | #20 |
+| GraphQL Source | ✅ Complete | #22 |
+
+### Future Directions
+
+#### Developer Experience
+
+**WASM Source SDK** - High priority for ecosystem growth:
+```bash
+tinkerdown wasm init github-issues   # Scaffold new WASM source
+tinkerdown wasm build                 # Compile TinyGo to WASM
+tinkerdown wasm test                  # Test module locally
+```
+
+**Debug Mode** - Useful for troubleshooting:
+```bash
+tinkerdown serve app.md --debug      # Source fetch timing, WS messages
+```
+
+**Validation improvements** - Extend existing `tinkerdown validate`:
+- Warn on unused source definitions
+- Type-check template patterns
+
+> **Not adopting:** Hot Reload for YAML config. Markdown hot reload already works. Separate YAML reload adds complexity for rare use case.
+
+#### Production Hardening
+
+**Authentication Middleware** - Essential for shared deployments:
+```yaml
+auth:
+  provider: github
+  allowed_orgs: [mycompany]
+```
+
+**Health Endpoints** - Standard for production:
+- `GET /health` - Liveness check
+- `GET /ready` - Source connectivity check
+
+**Graceful Shutdown** - Drain connections properly on SIGTERM.
+
+> **Consider carefully:** Rate limiting. May be better handled by a reverse proxy (nginx, Cloudflare) than built into tinkerdown.
+
+#### UI Enhancements
+
+**Pagination & Filtering** - Needed for real data volumes:
+```html
+<table lvt-source="users" lvt-paginate="20" lvt-sortable>
+</table>
+```
+
+**Charts** - Already in Phase 6 core roadmap.
+
+> **Not adopting:** Component library (modals, toasts, accordions). These add significant complexity and are better served by the HTML layer (Layer 3) where users can use any JS library they prefer. Tinkerdown should not become a UI framework.
+
+#### Data Sources
+
+> **Not adopting:** MongoDB, S3, Redis as native sources. The WASM source system already enables these integrations without bloating the core binary. Community can build these as WASM modules.
+
+> **Not adopting:** Source Composition with CEL. Template-level filtering (`{{range where .Status "active"}}`) is sufficient for most cases. CEL adds a complex dependency for marginal benefit.
+
+**Webhook Source** - Already covered in Phase 4 (Task 4.3).
+
+#### Advanced Features
+
+> **Not adopting:** Offline Support. Tinkerdown is a local-first tool - your markdown file is already on disk. Adding service workers, offline queues, and sync logic adds significant complexity for a scenario that conflicts with the core use case (edit markdown, see changes).
+
+> **Not adopting:** WASM Marketplace. Premature optimization. Focus on making WASM sources easy to build and share via git. A marketplace can come later if there's demand.
+
+> **Defer:** API Endpoint Mode with OpenAPI generation. Task 2.4 HTTP API provides basic CRUD. Full OpenAPI/Swagger adds complexity. Revisit based on user demand.
+
+### Philosophy Checklist
+
+Before adding post-v1.0 features, validate against these principles:
+
+1. **Does it require config?** If yes, can the 80% use case work without it?
+2. **Does WASM already solve this?** New source types should be WASM modules, not core code.
+3. **Is this a tinkerdown feature or a deployment concern?** Auth, rate limiting, SSL often belong in the deployment layer.
+4. **Does it increase the learning curve?** Every new concept makes the two-line todo harder to explain.
+
+### What v1.0 Must Prove
+
+Before any extended roadmap work:
+
+1. **Zero-config works** - `## Tasks` → working CRUD app
+2. **LLM generation works** - AI can create tinkerdown apps reliably
+3. **Users adopt it** - Real usage validates the concept
+4. **WASM extensibility works** - Community can build custom sources
+
+Features beyond the core plan should be driven by observed user needs, not speculative requirements
 
 ---
 
