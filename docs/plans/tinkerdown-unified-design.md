@@ -17,36 +17,22 @@ Tinkerdown turns markdown into apps. **If it's valid markdown, it's a working ap
 
 That's a complete app. Two lines. No YAML. No HTML. No configuration.
 
-### The Tinkering Philosophy
+### The Building Blocks
 
-Tinkerdown enables **tinkering** - exploration, experimentation, and discovery. The goal isn't to prescribe what you build, but to give you building blocks simple enough to understand and powerful enough to matter.
+Tinkerdown has a small grammar. These are the pieces you combine:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     THE TINKERING LOOP                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│    Wonder → Try → See → Understand → Modify → Try again         │
-│                                                                 │
-│    "What if I..."                                               │
-│         ↓                                                       │
-│    Make a small change                                          │
-│         ↓                                                       │
-│    Immediate feedback                                           │
-│         ↓                                                       │
-│    "Oh, that's how it works"                                    │
-│         ↓                                                       │
-│    "Now what if I..."                                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Block | What It Does | Example |
+|-------|--------------|---------|
+| `# Heading` | Groups content | Section titles |
+| `- [ ] Task` | Interactive checkbox | Tracks completion |
+| `\| Table \|` | Editable data grid | Add/edit/delete rows |
+| `[Button](action:x)` | Triggers actions | API calls, scripts |
+| `{{variable}}` | Injects live data | From APIs, DBs, files |
+| `<!--trigger:...-->` | Runs on schedule | Automation, polling |
 
-**Core properties:**
-- **Learnable** - Master the grammar in an afternoon
-- **Deterministic** - What's simple for LLMs is simple for humans
-- **Composable** - Small pieces that combine without interference
-- **Recoverable** - You can always hand-edit if needed
-- **Portable** - Git-backed, grep-able, yours forever
+That's it. Six building blocks. Everything else is standard markdown rendered as content.
+
+**Tinkering means:** you add a checkbox, see it work, add a table, connect it to a database, add a button, wire it to an API. Each step is small, visible, and reversible. When you read a tinkerdown file, you understand it. When an LLM generates one, you can verify it.
 
 ### One Command, Three Modes
 
