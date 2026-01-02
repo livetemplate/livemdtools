@@ -1,7 +1,7 @@
 # Tinkerdown: Unified Design & Implementation Plan
 
 **Date:** 2026-01-02
-**Version:** 3.1 - Consistency Pass
+**Version:** 4.0 - Consolidated V1.0 Roadmap
 **Status:** Living Document
 
 ---
@@ -62,15 +62,11 @@ But the point is: **you decide what to build**. We provide the blocks.
 1. [Tinkering Stories](#tinkering-stories)
 2. [Markdown-Native Design](#markdown-native-design)
 3. [Architecture](#architecture)
-4. [Feature Dependency Graph](#feature-dependency-graph)
-5. [Progressive Implementation Plan](#progressive-implementation-plan)
-6. [Feature Specifications](#feature-specifications)
-7. [Example Apps](#example-apps)
-8. [Security Considerations](#security-considerations)
-9. [Distribution Strategy](#distribution-strategy)
-10. [Success Metrics](#success-metrics)
-11. [Extended Roadmap (Post-v1.0)](#extended-roadmap-post-v10)
-12. [Summary](#summary)
+4. [V1.0 Roadmap](#v10-roadmap)
+5. [Quick Reference](#quick-reference)
+6. [Success Metrics](#success-metrics)
+7. [Post-v1.0 Considerations](#post-v10-considerations)
+8. [Summary](#summary)
 
 ---
 
@@ -871,2045 +867,277 @@ When you need complete control over layout and interactions, use HTML with `lvt-
 
 ---
 
-## Feature Dependency Graph
+## V1.0 Roadmap
 
-Features build on each other. Each layer unlocks new tinkering capabilities.
+This roadmap is designed to be imported directly into a GitHub project. Each milestone becomes a GitHub milestone; each task becomes an issue.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    FEATURE DEPENDENCIES                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  LAYER 0: Foundation (It Works)                                 │
-│  ──────────────────────────────                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Heading   │  │  Table/List │  │   Schema    │             │
-│  │   as Anchor │  │   Parsing   │  │  Inference  │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         └────────────────┼────────────────┘                     │
-│                          ▼                                      │
-│  LAYER 1: Core Features (It Connects)                          │
-│  ────────────────────────────────────                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │Auto-timestamp│  │  Computed   │  │  HTTP API   │             │
-│  │+ Operator   │  │  Expressions│  │  + CLI mode │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                     │
-│         ▼                ▼                ▼                     │
-│  LAYER 2: Interactivity (It Acts)                              │
-│  ────────────────────────────────                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  Snapshot   │  │   Tabs &    │  │   Action    │             │
-│  │  + Steps    │  │  Filtering  │  │   Buttons   │             │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘             │
-│         │                │                │                     │
-│         ▼                ▼                ▼                     │
-│  LAYER 3: Automation (It Reacts)                               │
-│  ───────────────────────────────                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  @schedule  │  │   Charts    │  │  Webhooks   │             │
-│  │  Triggers   │  │ + Exports   │  │  + Outputs  │             │
-│  └─────────────┘  └─────────────┘  └──────┬──────┘             │
-│                                           │                     │
-│                                           ▼                     │
-│  LAYER 4: Distribution (It Ships)                              │
-│  ────────────────────────────────                              │
-│  ┌─────────────────────────────────────────────────┐           │
-│  │  Build command / Desktop app / tinkerdown.dev   │           │
-│  └─────────────────────────────────────────────────┘           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Milestone Overview
 
-### Feature → Tinkering Stories
-
-Each feature enables specific tinkering stories:
-
-| Feature | Discovery | Learning | Composition | Iteration | Sharing | Layer |
-|---------|:---------:|:--------:|:-----------:|:---------:|:-------:|:-----:|
-| Heading as anchor | ✓ | ✓ | | | | 0 |
-| Table/list parsing | ✓ | ✓ | | | | 0 |
-| Schema inference | ✓ | | | ✓ | | 0 |
-| Auto-timestamp | | ✓ | | | ✓ | 1 |
-| Computed expressions | ✓ | ✓ | ✓ | | | 1 |
-| HTTP API | | | ✓ | | ✓ | 1 |
-| CLI mode | | | ✓ | | | 1 |
-| Tabs & filtering | ✓ | | ✓ | | | 2 |
-| Action buttons | ✓ | ✓ | ✓ | | | 2 |
-| @schedule triggers | ✓ | | ✓ | | | 3 |
-| Webhooks | | | ✓ | | | 3 |
-| Outputs (Slack/Email) | | | ✓ | | ✓ | 3 |
-| Charts/Exports | ✓ | | | | ✓ | 3 |
-| Build command | | | | | ✓ | 4 |
-| Desktop app | | | | | ✓ | 4 |
-
-✓ = Enables this story type
+| # | Milestone | What Ships | Exit Criteria |
+|---|-----------|------------|---------------|
+| 1 | **It Works** | Markdown → interactive app | Pure markdown app runs, changes persist |
+| 2 | **It Connects** | External data sources | Postgres, REST, exec sources work |
+| 3 | **It Acts** | Buttons, forms, API | Action buttons trigger operations |
+| 4 | **It Reacts** | Triggers & outputs | Schedules run, webhooks received |
+| 5 | **It Ships** | Distribution | Build command produces standalone binary |
+| 6 | **v1.0 Launch** | Polish & launch | Docs complete, examples work, release published |
 
 ---
 
-## Progressive Implementation Plan
+### Milestone 1: It Works
 
-This implementation plan is designed to be followed by an LLM across multiple sessions. Each task includes:
+**Goal:** A markdown file becomes an interactive app. Changes persist to the file.
 
-- **Prerequisites**: What must be done before starting
-- **Files to modify/create**: Exact paths
-- **Integration points**: How it connects to existing code
-- **Acceptance criteria**: How to verify completion
-- **Verification commands**: Tests to run
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 1.1 | **Testing Infrastructure** | Golden file tests work with `-update` flag |
+| 1.2 | **Heading-as-Anchor** | `## Tasks` auto-detected as source named "tasks" |
+| 1.3 | **Table Parsing** | Markdown tables parse to structured data with columns |
+| 1.4 | **List Parsing** | Task lists, ordered lists, definition lists parse correctly |
+| 1.5 | **Schema Inference** | Dates, numbers, booleans auto-detected from patterns |
+| 1.6 | **Auto-CRUD UI** | Tables get add form, task lists get checkbox toggle |
+| 1.7 | **Hot Reload** | File changes reflect in browser within 100ms |
+| 1.8 | **Example: Two-Line Todo** | `# Todo\n- [ ] task` runs as complete app |
 
-**Before starting any task:**
-1. Read the Prerequisites section
-2. Check if prerequisite tasks are complete
-3. Read the relevant existing files listed
-4. Follow the implementation steps
-5. Run verification commands
-6. Update the task status in this document
+**Security:** Input validation on all form submissions. Sanitize markdown content.
 
-### Current Codebase Structure
-
-```
-tinkerdown/
-├── cmd/
-│   └── tinkerdown/          # CLI entry point
-├── internal/
-│   ├── source/              # Data sources (see list below)
-│   │   ├── source.go        # Source interface
-│   │   ├── markdown.go      # Markdown table/list source
-│   │   └── ...
-│   ├── server/              # HTTP server, WebSocket
-│   ├── runtime/             # Actions, state management
-│   ├── markdown/            # Markdown parser
-│   ├── config/              # Configuration
-│   └── compiler/            # Template compilation
-├── web/                     # Frontend assets
-└── examples/                # Working examples
-```
-
-**Implemented source types (9 total):**
-
-| Type | From | Description |
-|------|------|-------------|
-| `markdown` | `#heading` | Tables/lists in the .md file itself |
-| `sqlite` | `./file.db` | SQLite database file |
-| `postgres` | `postgres://...` | PostgreSQL database |
-| `json` | `./file.json` or URL | JSON file or REST endpoint |
-| `csv` | `./file.csv` | CSV file |
-| `rest` | `https://...` | REST API with headers/auth |
-| `exec` | shell command | Execute command, parse JSON output |
-| `graphql` | `https://...` | GraphQL endpoint |
-| `wasm` | `./module.wasm` | WebAssembly custom source |
-
-### Overview: Capability Milestones
-
-Each milestone unlocks new tinkering possibilities. Ship each milestone, see what people build, learn.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CAPABILITY MILESTONES                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  MILESTONE 1: It Works (Wk 1-2)                                 │
-│  ───────────────────────────────                                │
-│  Markdown → interactive app. Changes persist. Sources fetch.   │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Discovery: "I can run my existing markdown"                  │
-│  • Learning: "I see how the syntax maps to UI"                  │
-│  • Iteration: "Hot reload shows my changes"                     │
-│                                                                 │
-│  MILESTONE 2: It Connects (Wk 3-4)                              │
-│  ─────────────────────────────────                              │
-│  External databases, APIs, shell commands as data sources.     │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Composition: "I can pull in my actual data"                  │
-│  • Discovery: "What if I connect to my database?"               │
-│                                                                 │
-│  MILESTONE 3: It Acts (Wk 5-6)                                  │
-│  ──────────────────────────────                                 │
-│  Action buttons, forms, HTTP API, CLI mode.                    │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Composition: "Buttons can trigger any action"                │
-│  • Sharing: "Others can use my app via API"                     │
-│                                                                 │
-│  MILESTONE 4: It Reacts (Wk 7-8)                                │
-│  ───────────────────────────────                                │
-│  Schedules trigger, webhooks arrive, outputs notify.           │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Discovery: "What if it runs automatically?"                  │
-│  • Composition: "Triggers + actions + outputs"                  │
-│                                                                 │
-│  MILESTONE 5: It Ships (Wk 9-10)                                │
-│  ────────────────────────────────                               │
-│  Build command, desktop app, distribution.                     │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Sharing: "I can give this to non-developers"                 │
-│                                                                 │
-│  MILESTONE 6: It Scales (Wk 11-12)                              │
-│  ─────────────────────────────────                              │
-│  Charts, templates, documentation, polish.                     │
-│                                                                 │
-│  Tinkering unlocked:                                            │
-│  • Discovery: "What else can I visualize?"                      │
-│  • Learning: "Examples show me patterns"                        │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Milestone → Stories Mapping
-
-| Milestone | Discovery | Learning | Composition | Iteration | Recovery | Sharing |
-|-----------|:---------:|:--------:|:-----------:|:---------:|:--------:|:-------:|
-| 1: Works | ✓ | ✓ | | ✓ | ✓ | |
-| 2: Connects | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| 3: Acts | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 4: Reacts | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 5: Ships | | | ✓ | | | ✓ |
-| 6: Scales | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-### Task Status Summary
-
-| Phase | Task | Status |
-|-------|------|--------|
-| 1 | 1.0 Testing Foundation | `[ ]` |
-| 1 | 1.1 Heading-as-Anchor | `[ ]` |
-| 1 | 1.2 Table Parsing | `[ ]` |
-| 1 | 1.3 List Parsing | `[ ]` |
-| 1 | 1.4 Schema Inference & Type Hints | `[ ]` |
-| 1 | 1.5 Auto-CRUD UI | `[ ]` |
-| 2 | 2.1 Auto-Timestamp | `[ ]` |
-| 2 | 2.2 Operator Identity | `[ ]` |
-| 2 | 2.3 Computed Expressions | `[ ]` |
-| 2 | 2.4 HTTP API | `[ ]` |
-| 2 | 2.5 CLI Mode | `[ ]` |
-| 2 | 2.6 WebSocket Protocol Tests | `[ ]` |
-| 3 | 3.1 Snapshot Capture | `[ ]` |
-| 3 | 3.2 Step Status | `[ ]` |
-| 3 | 3.3 Tabs | `[ ]` |
-| 3 | 3.4 Status Banners | `[ ]` |
-| 3 | 3.5 Action Buttons | `[ ]` |
-| 3 | 3.6 Source Golden Tests | `[ ]` |
-| 4 | 4.1 @schedule Parsing | `[ ]` |
-| 4 | 4.2 Schedule Runner | `[ ]` |
-| 4 | 4.3 Webhook Triggers | `[ ]` |
-| 4 | 4.4 Output Integrations | `[ ]` |
-| 5 | 5.1 Build Command | `[ ]` |
-| 5 | 5.2 Desktop App | `[ ]` |
-| 5 | 5.3 Hosted Service | `[ ]` |
-| 5 | 5.4 CLI Testscript | `[ ]` |
-| 6 | 6.1 Charts | `[ ]` |
-| 6 | 6.2 Template Gallery | `[ ]` |
-| 6 | 6.3 Documentation | `[ ]` |
-| 6 | 6.4 Reduce Browser Tests | `[ ]` |
+**Testing:** Golden file tests for parser output. Browser test for hot reload.
 
 ---
 
-### Phase 1: Markdown-Native Foundation (Week 1-2)
+### Milestone 2: It Connects
 
-#### Task 1.0: Testing Foundation
+**Goal:** Connect to external databases, APIs, and commands.
 
-**Status:** `[ ] Not Started`
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 2.1 | **SQLite Source** | `from: ./data.db` loads SQLite tables |
+| 2.2 | **PostgreSQL Source** | `from: postgres://...` connects and queries |
+| 2.3 | **REST Source** | `from: https://...` fetches JSON with headers/auth |
+| 2.4 | **Exec Source** | `type: exec` runs shell command, parses JSON output |
+| 2.5 | **Source Caching** | TTL and stale-while-revalidate work |
+| 2.6 | **Cross-Source Queries** | SQL JOINs across markdown + external sources |
+| 2.7 | **Auto-Timestamp** | `{{now}}` fills current date/time on submit |
+| 2.8 | **Operator Identity** | `--operator alice` sets `{{operator}}` |
+| 2.9 | **Example: Expense Tracker** | Markdown + SQLite source working together |
 
-**Goal:** Set up golden file testing infrastructure for deterministic output verification.
+**Security:** Parameterized queries only. No string interpolation in SQL. Exec sources log all commands.
 
-**Prerequisites:** None (first task - enables testing for all subsequent tasks)
-
-**Files to read first:**
-- `docs/plans/2025-12-31-e2e-testing-strategy.md` - Testing strategy document
-- `parser_test.go` - Existing test patterns
-- `internal/source/markdown_test.go` - Existing source tests
-
-**Files to create:**
-- `internal/testutil/golden.go` - Golden file assertion helper
-- `internal/testutil/scrub.go` - Scrubbers for non-deterministic data
-- `testdata/` - Test fixture directory structure
-
-**Implementation steps:**
-
-1. Create `internal/testutil/golden.go`:
-```go
-package testutil
-
-import (
-    "bytes"
-    "flag"
-    "os"
-    "path/filepath"
-    "testing"
-)
-
-var update = flag.Bool("update", false, "update golden files")
-
-// AssertGolden compares actual output against golden file.
-// Run with -update flag to update golden files.
-func AssertGolden(t *testing.T, name string, actual []byte) {
-    t.Helper()
-    golden := filepath.Join("testdata", "golden", name)
-
-    if *update {
-        os.MkdirAll(filepath.Dir(golden), 0755)
-        if err := os.WriteFile(golden, actual, 0644); err != nil {
-            t.Fatalf("failed to update golden file: %v", err)
-        }
-        return
-    }
-
-    expected, err := os.ReadFile(golden)
-    if err != nil {
-        t.Fatalf("failed to read golden file %s: %v", golden, err)
-    }
-
-    if !bytes.Equal(actual, expected) {
-        t.Errorf("output mismatch for %s\n\nExpected:\n%s\n\nActual:\n%s",
-            name, string(expected), string(actual))
-    }
-}
-
-// ReadFixture reads a test fixture file.
-func ReadFixture(t *testing.T, name string) []byte {
-    t.Helper()
-    path := filepath.Join("testdata", "fixtures", name)
-    data, err := os.ReadFile(path)
-    if err != nil {
-        t.Fatalf("failed to read fixture %s: %v", name, err)
-    }
-    return data
-}
-```
-
-2. Create `internal/testutil/scrub.go`:
-```go
-package testutil
-
-import "regexp"
-
-// Scrubber replaces non-deterministic values with placeholders
-type Scrubber struct {
-    Pattern     *regexp.Regexp
-    Replacement string
-}
-
-// DefaultScrubbers for tinkerdown-specific patterns
-var DefaultScrubbers = []Scrubber{
-    {regexp.MustCompile(`(lvt|auto-persist-lvt)-\d+`), "BLOCK_ID"},
-    {regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`), "TIMESTAMP"},
-    {regexp.MustCompile(`"duration":\d+`), `"duration":0`},
-    {regexp.MustCompile(`\?v=\d+`), "?v=VERSION"},
-    {regexp.MustCompile(`nonce="[^"]+"`), `nonce="NONCE"`},
-}
-
-// Scrub applies all scrubbers to data
-func Scrub(data []byte, scrubbers ...Scrubber) []byte {
-    if len(scrubbers) == 0 {
-        scrubbers = DefaultScrubbers
-    }
-    for _, s := range scrubbers {
-        data = s.Pattern.ReplaceAll(data, []byte(s.Replacement))
-    }
-    return data
-}
-```
-
-3. Create testdata directory structure:
-```
-testdata/
-├── fixtures/           # Input files for tests
-│   └── .gitkeep
-└── golden/             # Expected outputs
-    └── .gitkeep
-```
-
-**Acceptance criteria:**
-- [ ] `AssertGolden()` correctly compares actual vs expected output
-- [ ] `AssertGolden()` with `-update` flag creates/updates golden files
-- [ ] `ReadFixture()` loads test input files
-- [ ] `Scrub()` removes non-deterministic values (timestamps, IDs)
-- [ ] All testutil tests pass
-- [ ] Directory structure exists with `.gitkeep` files
-
-**Verification commands:**
-```bash
-go test ./internal/testutil/... -v
-# Test update mode
-go test ./internal/testutil/... -v -update
-```
-
-**Testing requirements for subsequent tasks:**
-After this task, all new features MUST include:
-1. Golden file test for output (parser, sources, HTTP)
-2. Scrubbed comparison for dynamic content
-3. Fixture files in `testdata/fixtures/`
-4. Expected output in `testdata/golden/`
+**Testing:** Golden tests for each source type. Integration test with test Postgres container.
 
 ---
 
-#### Task 1.1: Heading-as-Anchor Detection
+### Milestone 3: It Acts
 
-**Status:** `[ ] Not Started`
+**Goal:** Buttons trigger actions. API and CLI available.
 
-**Goal:** Recognize `## Heading` as a data source anchor without explicit `#anchor` syntax.
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 3.1 | **Action Buttons** | `[Button](action:name)` triggers named action |
+| 3.2 | **Computed Expressions** | `` `count(tasks where done)` `` evaluates live |
+| 3.3 | **Tabs & Filtering** | `## [All] \| [Active] not done` creates tabbed view |
+| 3.4 | **Status Banners** | `> ✅ text` renders as styled banner |
+| 3.5 | **HTTP API** | `GET/POST /api/sources/{name}` CRUD endpoints |
+| 3.6 | **CLI Mode** | `tinkerdown cli app.md add tasks --text="..."` |
+| 3.7 | **WebSocket Protocol Tests** | Direct WS tests without browser (fast) |
+| 3.8 | **Example: Team Tasks** | Multi-user task board with filters |
 
-**Prerequisites:** Task 1.0 complete (testing infrastructure)
+**Security:** CORS headers configurable. Rate limiting on API endpoints.
 
-**Files to read first:**
-- `internal/source/markdown.go` - Current markdown source implementation
-- `internal/markdown/parser.go` - Markdown parsing utilities
-- `internal/config/config.go` - How sources are configured
-
-**Files to modify:**
-- `internal/markdown/parser.go` - Add heading detection
-
-**Files to create:**
-- `internal/markdown/sources.go` - Auto-detected source extraction
-
-**Implementation steps:**
-
-1. Create `internal/markdown/sources.go`:
-```go
-package markdown
-
-// AutoSource represents a data source auto-detected from markdown structure
-type AutoSource struct {
-    Name      string     // Derived from heading (e.g., "## Tasks" -> "tasks")
-    Heading   string     // Original heading text
-    Type      SourceType // table, task_list, unordered_list, ordered_list, definition_list
-    StartLine int        // Line number where data starts
-    EndLine   int        // Line number where data ends
-    RawData   string     // Raw markdown content of the data
-}
-
-type SourceType int
-
-const (
-    SourceTypeTable SourceType = iota
-    SourceTypeTaskList
-    SourceTypeUnorderedList
-    SourceTypeOrderedList
-    SourceTypeDefinitionList
-)
-
-// DetectSources scans markdown content and returns all auto-detected sources
-func DetectSources(content string) []AutoSource {
-    // Implementation:
-    // 1. Split content into lines
-    // 2. Find all ## headings
-    // 3. For each heading, check what follows:
-    //    - Lines starting with "| " -> table
-    //    - Lines starting with "- [ ]" or "- [x]" -> task_list
-    //    - Lines starting with "- " -> unordered_list
-    //    - Lines starting with "1. " -> ordered_list
-    //    - Lines with term\n: definition pattern -> definition_list
-    // 4. Extract the data block until next heading or EOF
-}
-
-// HeadingToSourceName converts "## My Tasks" to "my-tasks"
-func HeadingToSourceName(heading string) string {
-    // Remove ## prefix, lowercase, replace spaces with hyphens
-}
-```
-
-2. Add tests in `internal/markdown/sources_test.go`
-
-**Acceptance criteria:**
-- [ ] `DetectSources()` correctly identifies tables after headings
-- [ ] `DetectSources()` correctly identifies task lists after headings
-- [ ] `DetectSources()` correctly identifies unordered lists after headings
-- [ ] `HeadingToSourceName()` converts headings to valid source names
-- [ ] All tests pass
-
-**Verification commands:**
-```bash
-go test ./internal/markdown/... -v -run TestDetectSources
-go test ./internal/markdown/... -v -run TestHeadingToSourceName
-```
+**Testing:** API endpoint tests. CLI testscript tests. WebSocket protocol golden tests.
 
 ---
 
-#### Task 1.2: Table Parsing
+### Milestone 4: It Reacts
 
-**Status:** `[ ] Not Started`
+**Goal:** Schedules trigger actions. Webhooks received. Outputs notify.
 
-**Goal:** Parse markdown tables into structured data with column names and rows.
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 4.1 | **@schedule Parsing** | `@daily:9am` parsed from markdown |
+| 4.2 | **Schedule Runner** | Cron-based trigger execution |
+| 4.3 | **Webhook Triggers** | `POST /webhook/name` triggers action |
+| 4.4 | **Slack Output** | `outputs: { slack: "#channel" }` sends messages |
+| 4.5 | **Email Output** | `outputs: { email: "addr" }` sends email |
+| 4.6 | **Headless Mode** | `--headless` runs triggers without web UI |
+| 4.7 | **Example: Standup Bot** | Daily notification with team responses |
 
-**Prerequisites:** Task 1.1 complete
+**Security:** Webhook secret validation. Output credentials from env vars only.
 
-**Files to read first:**
-- `internal/source/markdown.go` - See how tables are currently parsed
-- `internal/markdown/sources.go` - From Task 1.1
-
-**Files to create:**
-- `internal/markdown/table.go` - Table-specific parsing
-
-**Implementation steps:**
-
-1. Create `internal/markdown/table.go`:
-```go
-package markdown
-
-// TableData represents parsed markdown table
-type TableData struct {
-    Columns []string             // Column names from header row
-    Rows    []map[string]string  // Each row as column->value map
-}
-
-// ParseTable extracts structured data from markdown table
-func ParseTable(raw string) (*TableData, error) {
-    // 1. Split into lines
-    // 2. First line is header: | col1 | col2 | col3 |
-    // 3. Second line is separator: |------|------|------|
-    // 4. Remaining lines are data rows
-    // 5. Handle: empty cells, escaped |, whitespace trimming
-}
-```
-
-**Acceptance criteria:**
-- [ ] Correctly parses simple markdown tables
-- [ ] Handles empty cells
-- [ ] Handles cells with special characters
-- [ ] Returns column names in order
-
-**Verification commands:**
-```bash
-go test ./internal/markdown/... -v -run TestParseTable
-```
+**Testing:** Schedule tests with mock clock. Webhook tests with test endpoints.
 
 ---
 
-#### Task 1.3: List Parsing
+### Milestone 5: It Ships
 
-**Status:** `[ ] Not Started`
+**Goal:** Build standalone binaries. Desktop app. Distribution ready.
 
-**Goal:** Parse markdown lists (task lists, ordered, unordered) into structured data.
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 5.1 | **Build Command** | `tinkerdown build app.md -o myapp` produces binary |
+| 5.2 | **Embedded Assets** | Built binary includes all web assets |
+| 5.3 | **Desktop App (Wails)** | Double-click .md opens in native window |
+| 5.4 | **Homebrew Formula** | `brew install tinkerdown` works |
+| 5.5 | **Docker Image** | `docker run tinkerdown serve app.md` works |
+| 5.6 | **CLI Testscript Suite** | Black-box CLI tests with testscript |
+| 5.7 | **Example: Distributable App** | Built binary shared and runs on another machine |
 
-**Prerequisites:** Task 1.1 complete
+**Security:** Built binaries don't include source secrets. Env vars loaded at runtime.
 
-**Files to create:**
-- `internal/markdown/list.go` - List-specific parsing
-
-**Implementation steps:**
-
-```go
-package markdown
-
-type TaskItem struct {
-    Text string
-    Done bool
-}
-
-type ListItem struct {
-    Text  string
-    Order int // For ordered lists, 0 for unordered
-}
-
-func ParseTaskList(raw string) []TaskItem
-func ParseUnorderedList(raw string) []ListItem
-func ParseOrderedList(raw string) []ListItem
-func ParseDefinitionList(raw string) []map[string]string
-```
-
-**Acceptance criteria:**
-- [ ] Correctly parses task lists with checked/unchecked items
-- [ ] Correctly parses unordered lists
-- [ ] Correctly parses ordered lists (preserving order)
-- [ ] Correctly parses definition lists
-
-**Verification commands:**
-```bash
-go test ./internal/markdown/... -v -run TestParse
-```
+**Testing:** Build output tests. Installation tests on clean systems.
 
 ---
 
-#### Task 1.4: Schema Inference & Type Hints
+### Milestone 6: v1.0 Launch
 
-**Status:** `[ ] Not Started`
+**Goal:** Documentation complete. Examples polished. Public release.
 
-**Goal:** Tiered schema system - auto-inference (Tier 1) with type hint overrides (Tier 2).
+| Task | Description | Acceptance Criteria |
+|------|-------------|---------------------|
+| 6.1 | **User Documentation** | Getting started, syntax reference, examples |
+| 6.2 | **Template Gallery** | 7+ starter templates via `tinkerdown new` |
+| 6.3 | **Charts** | `` ```chart `` `` code blocks render visualizations |
+| 6.4 | **Example Suite** | 10+ working examples covering all features |
+| 6.5 | **Reduce Browser Tests** | Replace slow chromedp with fast protocol tests |
+| 6.6 | **Performance Baseline** | Documented latency targets met |
+| 6.7 | **Security Audit** | Exec sources sandboxed, input validation complete |
+| 6.8 | **Release** | GitHub release with binaries, changelog, announcement |
 
-**Prerequisites:** Tasks 1.2 and 1.3 complete
-
-**Files to create:**
-- `internal/schema/infer.go` - Pattern-based type inference
-- `internal/schema/hints.go` - Type hint parsing and application
-- `internal/schema/types.go` - Type definitions and SQL mapping
-
-**Implementation steps:**
-
-```go
-package schema
-
-import "regexp"
-
-// TypeHint represents user-friendly type names (Tier 2)
-type TypeHint string
-
-const (
-    HintText     TypeHint = "text"
-    HintNumber   TypeHint = "number"
-    HintInteger  TypeHint = "integer"
-    HintCurrency TypeHint = "currency"
-    HintDate     TypeHint = "date"
-    HintTime     TypeHint = "time"
-    HintDatetime TypeHint = "datetime"
-    HintBoolean  TypeHint = "boolean"
-    HintEmail    TypeHint = "email"
-    HintURL      TypeHint = "url"
-    HintSelect   TypeHint = "select"
-    HintTextarea TypeHint = "textarea"
-    HintHidden   TypeHint = "hidden"
-)
-
-// Column represents a schema column with inferred or hinted type
-type Column struct {
-    Name       string
-    Hint       TypeHint    // User-provided hint (Tier 2)
-    SQLType    string      // Mapped SQL type
-    NotNull    bool
-    Default    string
-    Options    []string    // For select types: "select:a,b,c"
-    InputType  string      // HTML input type for UI
-}
-
-// TypeMapping maps hints to SQL and UI types
-var TypeMapping = map[TypeHint]struct {
-    SQLType   string
-    InputType string
-}{
-    HintText:     {"TEXT", "text"},
-    HintNumber:   {"DECIMAL", "number"},
-    HintInteger:  {"INTEGER", "number"},
-    HintCurrency: {"DECIMAL(10,2)", "text"},  // with currency formatting
-    HintDate:     {"DATE", "date"},
-    HintTime:     {"TIME", "time"},
-    HintDatetime: {"TIMESTAMP", "datetime-local"},
-    HintBoolean:  {"BOOLEAN", "checkbox"},
-    HintEmail:    {"TEXT", "email"},
-    HintURL:      {"TEXT", "url"},
-    HintSelect:   {"TEXT", "select"},
-    HintTextarea: {"TEXT", "textarea"},
-    HintHidden:   {"TEXT", "hidden"},
-}
-
-// InferType determines type from data values (Tier 1)
-func InferType(values []string) TypeHint
-
-// ParseHint parses user hint like "select:High,Medium,Low"
-func ParseHint(hint string) (TypeHint, []string)
-
-// ApplyHints merges inferred schema with user hints (Tier 2 overrides Tier 1)
-func ApplyHints(inferred []Column, hints map[string]string) []Column
-```
-
-**Pattern detection for Tier 1:**
-
-```go
-var patterns = map[*regexp.Regexp]TypeHint{
-    regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`):           HintDate,
-    regexp.MustCompile(`^\d{1,2}:\d{2}(:\d{2})?(am|pm)?$`): HintTime,
-    regexp.MustCompile(`^-?\d+$`):                       HintInteger,
-    regexp.MustCompile(`^-?\d+\.\d+$`):                  HintNumber,
-    regexp.MustCompile(`^[$€£¥]\d[\d,]*(\.\d{2})?$`):    HintCurrency,
-    regexp.MustCompile(`^(true|false)$`):                HintBoolean,
-    regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`):          HintEmail,
-    regexp.MustCompile(`^https?://`):                    HintURL,
-}
-
-func InferType(values []string) TypeHint {
-    // 1. Check patterns against all non-empty values
-    // 2. If ≤10 unique values, suggest HintSelect
-    // 3. Default to HintText
-}
-```
-
-**Example - Tier 1 (auto-inferred):**
-
-```markdown
-## Expenses
-| date | category | amount |
-|------|----------|--------|
-| 2024-01-15 | Food | $45.50 |
-```
-
-→ Inferred: `date: DATE, category: TEXT (select), amount: DECIMAL(10,2)`
-
-**Example - Tier 2 (with hints):**
-
-```yaml
-types:
-  expenses.amount: currency
-  expenses.priority: select:Critical,High,Medium,Low
-```
-
-**Acceptance criteria:**
-- [ ] `InferType()` correctly identifies date, time, number, currency, boolean, email, URL patterns
-- [ ] `InferType()` suggests select for ≤10 unique string values
-- [ ] `ParseHint()` correctly parses "select:a,b,c" syntax
-- [ ] `ApplyHints()` correctly overrides inferred types with user hints
-- [ ] Type mapping produces correct SQL types and HTML input types
-- [ ] NOT NULL inferred when all rows have values
-
-**Verification commands:**
-```bash
-go test ./internal/schema/... -v -run TestInferType
-go test ./internal/schema/... -v -run TestParseHint
-go test ./internal/schema/... -v -run TestApplyHints
-```
+**Testing:** Full test suite passes. Manual testing of all examples.
 
 ---
 
-#### Task 1.5: Auto-CRUD UI Generation
+## Quick Reference
 
-**Status:** `[ ] Not Started`
-
-**Goal:** Automatically generate form + display UI for auto-detected sources.
-
-**Prerequisites:** Tasks 1.1-1.4 complete
-
-**Files to modify:**
-- `internal/server/server.go` - Add auto-source detection to render pipeline
-
-**Files to create:**
-- `internal/render/autosource.go` - Auto-generate HTML for sources
-- `web/components/auto-form.html` - Form template
-- `web/components/auto-table.html` - Table template
-- `web/components/auto-tasklist.html` - Task list template
-
-**Implementation steps:**
-
-1. Create render pipeline that detects auto-sources and generates HTML
-2. Form generation based on schema type → input type mapping
-3. Display generation for tables, task lists, other lists
-
-**Acceptance criteria:**
-- [ ] Auto-detected tables render with form above
-- [ ] Auto-detected task lists render with add input
-- [ ] Form fields match inferred schema types
-- [ ] Add/toggle/delete actions work for all source types
-
-**Verification commands:**
-```bash
-# Create test file and run
-cat > /tmp/test-auto.md << 'EOF'
-# Test App
-
-## Tasks
-- [ ] Test task 1
-- [x] Test task 2
-EOF
-
-tinkerdown serve /tmp/test-auto.md
-go test ./... -v -run TestAutoSource
-```
-
----
-
-### Phase 2: Core Features (Week 3-4)
-
-#### Task 2.1: Auto-Timestamp
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Auto-fill `{{now}}` template with current timestamp on form submit.
-
-**Prerequisites:** Phase 1 complete
-
-**Files to modify:**
-- `internal/runtime/actions.go` - Add auto-field processing
-
-**Acceptance criteria:**
-- [ ] `{{now:2006-01-02}}` fills with current date
-- [ ] `{{now:15:04}}` fills with current time
-- [ ] Auto-detected sources with date/time columns auto-fill
-
----
-
-#### Task 2.2: Operator Identity
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Support `--operator` flag and `{{operator}}` template.
-
-**Prerequisites:** Task 2.1 complete
-
-**Files to modify:**
-- `cmd/tinkerdown/main.go` - Add --operator flag
-- `internal/config/config.go` - Store operator
-- `internal/runtime/actions.go` - Process {{operator}} template
-
-**Acceptance criteria:**
-- [ ] `tinkerdown serve app.md --operator alice` sets operator
-- [ ] `{{operator}}` resolves to operator value
-- [ ] Operator available in templates as `.Operator`
-
----
-
-#### Task 2.3: Computed Expressions
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Evaluate inline expressions like `` `sum(expenses.amount)` ``.
-
-**Prerequisites:** Phase 1 complete
-
-**Files to create:**
-- `internal/expr/parser.go` - Expression parser
-- `internal/expr/eval.go` - Expression evaluator
-- `internal/expr/functions.go` - Built-in functions (count, sum, avg, min, max)
-
-**Acceptance criteria:**
-- [ ] `count(tasks)` returns number of items
-- [ ] `count(tasks where done)` returns filtered count
-- [ ] `sum(expenses.amount)` returns sum
-- [ ] Expressions update on WebSocket state change
-
----
-
-#### Task 2.4: HTTP API
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Expose REST API for state and actions.
-
-**Prerequisites:** Phase 1 complete
-
-**Files to create:**
-- `internal/server/api.go` - API handlers
-
-**Routes:**
-```
-GET  /api/state              → Full state JSON
-GET  /api/sources/{name}     → Single source data
-POST /api/sources/{name}     → Add item
-DELETE /api/sources/{name}/{id} → Delete item
-POST /api/action/{name}      → Execute action
-```
-
-**Acceptance criteria:**
-- [ ] All routes work as documented
-- [ ] API respects CORS headers
-
----
-
-#### Task 2.5: CLI Mode
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Command-line interface for actions without browser.
-
-**Prerequisites:** Task 2.4 complete
-
-**Files to create:**
-- `cmd/tinkerdown/cli.go` - CLI subcommand
-
-**Commands:**
-```bash
-tinkerdown cli app.md sources
-tinkerdown cli app.md data tasks
-tinkerdown cli app.md add tasks --text="Buy milk"
-tinkerdown cli app.md delete tasks --id=3
-```
-
-**Acceptance criteria:**
-- [ ] All commands work as documented
-- [ ] Changes persist to markdown file
-
----
-
-#### Task 2.6: WebSocket Protocol Tests
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Add direct WebSocket protocol tests without browser automation.
-
-**Prerequisites:** Task 2.4 (HTTP API) complete, Task 1.0 (Testing Foundation) complete
-
-**Files to read first:**
-- `internal/server/websocket.go` - WebSocket handler and MessageEnvelope format
-- `internal/testutil/golden.go` - Golden file helpers from Task 1.0
-
-**Files to create:**
-- `websocket_protocol_test.go` - Direct WebSocket tests
-- `testdata/fixtures/ws-counter.md` - Test app for WebSocket
-- `testdata/golden/ws-initial-state.json` - Expected initial message
-- `testdata/golden/ws-after-action.json` - Expected post-action message
-
-**Implementation steps:**
-
-1. Create WebSocket test helper:
-```go
-// websocket_protocol_test.go
-package tinkerdown_test
-
-import (
-    "strings"
-    "testing"
-    "github.com/gorilla/websocket"
-)
-
-func connectWebSocket(t *testing.T, serverURL string) *websocket.Conn {
-    wsURL := "ws" + strings.TrimPrefix(serverURL, "http") + "/ws"
-    conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
-    if err != nil {
-        t.Fatalf("WebSocket connect failed: %v", err)
-    }
-    return conn
-}
-
-func TestWebSocketInitialState(t *testing.T) {
-    srv := setupTestServer(t, "testdata/fixtures/ws-counter.md")
-    defer srv.Close()
-
-    conn := connectWebSocket(t, srv.URL)
-    defer conn.Close()
-
-    // Read initial state message
-    _, msg, err := conn.ReadMessage()
-    if err != nil {
-        t.Fatalf("Failed to read message: %v", err)
-    }
-
-    scrubbed := testutil.Scrub(msg)
-    testutil.AssertGolden(t, "ws-initial-state.json", scrubbed)
-}
-
-func TestWebSocketAction(t *testing.T) {
-    srv := setupTestServer(t, "testdata/fixtures/ws-counter.md")
-    defer srv.Close()
-
-    conn := connectWebSocket(t, srv.URL)
-    defer conn.Close()
-
-    // Skip initial state
-    conn.ReadMessage()
-
-    // Send increment action
-    action := `{"blockID":"lvt-0","action":"increment","data":{}}`
-    conn.WriteMessage(websocket.TextMessage, []byte(action))
-
-    // Read response
-    _, msg, _ := conn.ReadMessage()
-
-    scrubbed := testutil.Scrub(msg)
-    testutil.AssertGolden(t, "ws-after-action.json", scrubbed)
-}
-```
-
-**Acceptance criteria:**
-- [ ] Direct WebSocket connection works without chromedp
-- [ ] Initial state message matches golden file
-- [ ] Action response matches golden file
-- [ ] Tests run in < 100ms (vs 5s for browser tests)
-- [ ] Scrubbers handle block IDs and timestamps
-
-**Verification commands:**
-```bash
-go test -v -run TestWebSocket
-# Compare timing vs browser test
-go test -v -run TestWebSocketInitialState -count=10
-```
-
----
-
-### Phase 3: Pillar Features (Week 5-6)
-
-#### Task 3.1: Snapshot Capture
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Capture exec source output at a point in time for runbooks.
-
-**Prerequisites:** Phase 2 complete
-
----
-
-#### Task 3.2: Step Status Buttons
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Track runbook step completion status.
-
-**Prerequisites:** Task 3.1 complete
-
----
-
-#### Task 3.3: Tabs
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Parse `## [Tab] Label` syntax for tabbed views.
-
-**Prerequisites:** Phase 2 complete
-
-**Files to create:**
-- `internal/markdown/tabs.go` - Tab parsing
-
----
-
-#### Task 3.4: Status Banners
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Render `> emoji text` as styled status banners.
-
-**Prerequisites:** Phase 2 complete
-
----
-
-#### Task 3.5: Action Buttons
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Parse `[Button Text]` and `[Text](action:name)` as action buttons.
-
-**Prerequisites:** Phase 2 complete
-
----
-
-#### Task 3.6: Source Golden Tests
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Add golden file tests for all 9 source types (see source types list above).
-
-**Prerequisites:** Task 1.0 (Testing Foundation) complete, existing source implementations
-
-**Files to read first:**
-- `internal/source/source.go` - Source interface
-- `internal/source/*.go` - All source implementations
-- `internal/testutil/golden.go` - Golden file helpers
-
-**Files to create:**
-- `internal/source/golden_test.go` - Golden tests for all sources
-- `testdata/sources/fixtures/` - Input files for each source type
-- `testdata/sources/golden/` - Expected JSON output for each source
-
-**Implementation steps:**
-
-1. Create fixture files for deterministic testing:
-```
-testdata/sources/
-├── fixtures/
-│   ├── users.json          # JSON source input
-│   ├── products.csv        # CSV source input
-│   ├── tasks.md            # Markdown source input
-│   ├── test.db             # SQLite database
-│   └── echo-json.sh        # Deterministic exec script
-└── golden/
-    ├── json-users.json     # Expected parsed output
-    ├── csv-products.json
-    ├── markdown-tasks.json
-    ├── sqlite-users.json
-    └── exec-data.json
-```
-
-2. Create golden tests for each source type:
-```go
-// internal/source/golden_test.go
-package source_test
-
-func TestJSONSourceGolden(t *testing.T) {
-    src, _ := source.NewJSONFileSource("users",
-        "testdata/sources/fixtures/users.json", ".")
-    data, _ := src.Fetch(context.Background())
-
-    output, _ := json.MarshalIndent(data, "", "  ")
-    testutil.AssertGolden(t, "sources/golden/json-users.json", output)
-}
-
-func TestCSVSourceGolden(t *testing.T) {
-    src, _ := source.NewCSVFileSource("products",
-        "testdata/sources/fixtures/products.csv", ".", nil)
-    data, _ := src.Fetch(context.Background())
-
-    output, _ := json.MarshalIndent(data, "", "  ")
-    testutil.AssertGolden(t, "sources/golden/csv-products.json", output)
-}
-
-func TestMarkdownSourceGolden(t *testing.T) {
-    src, _ := source.NewMarkdownSource("tasks",
-        "testdata/sources/fixtures/tasks.md", "tasks", ".", "", true)
-    data, _ := src.Fetch(context.Background())
-
-    output, _ := json.MarshalIndent(data, "", "  ")
-    testutil.AssertGolden(t, "sources/golden/markdown-tasks.json", output)
-}
-
-func TestExecSourceGolden(t *testing.T) {
-    src, _ := source.NewExecSource("data",
-        "testdata/sources/fixtures/echo-json.sh", ".")
-    data, _ := src.Fetch(context.Background())
-
-    output, _ := json.MarshalIndent(data, "", "  ")
-    testutil.AssertGolden(t, "sources/golden/exec-data.json", output)
-}
-
-func TestSQLiteSourceGolden(t *testing.T) {
-    src, _ := source.NewSQLiteSource("users",
-        "testdata/sources/fixtures/test.db", "users", ".", true)
-    data, _ := src.Fetch(context.Background())
-
-    output, _ := json.MarshalIndent(data, "", "  ")
-    testutil.AssertGolden(t, "sources/golden/sqlite-users.json", output)
-}
-```
-
-**Acceptance criteria:**
-- [ ] Golden tests exist for: json, csv, markdown, sqlite, exec sources
-- [ ] All source outputs are deterministic (same input → same output)
-- [ ] Exec source uses deterministic script (no timestamps, random data)
-- [ ] Tests can be updated with `-update` flag
-- [ ] All golden tests pass
-
-**Verification commands:**
-```bash
-go test ./internal/source/... -v -run Golden
-# Update golden files after intentional changes
-go test ./internal/source/... -v -run Golden -update
-```
-
----
-
-### Phase 4: Triggers & Outputs (Week 7-8)
-
-#### Task 4.1: @schedule Parsing
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Parse `@daily:9am` mentions from markdown content.
-
-**Prerequisites:** Phase 3 complete
-
-**Files to create:**
-- `internal/triggers/parser.go` - @mention parser
-- `internal/triggers/schedule.go` - Cron conversion
-
----
-
-#### Task 4.2: Schedule Runner
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Execute triggers at scheduled times.
-
-**Prerequisites:** Task 4.1 complete
-
-**Files to create:**
-- `internal/triggers/runner.go` - Cron runner using robfig/cron
-
----
-
-#### Task 4.3: Webhook Triggers
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Accept incoming webhooks to trigger actions.
-
-**Prerequisites:** Task 4.2 complete
-
----
-
-#### Task 4.4: Output Integrations
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Send notifications to Slack, email, webhooks.
-
-**Prerequisites:** Task 4.2 complete
-
-**Files to create:**
-- `internal/outputs/slack.go`
-- `internal/outputs/email.go`
-- `internal/outputs/webhook.go`
-
----
-
-### Phase 5: Distribution (Week 9-10)
-
-#### Task 5.1: Build Command
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Bundle app into standalone executable.
-
-**Prerequisites:** Phase 4 complete
-
----
-
-#### Task 5.2: Desktop App
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Wails-based desktop application.
-
-**Prerequisites:** Task 5.1 complete
-
----
-
-#### Task 5.3: Hosted Service
-
-**Status:** `[ ] Not Started`
-
-**Goal:** tinkerdown.dev for running apps from GitHub.
-
-**Prerequisites:** Task 5.1 complete
-
----
-
-#### Task 5.4: CLI Testscript
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Add testscript-based black-box tests for CLI commands.
-
-**Prerequisites:** Task 2.5 (CLI Mode) complete, Task 1.0 (Testing Foundation) complete
-
-**Files to read first:**
-- `cmd/tinkerdown/commands/*.go` - CLI command implementations
-- [testscript docs](https://pkg.go.dev/github.com/rogpeppe/go-internal/testscript)
-
-**Files to create:**
-- `cli_test.go` - Testscript runner
-- `testdata/cli/validate.txtar` - Validate command tests
-- `testdata/cli/serve.txtar` - Serve command tests
-- `testdata/cli/new.txtar` - New command tests
-
-**Implementation steps:**
-
-1. Add testscript dependency:
-```bash
-go get github.com/rogpeppe/go-internal/testscript
-```
-
-2. Create testscript runner:
-```go
-// cli_test.go
-package main_test
-
-import (
-    "os"
-    "os/exec"
-    "path/filepath"
-    "testing"
-
-    "github.com/rogpeppe/go-internal/testscript"
-)
-
-func TestCLI(t *testing.T) {
-    testscript.Run(t, testscript.Params{
-        Dir: "testdata/cli",
-        Setup: func(env *testscript.Env) error {
-            // Build tinkerdown binary for testing
-            binPath := filepath.Join(env.WorkDir, "tinkerdown")
-            cmd := exec.Command("go", "build", "-o", binPath, "./cmd/tinkerdown")
-            cmd.Dir = ".."
-            return cmd.Run()
-        },
-    })
-}
-```
-
-3. Create test files in txtar format:
-```txtar
-# testdata/cli/validate.txtar
-
-# Test validate with valid markdown
-exec tinkerdown validate valid.md
-stdout 'valid'
-! stderr .
-
-# Test validate with invalid source config
-! exec tinkerdown validate invalid.md
-stderr 'unsupported source type'
-
--- valid.md --
-# My App
-
-## Tasks
-- [ ] First task
-- [ ] Second task
-
--- invalid.md --
----
-sources:
-  bad: { type: unknown }
----
-# Invalid App
-```
-
-```txtar
-# testdata/cli/new.txtar
-
-# Test creating new app from template
-exec tinkerdown new todo myapp.md
-exists myapp.md
-grep 'Tasks' myapp.md
-
-# Clean up
-rm myapp.md
-```
-
-**Acceptance criteria:**
-- [ ] testscript infrastructure works
-- [ ] `validate` command tested with valid/invalid inputs
-- [ ] `new` command tested with template creation
-- [ ] `serve` command tested (startup, port binding)
-- [ ] Error messages verified in tests
-- [ ] All testscript tests pass
-
-**Verification commands:**
-```bash
-go test -v -run TestCLI
-```
-
----
-
-### Phase 6: Polish (Week 11-12)
-
-#### Task 6.1: Charts
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Render chart code blocks as visualizations.
-
----
-
-#### Task 6.2: Template Gallery
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Collection of starter templates.
-
----
-
-#### Task 6.3: Documentation
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Complete user documentation.
-
----
-
-#### Task 6.4: Reduce Browser Tests
-
-**Status:** `[ ] Not Started`
-
-**Goal:** Replace slow chromedp tests with faster alternatives, keep only essential browser tests.
-
-**Prerequisites:** Tasks 2.6, 3.6, 5.4 complete (alternative test coverage in place)
-
-**Files to read first:**
-- `*_e2e_test.go` - All existing chromedp tests (16 files)
-- `docs/plans/2025-12-31-e2e-testing-strategy.md` - Testing strategy
-
-**Current state:**
-- 16 e2e test files using chromedp
-- Each test takes ~5s (browser startup, navigation, sleep waits)
-- Total e2e test time: ~80 seconds
-
-**Target state:**
-- 5 essential browser tests (critical user flows only)
-- WebSocket protocol tests replace most browser tests
-- Golden file tests for output verification
-- Total test time: ~10 seconds
-
-**Tests to keep (require real browser):**
-
-| Test | Why Browser Needed |
-|------|-------------------|
-| `TestLvtClickAction` | JavaScript event handling |
-| `TestLvtSourceRendersData` | DOM rendering after WS message |
-| `TestFormSubmitAction` | Form submission + validation |
-| `TestRealTimeUpdate` | Live state sync display |
-| `TestNavigationWorks` | Client-side routing |
-
-**Tests to convert/remove:**
-
-| Current Test | Replacement |
-|--------------|-------------|
-| `TestLvtSourceExec` | WebSocket protocol test + Source golden test |
-| `TestLvtSourceJSON` | Source golden test |
-| `TestLvtSourceCSV` | Source golden test |
-| `TestLvtSourceMarkdown` | Source golden test |
-| `TestLvtSourcePg` | Source golden test (with test DB) |
-| `TestLvtSourceSQLite` | Source golden test |
-| `TestFrontmatterConfig` | Parser unit test |
-| `TestMermaidDiagrams` | Parser golden test |
-| `TestSearch` | HTTP endpoint test |
-| `TestPlayground` | HTTP endpoint test |
-
-**Implementation steps:**
-
-1. Verify coverage exists for each test being removed:
-```bash
-# For each test to remove, verify replacement exists
-go test -v -run TestJSONSourceGolden  # Replaces TestLvtSourceJSON
-go test -v -run TestWebSocketAction   # Replaces browser action tests
-```
-
-2. Create consolidated browser test file:
-```go
-// browser_e2e_test.go - Essential browser tests only
-package tinkerdown_test
-
-func TestBrowserEssentials(t *testing.T) {
-    t.Run("lvt-click triggers action", testLvtClickAction)
-    t.Run("form submit works", testFormSubmitAction)
-    t.Run("real-time update displays", testRealTimeUpdate)
-    t.Run("navigation works", testNavigationWorks)
-    t.Run("source data renders", testSourceRendersData)
-}
-```
-
-3. Remove redundant test files:
-```bash
-# After verifying coverage, remove redundant tests
-git rm lvtsource_file_e2e_test.go
-git rm lvtsource_rest_e2e_test.go
-# ... etc
-```
-
-4. Update CI to run fast tests first:
-```yaml
-# .github/workflows/test.yml
-jobs:
-  fast-tests:
-    - go test -v -short ./...  # Skip browser tests
-  browser-tests:
-    needs: fast-tests
-    - go test -v -run Browser ./...
-```
-
-**Acceptance criteria:**
-- [ ] Only 5 essential browser tests remain
-- [ ] All removed tests have equivalent coverage via golden/protocol tests
-- [ ] Total test time reduced from ~80s to ~10s
-- [ ] CI runs fast tests before slow browser tests
-- [ ] No regression in feature coverage
-
-**Verification commands:**
-```bash
-# Verify test time improvement
-time go test ./... -v
-
-# Verify no coverage regression
-go test ./... -cover
-```
-
----
-
-## Feature Specifications
-
-> **Note:** This section provides a quick reference for all tinkerdown syntax. For detailed explanations and examples, see [Markdown-Native Design](#markdown-native-design) and [Architecture](#architecture).
-
-### Complete Markdown Grammar (Quick Reference)
+### Markdown Grammar
 
 ```
-# DOCUMENT STRUCTURE
-─────────────────────────────────────────────────────────
+## Heading           → Data source (name from heading)
+- [ ] item           → Task list: {text, done: bool}
+- item               → Simple list: {text}
+1. item              → Ordered list: {text, order: int}
+| col | col |        → Table: {col: type, ...}
 
-# Heading 1              → App title
-## Heading 2             → Section + data source (if followed by data)
-## [Tab] Label           → Tab navigation
-### Heading 3            → Subsection
+@today @tomorrow     → Date mentions
+@daily:9am           → Schedule trigger
+@weekly:mon,wed      → Recurring trigger
 
+`count(x)`           → Computed value
+`sum(x.field)`       → Aggregation
 
-# DATA SOURCES
-─────────────────────────────────────────────────────────
+> ✅ Status          → Success banner
+> ⚠️ Warning         → Warning banner
 
-## Tasks                 → Source "tasks" (name from heading)
-- [ ] Task item          → Task list: {text, done: bool}
-
-## Shopping              → Source "shopping"
-- Item                   → Simple list: {text}
-
-## Steps                 → Source "steps"
-1. First step            → Ordered list: {text, order: int}
-
-## Contacts              → Source "contacts"
-| name | email |         → Table: {name, email, ...}
-|------|-------|
-| Alice | alice@co |
-
-## Config                → Source "config"
-API Key                  → Definition list: {term, definition}
-: sk-12345
-
-
-# SCHEDULING (@mentions)
-─────────────────────────────────────────────────────────
-
-@today                   → Today
-@tomorrow                → Tomorrow
-@friday                  → Next Friday
-@2024-03-15              → Specific date
-@9am                     → Time (today)
-@friday @3pm             → Date + time
-@in:2hours               → Relative
-
-@daily:9am               → Every day at 9am
-@daily:9am @weekdays     → Weekdays only
-@weekly:mon              → Every Monday
-@weekly:mon,wed,fri      → Multiple days
-@monthly:1st             → First of month
-@monthly:last-friday     → Last Friday
-@yearly:mar-15           → Annually
-
-
-# EXPRESSIONS
-─────────────────────────────────────────────────────────
-
-`count(source)`          → Count items
-`count(source where x)`  → Filtered count
-`sum(source.field)`      → Sum values
-`avg(source.field)`      → Average
-`min(source.field)`      → Minimum
-`max(source.field)`      → Maximum
-
-
-# UI ELEMENTS
-─────────────────────────────────────────────────────────
-
-> ✅ Status text          → Success banner
-> ⚠️ Warning text         → Warning banner
-> ❌ Error text           → Error banner
-> 📊 Stats                → Info banner
-
-[Button Text]            → Action button
-[Text](action:name)      → Action link
-[Export](export:csv)     → Export link
-[← Back](back)           → Navigation
-
----                      → Section divider
-
-
-# OUTPUTS (in YAML frontmatter)
-─────────────────────────────────────────────────────────
-
-outputs:
-  slack: "#channel"      → Slack output
-  email: "addr@co.com"   → Email output
-  webhook: "https://..." → Webhook output
-
-
-# USER/TAG MENTIONS
-─────────────────────────────────────────────────────────
-
-@username                → User reference
-#tag                     → Tag/category
+[Button]             → Action button
+[Text](action:x)     → Action link
 ```
 
-### YAML Configuration (Quick Reference)
-
-Only needed when you want to go beyond zero-config defaults. For detailed tier explanations, see [Architecture](#architecture).
-
-**Tier 2 - Type Hints:**
+### YAML Configuration
 
 ```yaml
 ---
-# Override inferred types with simple hints
-sources:
-  expenses:
-    from: "#expenses"         # markdown section
-    types:
-      amount: currency
-      category: select
-
-  tasks:
-    from: "#tasks"
-    types:
-      priority: select:Critical,High,Medium,Low
-      due: date
-    required: [title, due]
-
-# Or use shorthand (auto-detects from heading)
-types:
-  expenses.amount: currency
-  tasks.priority: select:Critical,High,Medium,Low
----
-```
-
-**Tier 3 - External Databases:**
-
-```yaml
----
-sources:
-  # External databases (schema lives in DB)
-  users: postgres://${DATABASE_URL}
-  orders: mysql://${MYSQL_URL}
-  archive: ./archive.db
-
-  # With custom queries
-  pending:
-    from: postgres://${DATABASE_URL}
-    query: SELECT * FROM orders WHERE status = 'pending'
-
-  # REST APIs
-  github:
-    from: https://api.github.com/repos/user/repo
-    headers:
-      Authorization: Bearer ${GITHUB_TOKEN}
-    cache: 5m
----
-```
-
-**Full Configuration (all options):**
-
-```yaml
----
-# Type hints (Tier 2)
+# Tier 2: Type hints
 types:
   expenses.amount: currency
   tasks.priority: select:Critical,High,Medium,Low
 
-# Sources (Tier 3)
+# Tier 3: External sources
 sources:
   users: postgres://${DATABASE_URL}
-  report:
-    query: |
-      SELECT e.*, u.name as submitter
-      FROM expenses e JOIN users u ON e.user_id = u.id
-
-# Schema file for constraints (Tier 3)
-schema: ./schema.sql
-
-# Triggers
-triggers:
-  - webhook:
-      path: /github
-      secret: ${WEBHOOK_SECRET}
-    action: handle_github
+  data: ./local.db
 
 # Outputs
 outputs:
-  slack:
-    token: ${SLACK_TOKEN}
-  email:
-    smtp: smtp.gmail.com
-    user: ${EMAIL_USER}
-    pass: ${EMAIL_PASS}
-
-# Metadata
-title: My App
-icon: 📋
-theme: dark
+  slack: "#channel"
+  email: "team@company.com"
 ---
 ```
 
-### LVT Attributes (Tier 4: HTML Templates)
+### LVT Attributes (Tier 4: HTML)
 
-For full control with HTML:
-
-| Attribute | Element | Purpose | Status |
-|-----------|---------|---------|--------|
-| `lvt-source` | table, ul, select | Bind to data source | ✅ Implemented |
-| `lvt-submit` | form | Action on submit | ✅ Implemented |
-| `lvt-click` | button | Action on click | ✅ Implemented |
-| `lvt-columns` | table | Column specification | ✅ Implemented |
-| `lvt-actions` | table | Row actions | ✅ Implemented |
-| `lvt-empty` | table, ul | Empty state text | ✅ Implemented |
-| `lvt-field` | ul | Field to display | ✅ Implemented |
-| `lvt-data-*` | button | Data attributes for actions | ✅ Implemented |
-| `lvt-filter` | table, ul | Filter expression | 🔲 Planned |
-| `lvt-aggregate` | span | Aggregation | 🔲 Planned |
-| `lvt-chart` | div | Chart type | 🔲 Planned |
-
-> **Note:** Before implementing new lvt-* attributes, verify they don't conflict
-> with existing implementations in the livetemplate/client repository.
-
----
-
-## Example Apps
-
-See [tinkerdown-example-apps-plan.md](tinkerdown-example-apps-plan.md) for planned examples.
-
-**When examples become functional:**
-
-| Example | Requires Milestone |
-|---------|-------------------|
-| Two-Line Todo | 1: Works |
-| Expense Tracker | 2: Connects |
-| Team Tasks, Meeting Notes, Inventory | 3: Acts |
-| Runbook with live data | 3: Acts |
-| Standup Bot, Health Monitor | 4: Reacts |
-| Distributable apps | 5: Ships |
-
-After each milestone, move working examples to `examples/`.
-
----
-
-## Security Considerations
-
-### Trust Model
-
-Tinkerdown apps run locally with user permissions. Trust boundaries:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                       TRUST LEVELS                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  TRUSTED (User Controls)                                        │
-│  ─────────────────────────                                      │
-│  • Markdown content (user writes)                               │
-│  • YAML configuration (user defines sources)                    │
-│  • Local file paths (user specifies)                            │
-│                                                                 │
-│  UNTRUSTED (External)                                           │
-│  ─────────────────────                                          │
-│  • REST API responses                                           │
-│  • Database query results                                       │
-│  • User input in forms                                          │
-│                                                                 │
-│  DANGEROUS (Requires Review)                                    │
-│  ───────────────────────────                                    │
-│  • exec sources (run shell commands)                            │
-│  • Custom sources (arbitrary code)                              │
-│  • Downloaded/shared .md apps                                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Security Guidelines
-
-#### For Exec Sources
-
-```yaml
-# ⚠️ DANGEROUS: Never pass untrusted input to shell
-sources:
-  bad:
-    type: exec
-    command: "grep {{user_input}} file.txt"  # INJECTION RISK
-
-  safe:
-    type: exec
-    command: "./validated-script.sh"
-    # Script validates input internally
-```
-
-**Requirements for exec sources:**
-1. Validate all inputs before shell execution
-2. Use allowlists, not blocklists
-3. Prefer structured APIs over shell commands
-4. Log all command executions in production
-
-#### For Custom Sources
-
-```python
-# custom-source.py
-import sys, json
-
-def main():
-    data = json.loads(sys.stdin.read())
-
-    # ✅ Validate input
-    if "query" not in data:
-        sys.exit(1)
-
-    # ✅ Sanitize before use
-    user_id = str(data["query"].get("user_id", ""))
-    if not user_id.isalnum():
-        sys.exit(1)
-
-    # ✅ Use parameterized queries
-    # cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-```
-
-#### For Shared Apps
-
-When using apps from others:
-1. **Review the markdown** - Check for exec sources and suspicious commands
-2. **Check YAML sources** - Understand what data the app accesses
-3. **Run in isolation** - Consider containers for untrusted apps
-4. **Verify origin** - Prefer apps from trusted sources
-
-### Security Roadmap
-
-| Phase | Feature | Priority |
-|-------|---------|----------|
-| 1 | Input validation helpers | High |
-| 1 | Exec source sandboxing option | High |
-| 2 | Permission prompts for dangerous ops | Medium |
-| 2 | App signing for trusted sources | Medium |
-| 3 | Container isolation mode | Low |
-| 3 | Capability-based permissions | Low |
-
-### Error Handling for Custom Sources
-
-Custom sources should handle errors gracefully:
-
-```python
-#!/usr/bin/env python3
-import sys, json
-
-def main():
-    try:
-        data = json.loads(sys.stdin.read())
-        # Process...
-        result = {"columns": [...], "rows": [...]}
-        print(json.dumps(result))
-        sys.exit(0)
-    except json.JSONDecodeError:
-        print(json.dumps({"error": "Invalid JSON input"}), file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(json.dumps({"error": str(e)}), file=sys.stderr)
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
-```
-
-**Error handling requirements:**
-- Exit 0 for success, non-zero for errors
-- Write errors to stderr as JSON
-- Never expose sensitive data in error messages
-- Log errors for debugging but sanitize user data
-
----
-
-## Distribution Strategy
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DISTRIBUTION TIERS                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  TIER 1: Developers (CLI)                                       │
-│  ─────────────────────────                                      │
-│  brew install tinkerdown                                        │
-│  tinkerdown serve app.md                                        │
-│                                                                 │
-│  TIER 2: Power Users (Build)                                    │
-│  ───────────────────────────                                    │
-│  tinkerdown build app.md -o myapp                               │
-│  ./myapp                                                        │
-│                                                                 │
-│  TIER 3: Non-Developers (Desktop)                               │
-│  ─────────────────────────────────                              │
-│  Download Tinkerdown.app                                        │
-│  Double-click .md file to open                                  │
-│                                                                 │
-│  TIER 4: Anyone (Web)                                           │
-│  ─────────────────────                                          │
-│  tinkerdown.dev/gh/user/repo/app.md                             │
-│  No install required                                            │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Attribute | Purpose |
+|-----------|---------|
+| `lvt-source` | Bind element to data source |
+| `lvt-submit` | Form submission action |
+| `lvt-click` | Button click action |
+| `lvt-columns` | Table column spec |
+| `lvt-actions` | Row action buttons |
 
 ---
 
 ## Success Metrics
 
-### Tinkering Health
-
-The real success metric: **"Users built things we didn't anticipate."**
-
-| Signal | What it means |
-|--------|---------------|
-| Unexpected use cases in issues/discussions | People are exploring |
-| Users sharing apps that surprise us | Composition is working |
-| "How do I do X?" questions (not complaints) | Curiosity, not frustration |
-| Users modifying LLM-generated apps | They understand and can tinker |
-
-### Anti-Metrics
-
-| Signal | What it means |
-|--------|---------------|
-| "I can't figure out how to start" | Barrier too high |
-| "It broke and I don't know why" | Errors not helpful |
-| "I need help understanding this app" | Syntax not readable |
-| Users only using exact examples | Not feeling safe to experiment |
-
-### Tinkering Funnel
+**Primary metric:** "Users built things we didn't anticipate."
 
 | Stage | Metric | Target |
 |-------|--------|--------|
-| **Try** | Time from install to first app running | < 2 minutes |
-| **Understand** | Can read and explain any example | 100% |
-| **Modify** | Successfully make a change on first try | > 80% |
-| **Compose** | Combine two features without docs | > 60% |
-| **Share** | App runs for someone else without help | 100% |
+| **Try** | Install → first app running | < 2 min |
+| **Understand** | Can explain any example | 100% |
+| **Modify** | Successful first change | > 80% |
+| **Compose** | Combine features without docs | > 60% |
+| **Share** | App runs for others without help | 100% |
 
-### Technical Quality
+**Technical quality:**
 
 | Metric | Target |
 |--------|--------|
-| Pure markdown app works (zero-config) | 100% |
-| LLM generation success rate | > 90% |
-| Error messages suggest fix | 100% |
+| Zero-config app works | 100% |
 | Hot reload latency | < 100ms |
-| Graceful degradation (partial failure) | Yes |
+| Error messages suggest fix | 100% |
 
 ---
 
-## Extended Roadmap (Post-v1.0)
+## Post-v1.0 Considerations
 
-> **Note:** These are future directions to consider after the 12-week core plan. Features here are **not committed** - they represent ideas that need validation against user demand and tinkerdown's core philosophy of markdown-first simplicity.
+> Features below are **not committed**. They represent directions to explore based on user demand.
 
-### Already Implemented
+**High priority if demanded:**
+- WASM Source SDK (`tinkerdown wasm init`)
+- Authentication middleware (GitHub/OAuth)
+- Pagination & sorting for large datasets
 
-| Feature | Status | PR |
-|---------|--------|-----|
-| Data Source Error Handling (retry, circuit breaker, timeout) | ✅ Complete | - |
-| Source Caching Layer (TTL, stale-while-revalidate) | ✅ Complete | #18 |
-| Multi-Page WebSocket Support | ✅ Complete | #19 |
-| Enhanced CLI Scaffolding (7 templates) | ✅ Complete | #24 |
-| Documentation Structure | ✅ Complete | #20 |
-| GraphQL Source | ✅ Complete | #22 |
+**Likely better solved elsewhere:**
+- Rate limiting → reverse proxy (nginx)
+- Complex UI components → Tier 4 HTML templates
+- New database types → WASM modules
 
-### Future Directions
-
-#### Developer Experience
-
-**WASM Source SDK** - High priority for ecosystem growth:
-```bash
-tinkerdown wasm init github-issues   # Scaffold new WASM source
-tinkerdown wasm build                 # Compile TinyGo to WASM
-tinkerdown wasm test                  # Test module locally
-```
-
-**Debug Mode** - Useful for troubleshooting:
-```bash
-tinkerdown serve app.md --debug      # Source fetch timing, WS messages
-```
-
-**Validation improvements** - Extend existing `tinkerdown validate`:
-- Warn on unused source definitions
-- Type-check template patterns
-
-> **Not adopting:** Hot Reload for YAML config. Markdown hot reload already works. Separate YAML reload adds complexity for rare use case.
-
-#### Production Hardening
-
-**Authentication Middleware** - Essential for shared deployments:
-```yaml
-auth:
-  provider: github
-  allowed_orgs: [mycompany]
-```
-
-**Health Endpoints** - Standard for production:
-- `GET /health` - Liveness check
-- `GET /ready` - Source connectivity check
-
-**Graceful Shutdown** - Drain connections properly on SIGTERM.
-
-> **Consider carefully:** Rate limiting. May be better handled by a reverse proxy (nginx, Cloudflare) than built into tinkerdown.
-
-#### UI Enhancements
-
-**Pagination & Filtering** - Needed for real data volumes:
-```html
-<table lvt-source="users" lvt-paginate="20" lvt-sortable>
-</table>
-```
-
-**Charts** - Already in Phase 6 core roadmap.
-
-> **Not adopting:** Component library (modals, toasts, accordions). These add significant complexity and are better served by Tier 4 (HTML templates) where users can use any JS library they prefer. Tinkerdown should not become a UI framework.
-
-#### Data Sources
-
-> **Not adopting:** MongoDB, S3, Redis as native sources. The WASM source system already enables these integrations without bloating the core binary. Community can build these as WASM modules.
-
-> **Not adopting:** Source Composition with CEL. Template-level filtering (`{{range where .Status "active"}}`) is sufficient for most cases. CEL adds a complex dependency for marginal benefit.
-
-**Webhook Source** - Already covered in Phase 4 (Task 4.3).
-
-#### Advanced Features
-
-> **Not adopting:** Offline Support. Tinkerdown is a local-first tool - your markdown file is already on disk. Adding service workers, offline queues, and sync logic adds significant complexity for a scenario that conflicts with the core use case (edit markdown, see changes).
-
-> **Not adopting:** WASM Marketplace. Premature optimization. Focus on making WASM sources easy to build and share via git. A marketplace can come later if there's demand.
-
-> **Defer:** API Endpoint Mode with OpenAPI generation. Task 2.4 HTTP API provides basic CRUD. Full OpenAPI/Swagger adds complexity. Revisit based on user demand.
-
-### Philosophy Checklist
-
-Before adding post-v1.0 features, validate against these principles:
-
-1. **Does it require config?** If yes, can the 80% use case work without it?
-2. **Does WASM already solve this?** New source types should be WASM modules, not core code.
-3. **Is this a tinkerdown feature or a deployment concern?** Auth, rate limiting, SSL often belong in the deployment layer.
-4. **Does it increase the learning curve?** Every new concept makes the two-line todo harder to explain.
-
-### What v1.0 Must Prove
-
-Before any extended roadmap work:
-
-1. **Zero-config works** - `## Tasks` → working CRUD app
-2. **LLM generation works** - AI can create tinkerdown apps reliably
-3. **Users adopt it** - Real usage validates the concept
-4. **WASM extensibility works** - Community can build custom sources
-
-Features beyond the core plan should be driven by observed user needs, not speculative requirements
+**Philosophy check before adding:**
+1. Does it require config? Can 80% use case work without it?
+2. Does WASM already solve this?
+3. Is this a tinkerdown feature or deployment concern?
+4. Does it increase learning curve?
 
 ---
 
 ## Summary
 
-### The Philosophy
-
-**Tinkerdown enables tinkering.** We don't prescribe what you build - we give you blocks simple enough to understand and powerful enough to matter.
-
-```
-Wonder → Try → See → Understand → Modify → Try again
-```
-
-### The Promise
+**Tinkerdown turns markdown into apps.**
 
 ```markdown
 # Todo
 - [ ] Try tinkerdown
 ```
 
-**Two lines. Working app. Zero configuration.**
-
-But more importantly: **you can read it, understand it, modify it, share it.**
-
-### The Grammar
-
-Learnable in an afternoon. Fits on an index card:
-
-```
-## Heading        → Data source
-- [ ] item        → Task list
-| col | col |     → Table
-`count(x)`        → Computed value
-@daily:9am        → Schedule trigger
-[Button](action:x)→ Action button
-```
+Two lines. Working app. Zero configuration.
 
 ### The Tiers
 
-| Tier | For | Uses |
-|------|-----|------|
-| 1 | 80% of apps | Pure markdown (zero config) |
-| 2 | Type overrides | YAML type hints |
-| 3 | External data | Databases, APIs, SQL |
-| 4 | Full control | HTML + Go templates |
+| Tier | Who | How |
+|------|-----|-----|
+| 1 | 80% | Pure markdown |
+| 2 | 15% | YAML type hints |
+| 3 | 5% | External DBs, SQL |
+| 4 | Power users | HTML + Go templates |
 
-### The Milestones
+### The Milestones to v1.0
 
-| Milestone | What it unlocks |
-|-----------|----------------|
-| 1: Works | Discovery, Learning, Iteration |
-| 2: Connects | Composition with real data |
-| 3: Acts | Buttons, forms, API |
-| 4: Reacts | Automation, triggers |
-| 5: Ships | Distribution, sharing |
-| 6: Scales | Polish, examples |
-
-### The Success Metric
-
-**"Users built things we didn't anticipate."**
+1. **Works** - Markdown renders, changes persist
+2. **Connects** - External data sources
+3. **Acts** - Buttons, forms, API
+4. **Reacts** - Triggers, outputs
+5. **Ships** - Build, distribute
+6. **Launch** - Docs, examples, release
 
 ### Next Action
 
-Ship Milestone 1: A markdown file becomes an interactive app that persists changes.
-
-Enable the tinkering loop. See what people build. Learn. Iterate.
+Start Milestone 1. Ship it. See what people build. Learn. Iterate.
