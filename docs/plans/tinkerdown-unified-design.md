@@ -87,97 +87,14 @@ But the point is: **you decide what to build**. We provide the blocks.
 
 ## Table of Contents
 
-1. [Tinkering Stories](#tinkering-stories)
-2. [Markdown-Native Design](#markdown-native-design)
-3. [Architecture](#architecture)
-4. [v1.0 Roadmap](#v10-roadmap)
-5. [Quick Reference](#quick-reference)
-6. [Success Metrics](#success-metrics)
-7. [Post-v1.0 Considerations](#post-v10-considerations)
-8. [Summary](#summary)
-
----
-
-## Tinkering Stories
-
-These aren't traditional user stories ("As a [role], I want [feature]"). They're patterns of exploration that tinkerdown should enable.
-
-### Discovery Stories
-
-> **"I wonder if I can just..."**
-
-| Story | What it requires |
-|-------|------------------|
-| I can start with any markdown file I already have and see what happens | Zero barrier to start |
-| I can add one line and see it become interactive | Incremental enhancement |
-| I can look at an example, copy it, and modify it | Learn by doing |
-| I can break things without consequences - reload and I'm back | Safe experimentation |
-
-### Learning Stories
-
-> **"How does this actually work?"**
-
-| Story | What it requires |
-|-------|------------------|
-| I can read any tinkerdown app and understand what it does | Readable syntax |
-| When something doesn't work, the error tells me what right looks like | Helpful errors |
-| I can view the source of any running app | Transparency |
-| I can learn the grammar incrementally - don't need everything to start | Progressive disclosure |
-
-### Composition Stories
-
-> **"What if I combine these?"**
-
-| Story | What it requires |
-|-------|------------------|
-| I can add a second data source without breaking the first | Independent pieces |
-| I can copy a section from one app into another and it works | Self-contained blocks |
-| I can connect any action to any source - they're interchangeable | Uniform interfaces |
-| Multiple sources, actions, triggers compose without interference | No hidden coupling |
-
-### Iteration Stories
-
-> **"Let me try a different approach"**
-
-| Story | What it requires |
-|-------|------------------|
-| I change the markdown and see the result instantly | Hot reload |
-| I can try something, undo it, try something else | Fast experimentation |
-| I can start simple and add complexity piece by piece | Progressive enhancement |
-| I can rip out parts that don't work without breaking the rest | Graceful degradation |
-
-### Recovery Stories
-
-> **"Something's wrong, can I fix it?"**
-
-| Story | What it requires |
-|-------|------------------|
-| When something breaks, I can understand why | Clear error messages |
-| I can always hand-edit the markdown to fix a problem | Human-editable format |
-| A broken section doesn't take down the whole app | Fault isolation |
-| I can diff my changes and revert if needed | Version control friendly |
-
-### Sharing Stories
-
-> **"Look what I made"**
-
-| Story | What it requires |
-|-------|------------------|
-| I share my app by sharing the markdown file - nothing else needed | Self-contained |
-| Someone else can run it if they have tinkerdown - no setup | Portable |
-| I can explain how it works by showing the markdown | Self-documenting |
-| I can put it in git and collaborate | Text-based format |
-
-### Anti-Stories
-
-> **If these happen, we've failed:**
-
-- "I had to read the whole documentation before I could start"
-- "I made a small change and everything broke"
-- "I don't understand what this app does even though I'm looking at the source"
-- "I needed to set up three other things before tinkerdown would work"
-- "I can't share this because it depends on my local setup"
-- "The LLM generated this and I have no idea how to modify it"
+1. [Markdown-Native Design](#markdown-native-design)
+2. [Architecture](#architecture)
+3. [v1.0 Roadmap](#v10-roadmap)
+4. [Quick Reference](#quick-reference)
+5. [Success Metrics](#success-metrics)
+6. [Post-v1.0 Considerations](#post-v10-considerations)
+7. [Summary](#summary)
+8. [Appendix: Tinkering Stories](#appendix-tinkering-stories)
 
 ---
 
@@ -1169,3 +1086,24 @@ Two lines. Working app. Zero configuration.
 ### Next Action
 
 Start Milestone 1. Ship it. See what people build. Learn. Iterate.
+
+---
+
+## Appendix: Tinkering Stories
+
+Patterns of exploration that tinkerdown should enable. Not traditional user stories, but design principles.
+
+| Category | Example | Requires |
+|----------|---------|----------|
+| **Discovery** | "I can start with any markdown file and see what happens" | Zero barrier |
+| **Learning** | "I can read any app and understand what it does" | Readable syntax |
+| **Composition** | "I can add a second source without breaking the first" | Independent pieces |
+| **Iteration** | "I change the markdown and see the result instantly" | Hot reload |
+| **Recovery** | "I can always hand-edit the markdown to fix a problem" | Human-editable |
+| **Sharing** | "I share my app by sharing the markdown file" | Self-contained |
+
+**Anti-patterns (if these happen, we've failed):**
+- "I had to read the whole documentation before I could start"
+- "I made a small change and everything broke"
+- "I don't understand what this app does even though I'm looking at the source"
+- "The LLM generated this and I have no idea how to modify it"
