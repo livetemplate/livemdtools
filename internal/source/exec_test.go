@@ -201,28 +201,27 @@ func TestExecSourceClose(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestExecSourceDisabledByDefault verifies that exec sources fail when --allow-exec is not set
-func TestExecSourceDisabledByDefault(t *testing.T) {
-	// Ensure exec is disabled
+// TestExecSourceSecurityFlagDefault verifies the --allow-exec flag is disabled by default
+func TestExecSourceSecurityFlagDefault(t *testing.T) {
+	// Reset to default state
 	config.SetAllowExec(false)
 	defer config.SetAllowExec(false)
 
+	// Verify the security flag is disabled by default
+	// The actual enforcement happens in the source factory (source.go createSource)
+	// which checks config.IsExecAllowed() before creating exec sources.
+	// This test verifies the flag defaults to false.
+	assert.False(t, config.IsExecAllowed(), "exec should be disabled by default")
+
+	// The constructor (NewExecSourceWithConfig) doesn't check the flag -
+	// security is enforced at the factory level to allow testing without the flag.
 	cfg := config.SourceConfig{
 		Type: "exec",
 		Cmd:  "echo hello",
 	}
-
-	// This should fail because exec is disabled
-	// Note: We test via the factory function which checks IsExecAllowed
-	// The NewExecSourceWithConfig itself doesn't check - the factory does
-	_, err := NewExecSourceWithConfig("test", cfg, ".")
-	// NewExecSourceWithConfig doesn't check the flag - source.go factory does
-	// So this test should actually pass (no error from constructor)
-	require.NoError(t, err)
-
-	// The real check happens in createSource in source.go
-	// We verify that by checking the flag is false
-	assert.False(t, config.IsExecAllowed(), "exec should be disabled by default")
+	src, err := NewExecSourceWithConfig("test", cfg, ".")
+	require.NoError(t, err, "constructor should work regardless of security flag")
+	assert.NotNil(t, src)
 }
 
 // TestExecSourceWithAllowExec verifies exec sources work when --allow-exec is set
@@ -427,7 +426,11 @@ echo "line three"
 	require.NoError(t, err)
 	require.Len(t, data, 3) // Only non-empty lines
 
+	// Verify lines and sequential indices (not original positions)
 	assert.Equal(t, "line one", data[0]["line"])
+	assert.Equal(t, 0, data[0]["index"])
 	assert.Equal(t, "line two", data[1]["line"])
+	assert.Equal(t, 1, data[1]["index"])
 	assert.Equal(t, "line three", data[2]["line"])
+	assert.Equal(t, 2, data[2]["index"])
 }

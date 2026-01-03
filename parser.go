@@ -37,6 +37,7 @@ type SourceConfig struct {
 	Format      string            `yaml:"format,omitempty"`      // For exec: output format (json, lines, csv)
 	Delimiter   string            `yaml:"delimiter,omitempty"`   // For exec CSV: field delimiter (default ",")
 	Env         map[string]string `yaml:"env,omitempty"`         // For exec: environment variables (env vars expanded)
+	Timeout     string            `yaml:"timeout,omitempty"`     // For exec/rest: timeout (e.g., "30s", "1m")
 }
 
 // StylingConfig represents styling/theme configuration.

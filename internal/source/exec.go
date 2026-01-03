@@ -154,14 +154,16 @@ func (s *ExecSource) parseLines(data []byte) ([]map[string]interface{}, error) {
 	lines := strings.Split(content, "\n")
 	results := make([]map[string]interface{}, 0, len(lines))
 
-	for i, line := range lines {
+	index := 0
+	for _, line := range lines {
 		if line == "" {
 			continue
 		}
 		results = append(results, map[string]interface{}{
 			"line":  line,
-			"index": i,
+			"index": index,
 		})
+		index++
 	}
 
 	return results, nil
