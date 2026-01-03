@@ -249,18 +249,21 @@ func (h *WebSocketHandler) getEffectiveSource(name string) (config.SourceConfig,
 		if src, ok := h.page.Config.Sources[name]; ok {
 			// Convert tinkerdown.SourceConfig to config.SourceConfig
 			return config.SourceConfig{
-				Type:     src.Type,
-				Cmd:      src.Cmd,
-				Query:    src.Query,
-				URL:      src.URL,
-				File:     src.File,
-				Anchor:   src.Anchor,
-				DB:       src.DB,
-				Table:    src.Table,
-				Path:     src.Path,
-				Readonly: src.Readonly,
-				Options:  src.Options,
-				Manual:   src.Manual,
+				Type:        src.Type,
+				Cmd:         src.Cmd,
+				Query:       src.Query,
+				From:        src.From,
+				File:        src.File,
+				Anchor:      src.Anchor,
+				DB:          src.DB,
+				Table:       src.Table,
+				Path:        src.Path,
+				Headers:     src.Headers,
+				QueryParams: src.QueryParams,
+				ResultPath:  src.ResultPath,
+				Readonly:    src.Readonly,
+				Options:     src.Options,
+				Manual:      src.Manual,
 			}, true
 		}
 	}

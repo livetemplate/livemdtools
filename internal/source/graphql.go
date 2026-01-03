@@ -32,8 +32,8 @@ type GraphQLSource struct {
 
 // NewGraphQLSource creates a new GraphQL API source
 func NewGraphQLSource(name string, cfg config.SourceConfig, siteDir string) (*GraphQLSource, error) {
-	if cfg.URL == "" {
-		return nil, &ValidationError{Source: name, Field: "url", Reason: "url is required"}
+	if cfg.From == "" {
+		return nil, &ValidationError{Source: name, Field: "from", Reason: "from is required"}
 	}
 	if cfg.QueryFile == "" {
 		return nil, &ValidationError{Source: name, Field: "query_file", Reason: "query_file is required"}
@@ -43,7 +43,7 @@ func NewGraphQLSource(name string, cfg config.SourceConfig, siteDir string) (*Gr
 	}
 
 	// Expand environment variables in URL
-	url := os.ExpandEnv(cfg.URL)
+	url := os.ExpandEnv(cfg.From)
 
 	// Expand environment variables in variables
 	variables := make(map[string]interface{})
@@ -55,8 +55,15 @@ func NewGraphQLSource(name string, cfg config.SourceConfig, siteDir string) (*Gr
 		}
 	}
 
-	// Parse headers from options (same as REST source)
+	// Build headers map with env var expansion
 	headers := make(map[string]string)
+
+	// Use headers from config (new YAML map format)
+	for key, value := range cfg.Headers {
+		headers[key] = os.ExpandEnv(value)
+	}
+
+	// Legacy: Parse headers from options (format: "key1:value1,key2:value2")
 	if cfg.Options != nil {
 		if headerStr := cfg.Options["headers"]; headerStr != "" {
 			for _, h := range strings.Split(headerStr, ",") {

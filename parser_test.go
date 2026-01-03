@@ -341,7 +341,7 @@ sources:
     file: users.json
   api_data:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
   db_users:
     type: pg
     query: "SELECT * FROM users"
@@ -388,8 +388,8 @@ sources:
 	if restSrc.Type != "rest" {
 		t.Errorf("api_data.Type = %q, want %q", restSrc.Type, "rest")
 	}
-	if restSrc.URL != "https://api.example.com/data" {
-		t.Errorf("api_data.URL = %q, want %q", restSrc.URL, "https://api.example.com/data")
+	if restSrc.From != "https://api.example.com/data" {
+		t.Errorf("api_data.From = %q, want %q", restSrc.From, "https://api.example.com/data")
 	}
 
 	// Check PostgreSQL source
@@ -584,7 +584,7 @@ func TestPageConfigMergeFromFrontmatter(t *testing.T) {
 		fm := &Frontmatter{
 			Sources: map[string]SourceConfig{
 				"users": {Type: "json", File: "users.json"},
-				"api":   {Type: "rest", URL: "https://api.example.com"},
+				"api":   {Type: "rest", From: "https://api.example.com"},
 			},
 		}
 
@@ -596,8 +596,8 @@ func TestPageConfigMergeFromFrontmatter(t *testing.T) {
 		if pc.Sources["users"].Type != "json" {
 			t.Errorf("users.Type = %q, want %q", pc.Sources["users"].Type, "json")
 		}
-		if pc.Sources["api"].URL != "https://api.example.com" {
-			t.Errorf("api.URL = %q, want %q", pc.Sources["api"].URL, "https://api.example.com")
+		if pc.Sources["api"].From != "https://api.example.com" {
+			t.Errorf("api.From = %q, want %q", pc.Sources["api"].From, "https://api.example.com")
 		}
 	})
 

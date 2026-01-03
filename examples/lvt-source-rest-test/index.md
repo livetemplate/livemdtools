@@ -3,7 +3,7 @@ title: "Users from REST API"
 sources:
   users:
     type: rest
-    url: https://jsonplaceholder.typicode.com/users
+    from: https://jsonplaceholder.typicode.com/users
 ---
 
 # Users List

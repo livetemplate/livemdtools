@@ -133,7 +133,7 @@ func convertToGoldenOutput(fm *Frontmatter, blocks []*CodeBlock, html string) *G
 					Type:     src.Type,
 					Cmd:      src.Cmd,
 					Query:    src.Query,
-					URL:      src.URL,
+					URL:      src.From,
 					File:     src.File,
 					Anchor:   src.Anchor,
 					DB:       src.DB,
