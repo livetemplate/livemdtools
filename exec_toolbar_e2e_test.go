@@ -22,6 +22,10 @@ import (
 // 3. Status updates to "Success" after execution
 // 4. Output panel shows command output
 func TestExecToolbarManualMode(t *testing.T) {
+	// Enable exec sources for this test (disabled by default for security)
+	config.SetAllowExec(true)
+	defer config.SetAllowExec(false)
+
 	// Load config from test example
 	cfg, err := config.LoadFromDir("examples/exec-toolbar-test")
 	if err != nil {
@@ -337,6 +341,10 @@ func TestExecToolbarManualMode(t *testing.T) {
 
 // TestExecToolbarAutoMode tests that auto-execute mode works correctly
 func TestExecToolbarAutoMode(t *testing.T) {
+	// Enable exec sources for this test (disabled by default for security)
+	config.SetAllowExec(true)
+	defer config.SetAllowExec(false)
+
 	// Load config from test example
 	cfg, err := config.LoadFromDir("examples/exec-toolbar-test")
 	if err != nil {

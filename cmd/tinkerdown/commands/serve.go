@@ -22,6 +22,7 @@ func ServeCommand(args []string) error {
 	var host string
 	var watch *bool
 	var operator string
+	var allowExec bool
 
 	// Parse flags
 	for i := 0; i < len(args); i++ {
@@ -49,6 +50,8 @@ func ServeCommand(args []string) error {
 				operator = args[i+1]
 				i++
 			}
+		} else if arg == "--allow-exec" {
+			allowExec = true
 		} else if !strings.HasPrefix(arg, "-") {
 			// Positional argument (directory)
 			dir = arg
@@ -57,6 +60,9 @@ func ServeCommand(args []string) error {
 
 	// Set operator identity (defaults to $USER if not specified)
 	config.SetOperator(operator)
+
+	// Set exec permission (disabled by default for security)
+	config.SetAllowExec(allowExec)
 
 	// Check if directory exists
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -136,6 +142,9 @@ func ServeCommand(args []string) error {
 	fmt.Printf("\n🌐 Server running at http://%s\n", addr)
 	if op := config.GetOperator(); op != "" {
 		fmt.Printf("👤 Operator: %s\n", op)
+	}
+	if config.IsExecAllowed() {
+		fmt.Printf("⚠️  Exec sources enabled (--allow-exec)\n")
 	}
 	if cfg.Features.HotReload {
 		fmt.Printf("📝 Edit .md files and see changes instantly\n")

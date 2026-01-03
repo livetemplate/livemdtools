@@ -8,8 +8,9 @@ import (
 // RuntimeConfig stores configuration set at runtime via CLI flags.
 // These values are not persisted to config files.
 type RuntimeConfig struct {
-	mu       sync.RWMutex
-	operator string
+	mu        sync.RWMutex
+	operator  string
+	allowExec bool
 }
 
 var globalRuntime = &RuntimeConfig{}
@@ -33,4 +34,20 @@ func GetOperator() string {
 	globalRuntime.mu.RLock()
 	defer globalRuntime.mu.RUnlock()
 	return globalRuntime.operator
+}
+
+// SetAllowExec enables or disables exec sources.
+// Exec sources are disabled by default for security.
+func SetAllowExec(allow bool) {
+	globalRuntime.mu.Lock()
+	defer globalRuntime.mu.Unlock()
+	globalRuntime.allowExec = allow
+}
+
+// IsExecAllowed returns whether exec sources are enabled.
+// Returns false by default - requires explicit --allow-exec flag.
+func IsExecAllowed() bool {
+	globalRuntime.mu.RLock()
+	defer globalRuntime.mu.RUnlock()
+	return globalRuntime.allowExec
 }
