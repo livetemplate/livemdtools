@@ -101,7 +101,7 @@ func (s *SQLiteSource) Fetch(ctx context.Context) ([]map[string]interface{}, err
 		return nil, err
 	}
 
-	var results []map[string]interface{}
+	results := make([]map[string]interface{}, 0)
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
 		valuePtrs := make([]interface{}, len(columns))
