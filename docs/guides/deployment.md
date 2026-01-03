@@ -75,7 +75,7 @@ Use environment variables for sensitive configuration:
 sources:
   api:
     type: rest
-    url: ${API_URL}
+    from: ${API_URL}
     headers:
       Authorization: Bearer ${API_TOKEN}
 ```

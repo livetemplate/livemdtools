@@ -3,7 +3,7 @@ title: "<<.Title>>"
 sources:
   users:
     type: rest
-    url: https://jsonplaceholder.typicode.com/users
+    from: https://jsonplaceholder.typicode.com/users
   system:
     type: exec
     cmd: ./system-info.sh

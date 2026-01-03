@@ -47,7 +47,7 @@ func TestLvtSourceRest(t *testing.T) {
 sources:
   users:
     type: rest
-    url: %s/users
+    from: %s/users
 `, mockAPI.URL)
 
 	if err := os.WriteFile(tmpDir+"/tinkerdown.yaml", []byte(configContent), 0644); err != nil {
@@ -114,7 +114,7 @@ title: "REST API Test"
 	if userSource.Type != "rest" {
 		t.Fatalf("Expected rest source type, got: %s", userSource.Type)
 	}
-	t.Logf("Source config: type=%s, url=%s", userSource.Type, userSource.URL)
+	t.Logf("Source config: type=%s, url=%s", userSource.Type, userSource.From)
 
 	// Create test server
 	srv := server.NewWithConfig(tmpDir, &cfg)

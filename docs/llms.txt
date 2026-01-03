@@ -124,7 +124,7 @@ sources:
 sources:
   posts:
     type: rest
-    url: https://api.example.com/posts
+    from: https://api.example.com/posts
 ```
 
 ### JSON File

@@ -8,7 +8,7 @@ Fetch data from REST APIs.
 sources:
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
 ```
 
 ## Options
@@ -30,7 +30,7 @@ sources:
 sources:
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
 ```
 
 ### With Authentication
@@ -39,7 +39,7 @@ sources:
 sources:
   secure_data:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     headers:
       Authorization: Bearer ${API_TOKEN}
       Accept: application/json
@@ -51,7 +51,7 @@ sources:
 sources:
   search_results:
     type: rest
-    url: https://api.example.com/search
+    from: https://api.example.com/search
     method: POST
     headers:
       Content-Type: application/json
@@ -65,7 +65,7 @@ sources:
 sources:
   filtered_users:
     type: rest
-    url: https://api.example.com/users?status=active&limit=100
+    from: https://api.example.com/users?status=active&limit=100
 ```
 
 ## Response Handling
@@ -110,7 +110,7 @@ Enable caching for API rate limiting:
 sources:
   api_data:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     cache:
       ttl: 5m
       strategy: stale-while-revalidate
@@ -124,7 +124,7 @@ REST sources include built-in error handling:
 sources:
   external_api:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     timeout: 30s
 ```
 
@@ -141,7 +141,7 @@ Use environment variables for sensitive data:
 sources:
   private_api:
     type: rest
-    url: ${API_URL}
+    from: ${API_URL}
     headers:
       Authorization: Bearer ${API_TOKEN}
 ```
@@ -153,7 +153,7 @@ sources:
 sources:
   github_repos:
     type: rest
-    url: https://api.github.com/users/livetemplate/repos
+    from: https://api.github.com/users/livetemplate/repos
     headers:
       Accept: application/vnd.github.v3+json
     cache:

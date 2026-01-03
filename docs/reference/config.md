@@ -101,7 +101,7 @@ sources:
 sources:
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
     method: GET
     headers:
       Authorization: Bearer ${API_TOKEN}
@@ -113,7 +113,7 @@ sources:
 sources:
   issues:
     type: graphql
-    url: https://api.github.com/graphql
+    from: https://api.github.com/graphql
     query_file: queries/issues.graphql  # Path to .graphql file
     variables:                           # Optional query variables
       owner: livetemplate
@@ -190,7 +190,7 @@ Caching is where `tinkerdown.yaml` shines - complex cache strategies:
 sources:
   api_data:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     cache:
       ttl: 5m                  # Cache duration
       strategy: stale-while-revalidate  # Background refresh
@@ -211,7 +211,7 @@ Use `${VAR_NAME}` syntax for secrets - a key reason to use `tinkerdown.yaml`:
 sources:
   api:
     type: rest
-    url: ${API_URL}
+    from: ${API_URL}
     headers:
       Authorization: Bearer ${API_TOKEN}
 ```
@@ -240,7 +240,7 @@ sources:
   # Shared auth - used by all pages
   current_user:
     type: rest
-    url: ${AUTH_API}/me
+    from: ${AUTH_API}/me
     headers:
       Authorization: Bearer ${AUTH_TOKEN}
     cache:
@@ -250,7 +250,7 @@ sources:
   # Shared data with aggressive caching
   products:
     type: rest
-    url: https://api.example.com/products
+    from: https://api.example.com/products
     cache:
       ttl: 1h
       strategy: stale-while-revalidate

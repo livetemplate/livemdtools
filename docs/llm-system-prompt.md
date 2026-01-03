@@ -107,7 +107,7 @@ sources:
 sources:
   repos:
     type: rest
-    url: https://api.github.com/users/USER/repos
+    from: https://api.github.com/users/USER/repos
 ```
 
 ### Exec (for system commands - use sparingly)

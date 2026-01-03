@@ -69,7 +69,7 @@ sources:
 
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
 
   config:
     type: json
@@ -147,7 +147,7 @@ server:
 sources:
   shared_data:
     type: rest
-    url: ${API_URL}
+    from: ${API_URL}
     cache:
       ttl: 5m
 ```

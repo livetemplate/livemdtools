@@ -8,7 +8,7 @@ sources:
     table: tasks
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
   logs:
     type: exec
     cmd: tail -n 10 /var/log/app.log

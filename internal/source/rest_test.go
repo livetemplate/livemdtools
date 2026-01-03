@@ -6,108 +6,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/livetemplate/tinkerdown/internal/config"
 )
 
-func TestNewRestSourceValidation(t *testing.T) {
-	tests := []struct {
-		name      string
-		srcName   string
-		url       string
-		options   map[string]string
-		wantErr   bool
-		errReason string
-	}{
-		{
-			name:    "valid url",
-			srcName: "test",
-			url:     "http://localhost:8080/api",
-			options: nil,
-			wantErr: false,
-		},
-		{
-			name:      "empty url",
-			srcName:   "test",
-			url:       "",
-			options:   nil,
-			wantErr:   true,
-			errReason: "url is required",
-		},
-		{
-			name:    "url with env var",
-			srcName: "test",
-			url:     "${TEST_API_URL}/data",
-			options: nil,
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			src, err := NewRestSource(tt.srcName, tt.url, tt.options)
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errReason)
-				return
-			}
-			require.NoError(t, err)
-			assert.Equal(t, tt.srcName, src.Name())
-		})
-	}
-}
-
-func TestNewRestSourceOptions(t *testing.T) {
-	tests := []struct {
-		name           string
-		options        map[string]string
-		expectedMethod string
-	}{
-		{
-			name:           "default method is GET",
-			options:        nil,
-			expectedMethod: "GET",
-		},
-		{
-			name:           "explicit GET method",
-			options:        map[string]string{"method": "get"},
-			expectedMethod: "GET",
-		},
-		{
-			name:           "POST method",
-			options:        map[string]string{"method": "post"},
-			expectedMethod: "POST",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var receivedMethod string
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				receivedMethod = r.Method
-				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte("[]"))
-			}))
-			defer server.Close()
-
-			src, err := NewRestSource("test", server.URL, tt.options)
-			require.NoError(t, err)
-
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			_, err = src.Fetch(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, tt.expectedMethod, receivedMethod)
-		})
-	}
-}
-
-func TestRestSourceFetchJSON(t *testing.T) {
-	// Create test server that returns JSON array
+func TestRestSource_BasicFetch(t *testing.T) {
+	// Test server returns a JSON array at root
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]map[string]interface{}{
@@ -117,290 +23,452 @@ func TestRestSourceFetchJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
 
-	data, err := src.Fetch(ctx)
-	require.NoError(t, err)
-	require.Len(t, data, 2)
-
-	assert.Equal(t, float64(1), data[0]["id"])
-	assert.Equal(t, "Alice", data[0]["name"])
-	assert.Equal(t, float64(2), data[1]["id"])
-	assert.Equal(t, "Bob", data[1]["name"])
+	if len(results) != 2 {
+		t.Errorf("Expected 2 results, got %d", len(results))
+	}
+	if results[0]["name"] != "Alice" {
+		t.Errorf("Expected first name to be Alice, got %v", results[0]["name"])
+	}
 }
 
-func TestRestSourceFetchSingleObject(t *testing.T) {
-	// Create test server that returns single JSON object
+func TestRestSource_WithHeaders(t *testing.T) {
+	var receivedAuth string
+	var receivedCustom string
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedAuth = r.Header.Get("Authorization")
+		receivedCustom = r.Header.Get("X-Custom-Header")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": "ok",
-			"count":  42,
-		})
+		json.NewEncoder(w).Encode([]map[string]interface{}{{"ok": true}})
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+		Headers: map[string]string{
+			"Authorization":   "Bearer test-token",
+			"X-Custom-Header": "custom-value",
+		},
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
 
-	data, err := src.Fetch(ctx)
-	require.NoError(t, err)
-	require.Len(t, data, 1)
-
-	assert.Equal(t, "ok", data[0]["status"])
-	assert.Equal(t, float64(42), data[0]["count"])
+	if receivedAuth != "Bearer test-token" {
+		t.Errorf("Expected Authorization header 'Bearer test-token', got %q", receivedAuth)
+	}
+	if receivedCustom != "custom-value" {
+		t.Errorf("Expected X-Custom-Header 'custom-value', got %q", receivedCustom)
+	}
 }
 
-func TestRestSourceFetchDataWrapper(t *testing.T) {
-	// Create test server that returns wrapped data (common API pattern)
+func TestRestSource_HeadersEnvExpansion(t *testing.T) {
+	os.Setenv("TEST_API_TOKEN", "secret-env-token")
+	defer os.Unsetenv("TEST_API_TOKEN")
+
+	var receivedAuth string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedAuth = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]map[string]interface{}{{"ok": true}})
+	}))
+	defer server.Close()
+
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+		Headers: map[string]string{
+			"Authorization": "Bearer ${TEST_API_TOKEN}",
+		},
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
+
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
+
+	if receivedAuth != "Bearer secret-env-token" {
+		t.Errorf("Expected Authorization header with expanded env var, got %q", receivedAuth)
+	}
+}
+
+func TestRestSource_WithQueryParams(t *testing.T) {
+	var receivedLimit string
+	var receivedStatus string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedLimit = r.URL.Query().Get("limit")
+		receivedStatus = r.URL.Query().Get("status")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]map[string]interface{}{{"ok": true}})
+	}))
+	defer server.Close()
+
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+		QueryParams: map[string]string{
+			"limit":  "100",
+			"status": "active",
+		},
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
+
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
+
+	if receivedLimit != "100" {
+		t.Errorf("Expected limit=100, got %q", receivedLimit)
+	}
+	if receivedStatus != "active" {
+		t.Errorf("Expected status=active, got %q", receivedStatus)
+	}
+}
+
+func TestRestSource_QueryParamsMerge(t *testing.T) {
+	var receivedExisting string
+	var receivedNew string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedExisting = r.URL.Query().Get("existing")
+		receivedNew = r.URL.Query().Get("new_param")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]map[string]interface{}{{"ok": true}})
+	}))
+	defer server.Close()
+
+	// URL already has ?existing=value
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL + "?existing=value",
+		QueryParams: map[string]string{
+			"new_param": "new_value",
+		},
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
+
+	_, err = src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
+
+	if receivedExisting != "value" {
+		t.Errorf("Expected existing param preserved, got %q", receivedExisting)
+	}
+	if receivedNew != "new_value" {
+		t.Errorf("Expected new_param=new_value, got %q", receivedNew)
+	}
+}
+
+func TestRestSource_ResultPath(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"data": []map[string]interface{}{
-				{"id": 1, "title": "First"},
-				{"id": 2, "title": "Second"},
+			"data": map[string]interface{}{
+				"items": []map[string]interface{}{
+					{"id": 1, "name": "Alice"},
+					{"id": 2, "name": "Bob"},
+				},
 			},
 		})
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type:       "rest",
+		From:       server.URL,
+		ResultPath: "data.items",
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
 
-	data, err := src.Fetch(ctx)
-	require.NoError(t, err)
-	require.Len(t, data, 2)
-
-	assert.Equal(t, float64(1), data[0]["id"])
-	assert.Equal(t, "First", data[0]["title"])
+	if len(results) != 2 {
+		t.Errorf("Expected 2 results from data.items, got %d", len(results))
+	}
+	if results[0]["name"] != "Alice" {
+		t.Errorf("Expected first name to be Alice, got %v", results[0]["name"])
+	}
 }
 
-func TestRestSourceFetchResultsWrapper(t *testing.T) {
-	// Create test server that returns results wrapper (another common pattern)
+func TestRestSource_ResultPathNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"count": 2,
-			"results": []map[string]interface{}{
-				{"id": 1, "name": "First"},
-				{"id": 2, "name": "Second"},
+			"data": map[string]interface{}{
+				"users": []interface{}{}, // Note: "users" not "items"
 			},
 		})
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type:       "rest",
+		From:       server.URL,
+		ResultPath: "data.items", // Path doesn't exist
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	_, err = src.Fetch(context.Background())
+	if err == nil {
+		t.Fatal("Expected error for missing result_path, got nil")
+	}
 
-	data, err := src.Fetch(ctx)
-	require.NoError(t, err)
-	require.Len(t, data, 2)
-
-	assert.Equal(t, float64(1), data[0]["id"])
-	assert.Equal(t, "First", data[0]["name"])
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("Expected 'not found' in error, got: %v", err)
+	}
 }
 
-func TestRestSourceFetchEmptyResponse(t *testing.T) {
-	// Create test server that returns empty body
+func TestRestSource_NoResultPath_RootArray(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(""))
+		json.NewEncoder(w).Encode([]map[string]interface{}{
+			{"id": 1},
+			{"id": 2},
+		})
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+		// No ResultPath - should work with array at root
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
 
-	data, err := src.Fetch(ctx)
-	require.NoError(t, err)
-	assert.Empty(t, data)
+	if len(results) != 2 {
+		t.Errorf("Expected 2 results from root array, got %d", len(results))
+	}
 }
 
-func TestRestSourceFetch404(t *testing.T) {
-	// Create test server that returns 404
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Not Found"))
-	}))
-	defer server.Close()
-
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = src.Fetch(ctx)
-	assert.Error(t, err)
-
-	var httpErr *HTTPError
-	assert.ErrorAs(t, err, &httpErr)
-	assert.Equal(t, 404, httpErr.StatusCode)
-}
-
-func TestRestSourceFetch500(t *testing.T) {
-	// Create test server that returns 500
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
-	}))
-	defer server.Close()
-
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = src.Fetch(ctx)
-	assert.Error(t, err)
-
-	var httpErr *HTTPError
-	assert.ErrorAs(t, err, &httpErr)
-	assert.Equal(t, 500, httpErr.StatusCode)
-}
-
-func TestRestSourceFetchInvalidJSON(t *testing.T) {
-	// Create test server that returns invalid JSON
+func TestRestSource_NoResultPath_SingleObject(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("not valid json"))
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"id":   1,
+			"name": "Single Item",
+		})
 	}))
 	defer server.Close()
 
-	src, err := NewRestSource("test", server.URL, nil)
-	require.NoError(t, err)
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: server.URL,
+		// No ResultPath - should wrap single object in array
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	results, err := src.Fetch(context.Background())
+	if err != nil {
+		t.Fatalf("Fetch failed: %v", err)
+	}
 
-	_, err = src.Fetch(ctx)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "could not parse response as JSON")
+	if len(results) != 1 {
+		t.Errorf("Expected 1 result (wrapped single object), got %d", len(results))
+	}
+	if results[0]["name"] != "Single Item" {
+		t.Errorf("Expected name to be 'Single Item', got %v", results[0]["name"])
+	}
 }
 
-func TestRestSourceHeaders(t *testing.T) {
-	var receivedHeaders http.Header
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedHeaders = r.Header.Clone()
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("[]"))
-	}))
-	defer server.Close()
+func TestRestSource_String_MasksAuth(t *testing.T) {
+	cfg := config.SourceConfig{
+		Type: "rest",
+		From: "https://api.example.com/data",
+		Headers: map[string]string{
+			"Authorization": "Bearer super-secret-token-12345",
+			"Accept":        "application/json",
+			"X-API-Key":     "key-12345",
+		},
+		QueryParams: map[string]string{
+			"limit": "100",
+		},
+		ResultPath: "data.items",
+	}
+	src, err := NewRestSourceWithConfig("test", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create source: %v", err)
+	}
 
-	// Test with custom headers
-	src, err := NewRestSource("test", server.URL, map[string]string{
-		"headers": "X-Custom:value1,Authorization:Bearer token123",
-	})
-	require.NoError(t, err)
+	str := src.String()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// Authorization should be masked
+	if strings.Contains(str, "super-secret-token-12345") {
+		t.Errorf("Authorization token should be masked in String(), got: %s", str)
+	}
+	if !strings.Contains(str, "Bear****") {
+		t.Errorf("Expected masked Authorization like 'Bear****' in String(), got: %s", str)
+	}
 
-	_, err = src.Fetch(ctx)
-	require.NoError(t, err)
+	// X-API-Key should also be masked
+	if strings.Contains(str, "key-12345") {
+		t.Errorf("X-API-Key should be masked in String(), got: %s", str)
+	}
 
-	assert.Equal(t, "value1", receivedHeaders.Get("X-Custom"))
-	assert.Equal(t, "Bearer token123", receivedHeaders.Get("Authorization"))
-	assert.Equal(t, "application/json", receivedHeaders.Get("Accept"))
+	// Accept header should NOT be masked
+	if !strings.Contains(str, "application/json") {
+		t.Errorf("Accept header should not be masked in String(), got: %s", str)
+	}
+
+	// Other fields should be present
+	if !strings.Contains(str, "https://api.example.com/data") {
+		t.Errorf("URL should be present in String(), got: %s", str)
+	}
+	if !strings.Contains(str, "data.items") {
+		t.Errorf("resultPath should be present in String(), got: %s", str)
+	}
 }
 
-func TestRestSourceAuthHeader(t *testing.T) {
-	var receivedHeaders http.Header
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedHeaders = r.Header.Clone()
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("[]"))
-	}))
-	defer server.Close()
+func TestRestSource_MissingFrom(t *testing.T) {
+	cfg := config.SourceConfig{
+		Type: "rest",
+		// From is missing
+	}
+	_, err := NewRestSourceWithConfig("test", cfg)
+	if err == nil {
+		t.Fatal("Expected error for missing 'from', got nil")
+	}
 
-	// Test with auth_header option
-	src, err := NewRestSource("test", server.URL, map[string]string{
-		"auth_header": "Bearer my-secret-token",
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = src.Fetch(ctx)
-	require.NoError(t, err)
-
-	assert.Equal(t, "Bearer my-secret-token", receivedHeaders.Get("Authorization"))
+	if !strings.Contains(err.Error(), "from is required") {
+		t.Errorf("Expected 'from is required' in error, got: %v", err)
+	}
 }
 
-func TestRestSourceApiKey(t *testing.T) {
-	var receivedHeaders http.Header
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedHeaders = r.Header.Clone()
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("[]"))
-	}))
-	defer server.Close()
+func TestNavigateJSONPath(t *testing.T) {
+	tests := []struct {
+		name    string
+		data    interface{}
+		path    string
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name:    "empty path returns data",
+			data:    map[string]interface{}{"a": 1},
+			path:    "",
+			want:    map[string]interface{}{"a": 1},
+			wantErr: false,
+		},
+		{
+			name: "single level path",
+			data: map[string]interface{}{
+				"items": []interface{}{1, 2, 3},
+			},
+			path:    "items",
+			want:    []interface{}{1, 2, 3},
+			wantErr: false,
+		},
+		{
+			name: "nested path",
+			data: map[string]interface{}{
+				"data": map[string]interface{}{
+					"items": []interface{}{"a", "b"},
+				},
+			},
+			path:    "data.items",
+			want:    []interface{}{"a", "b"},
+			wantErr: false,
+		},
+		{
+			name: "deeply nested path",
+			data: map[string]interface{}{
+				"response": map[string]interface{}{
+					"data": map[string]interface{}{
+						"users": []interface{}{"alice", "bob"},
+					},
+				},
+			},
+			path:    "response.data.users",
+			want:    []interface{}{"alice", "bob"},
+			wantErr: false,
+		},
+		{
+			name: "path not found",
+			data: map[string]interface{}{
+				"data": map[string]interface{}{
+					"users": []interface{}{},
+				},
+			},
+			path:    "data.items",
+			wantErr: true,
+		},
+		{
+			name:    "path on non-object",
+			data:    []interface{}{1, 2, 3},
+			path:    "data",
+			wantErr: true,
+		},
+	}
 
-	// Test with api_key option
-	src, err := NewRestSource("test", server.URL, map[string]string{
-		"api_key": "my-api-key",
-	})
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = src.Fetch(ctx)
-	require.NoError(t, err)
-
-	assert.Equal(t, "my-api-key", receivedHeaders.Get("X-API-Key"))
-}
-
-func TestRestSourceEnvVarExpansion(t *testing.T) {
-	// Create a test server to verify the URL is correct
-	var receivedPath string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedPath = r.URL.Path
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("[]"))
-	}))
-	defer server.Close()
-
-	// Set env var for test using server URL
-	oldVal := os.Getenv("TEST_REST_URL")
-	os.Setenv("TEST_REST_URL", server.URL)
-	defer os.Setenv("TEST_REST_URL", oldVal)
-
-	src, err := NewRestSource("test", "${TEST_REST_URL}/api/data", nil)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = src.Fetch(ctx)
-	require.NoError(t, err)
-	// Verify the path portion was correctly expanded
-	assert.Equal(t, "/api/data", receivedPath)
-}
-
-func TestRestSourceClose(t *testing.T) {
-	src, err := NewRestSource("test", "http://localhost/api", nil)
-	require.NoError(t, err)
-
-	err = src.Close()
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := navigateJSONPath(tt.data, tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("navigateJSONPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				// Compare as JSON for deep equality
+				gotJSON, _ := json.Marshal(got)
+				wantJSON, _ := json.Marshal(tt.want)
+				if string(gotJSON) != string(wantJSON) {
+					t.Errorf("navigateJSONPath() = %s, want %s", gotJSON, wantJSON)
+				}
+			}
+		})
+	}
 }

@@ -59,7 +59,7 @@ sources:
 
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
 
   config:
     type: json
@@ -74,7 +74,7 @@ All source types can be defined in frontmatter:
 | Type | Example |
 |------|---------|
 | `sqlite` | `type: sqlite`<br>`path: ./data.db`<br>`query: SELECT * FROM tasks` |
-| `rest` | `type: rest`<br>`url: https://api.example.com/data` |
+| `rest` | `type: rest`<br>`from: https://api.example.com/data` |
 | `json` | `type: json`<br>`path: ./_data/data.json` |
 | `csv` | `type: csv`<br>`path: ./_data/data.csv` |
 | `exec` | `type: exec`<br>`command: uname -a` |
@@ -193,7 +193,7 @@ sources:
   # Shared across all pages
   auth_user:
     type: rest
-    url: ${AUTH_API_URL}/user
+    from: ${AUTH_API_URL}/user
     headers:
       Authorization: Bearer ${AUTH_TOKEN}
     cache:

@@ -39,7 +39,7 @@ func TestGraphQLSourceE2E(t *testing.T) {
 		t.Fatalf("Expected graphql source type, got: %s", countriesSource.Type)
 	}
 	t.Logf("Source config: type=%s, url=%s, query_file=%s, result_path=%s",
-		countriesSource.Type, countriesSource.URL, countriesSource.QueryFile, countriesSource.ResultPath)
+		countriesSource.Type, countriesSource.From, countriesSource.QueryFile, countriesSource.ResultPath)
 
 	// Create test server
 	srv := server.NewWithConfig("examples/lvt-source-graphql-test", cfg)

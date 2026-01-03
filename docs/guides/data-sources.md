@@ -52,7 +52,7 @@ sources:
 
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
 
   system_info:
     type: exec
@@ -88,7 +88,7 @@ sources:
   # Available to all pages
   current_user:
     type: rest
-    url: ${AUTH_API}/me
+    from: ${AUTH_API}/me
     headers:
       Authorization: Bearer ${AUTH_TOKEN}
 ```
@@ -104,7 +104,7 @@ Enable caching for better performance:
 sources:
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
     cache:
       ttl: 5m
       strategy: stale-while-revalidate
@@ -126,7 +126,7 @@ Sources include built-in error handling:
 sources:
   external_api:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     timeout: 30s
 ---
 ```

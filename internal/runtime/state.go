@@ -157,7 +157,7 @@ func createSource(name string, cfg config.SourceConfig, siteDir, currentFile str
 	case "pg":
 		return source.NewPostgresSource(name, cfg.Query, cfg.Options)
 	case "rest":
-		return source.NewRestSource(name, cfg.URL, cfg.Options)
+		return source.NewRestSourceWithConfig(name, cfg)
 	case "json":
 		return source.NewJSONFileSource(name, cfg.File, siteDir)
 	case "csv":

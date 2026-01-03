@@ -17,7 +17,7 @@ Configure error handling in your `tinkerdown.yaml`:
 sources:
   api:
     type: rest
-    url: https://api.example.com/data
+    from: https://api.example.com/data
     timeout: "30s"      # Request timeout (default: 10s)
     retry:
       max_retries: 3    # Number of retry attempts (default: 3, set to 0 to disable)
@@ -120,7 +120,7 @@ Other source types (json, csv, markdown, sqlite, exec) have basic error handling
 sources:
   products:
     type: rest
-    url: https://api.shop.com/products
+    from: https://api.shop.com/products
     timeout: "15s"
     retry:
       max_retries: 3

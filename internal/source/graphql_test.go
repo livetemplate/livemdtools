@@ -95,7 +95,7 @@ func TestExtractPath_EmptyPath(t *testing.T) {
 func TestNewGraphQLSource_Valid(t *testing.T) {
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        "https://api.example.com/graphql",
+		From:        "https://api.example.com/graphql",
 		QueryFile:  "queries/test.graphql",
 		ResultPath: "data.users",
 	}
@@ -125,7 +125,7 @@ func TestNewGraphQLSource_MissingURL(t *testing.T) {
 func TestNewGraphQLSource_MissingQueryFile(t *testing.T) {
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        "https://api.example.com/graphql",
+		From:        "https://api.example.com/graphql",
 		ResultPath: "data.users",
 	}
 
@@ -138,7 +138,7 @@ func TestNewGraphQLSource_MissingQueryFile(t *testing.T) {
 func TestNewGraphQLSource_MissingResultPath(t *testing.T) {
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        "https://api.example.com/graphql",
+		From:        "https://api.example.com/graphql",
 		QueryFile:  "queries/test.graphql",
 	}
 
@@ -179,7 +179,7 @@ func TestGraphQLSource_Fetch(t *testing.T) {
 
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        server.URL,
+		From:        server.URL,
 		QueryFile:  "query.graphql",
 		ResultPath: "users",
 	}
@@ -230,7 +230,7 @@ func TestGraphQLSource_FetchWithVariables(t *testing.T) {
 
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        server.URL,
+		From:        server.URL,
 		QueryFile:  "query.graphql",
 		ResultPath: "user",
 		Variables: map[string]interface{}{
@@ -274,7 +274,7 @@ func TestGraphQLSource_FetchGraphQLError(t *testing.T) {
 
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        server.URL,
+		From:        server.URL,
 		QueryFile:  "query.graphql",
 		ResultPath: "user",
 	}
@@ -305,7 +305,7 @@ func TestGraphQLSource_FetchQueryFileNotFound(t *testing.T) {
 
 	cfg := config.SourceConfig{
 		Type:       "graphql",
-		URL:        server.URL,
+		From:        server.URL,
 		QueryFile:  "nonexistent.graphql",
 		ResultPath: "users",
 	}
