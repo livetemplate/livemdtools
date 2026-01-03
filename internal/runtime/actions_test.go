@@ -14,47 +14,61 @@ func TestSubstituteParams(t *testing.T) {
 		data      map[string]interface{}
 		wantQuery string
 		wantArgs  []interface{}
+		wantErr   bool
 	}{
 		{
-			name: "single param",
-			stmt: "DELETE FROM tasks WHERE id = :id",
-			data: map[string]interface{}{"id": 123},
+			name:      "single param",
+			stmt:      "DELETE FROM tasks WHERE id = :id",
+			data:      map[string]interface{}{"id": 123},
 			wantQuery: "DELETE FROM tasks WHERE id = ?",
 			wantArgs:  []interface{}{123},
 		},
 		{
-			name: "multiple params",
-			stmt: "UPDATE tasks SET done = :done WHERE id = :id",
-			data: map[string]interface{}{"id": 456, "done": true},
+			name:      "multiple params",
+			stmt:      "UPDATE tasks SET done = :done WHERE id = :id",
+			data:      map[string]interface{}{"id": 456, "done": true},
 			wantQuery: "UPDATE tasks SET done = ? WHERE id = ?",
 			wantArgs:  []interface{}{true, 456},
 		},
 		{
-			name: "no params",
-			stmt: "DELETE FROM tasks WHERE done = 1",
-			data: map[string]interface{}{},
+			name:      "no params",
+			stmt:      "DELETE FROM tasks WHERE done = 1",
+			data:      map[string]interface{}{},
 			wantQuery: "DELETE FROM tasks WHERE done = 1",
 			wantArgs:  []interface{}{},
 		},
 		{
-			name: "param with underscore",
-			stmt: "SELECT * FROM users WHERE created_at < :cutoff_date",
-			data: map[string]interface{}{"cutoff_date": "2024-01-01"},
+			name:      "param with underscore",
+			stmt:      "SELECT * FROM users WHERE created_at < :cutoff_date",
+			data:      map[string]interface{}{"cutoff_date": "2024-01-01"},
 			wantQuery: "SELECT * FROM users WHERE created_at < ?",
 			wantArgs:  []interface{}{"2024-01-01"},
 		},
 		{
-			name: "missing param (nil value)",
-			stmt: "DELETE FROM tasks WHERE id = :id",
-			data: map[string]interface{}{},
-			wantQuery: "DELETE FROM tasks WHERE id = ?",
-			wantArgs:  []interface{}{nil},
+			name:    "missing param returns error",
+			stmt:    "DELETE FROM tasks WHERE id = :id",
+			data:    map[string]interface{}{},
+			wantErr: true,
+		},
+		{
+			name:      "explicit nil value is allowed",
+			stmt:      "UPDATE tasks SET notes = :notes WHERE id = :id",
+			data:      map[string]interface{}{"id": 1, "notes": nil},
+			wantQuery: "UPDATE tasks SET notes = ? WHERE id = ?",
+			wantArgs:  []interface{}{nil, 1},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotQuery, gotArgs := substituteParams(tt.stmt, tt.data)
+			gotQuery, gotArgs, err := substituteParams(tt.stmt, tt.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("substituteParams() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
 			if gotQuery != tt.wantQuery {
 				t.Errorf("substituteParams() query = %q, want %q", gotQuery, tt.wantQuery)
 			}

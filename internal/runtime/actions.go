@@ -313,12 +313,16 @@ func (s *GenericState) executeSQLAction(action *config.Action, data map[string]i
 	}
 
 	// Substitute parameters in SQL statement
-	query, args := substituteParams(action.Statement, data)
+	query, args, err := substituteParams(action.Statement, data)
+	if err != nil {
+		s.Error = err.Error()
+		return err
+	}
 
 	// Execute the query with timeout to avoid hanging indefinitely
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, err := executor.Exec(ctx, query, args...)
+	_, err = executor.Exec(ctx, query, args...)
 	if err != nil {
 		s.Error = err.Error()
 		return err
@@ -331,7 +335,8 @@ func (s *GenericState) executeSQLAction(action *config.Action, data map[string]i
 // substituteParams converts :name placeholders to positional args.
 // Input:  "DELETE FROM tasks WHERE id = :id", {"id": "123"}
 // Output: "DELETE FROM tasks WHERE id = ?", ["123"]
-func substituteParams(stmt string, data map[string]interface{}) (string, []interface{}) {
+// Returns an error if a parameter in the statement is not found in data.
+func substituteParams(stmt string, data map[string]interface{}) (string, []interface{}, error) {
 	var args []interface{}
 	result := stmt
 
@@ -363,7 +368,10 @@ func substituteParams(stmt string, data map[string]interface{}) (string, []inter
 		}
 
 		paramName := result[idx+1 : endIdx]
-		paramValue := data[paramName]
+		paramValue, exists := data[paramName]
+		if !exists {
+			return "", nil, fmt.Errorf("undefined parameter %q in SQL statement", paramName)
+		}
 		args = append(args, paramValue)
 		result = result[:idx] + "?" + result[endIdx:]
 	}
@@ -371,7 +379,7 @@ func substituteParams(stmt string, data map[string]interface{}) (string, []inter
 	// Restore any escaped colons
 	result = strings.ReplaceAll(result, "\x00COLON\x00", ":")
 
-	return result, args
+	return result, args, nil
 }
 
 // executeHTTPAction executes an HTTP request.
