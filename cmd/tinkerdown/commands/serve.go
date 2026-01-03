@@ -21,6 +21,7 @@ func ServeCommand(args []string) error {
 	var port string
 	var host string
 	var watch *bool
+	var operator string
 
 	// Parse flags
 	for i := 0; i < len(args); i++ {
@@ -43,11 +44,19 @@ func ServeCommand(args []string) error {
 				configPath = args[i+1]
 				i++
 			}
+		} else if arg == "--operator" || arg == "-o" {
+			if i+1 < len(args) {
+				operator = args[i+1]
+				i++
+			}
 		} else if !strings.HasPrefix(arg, "-") {
 			// Positional argument (directory)
 			dir = arg
 		}
 	}
+
+	// Set operator identity (defaults to $USER if not specified)
+	config.SetOperator(operator)
 
 	// Check if directory exists
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -125,6 +134,9 @@ func ServeCommand(args []string) error {
 	// Start server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	fmt.Printf("\n🌐 Server running at http://%s\n", addr)
+	if op := config.GetOperator(); op != "" {
+		fmt.Printf("👤 Operator: %s\n", op)
+	}
 	if cfg.Features.HotReload {
 		fmt.Printf("📝 Edit .md files and see changes instantly\n")
 	}

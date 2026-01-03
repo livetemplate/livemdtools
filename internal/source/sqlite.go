@@ -149,6 +149,8 @@ func (s *SQLiteSource) WriteItem(ctx context.Context, action string, data map[st
 		return s.updateItem(ctx, data)
 	case "delete":
 		return s.deleteItem(ctx, data)
+	case "toggle":
+		return s.toggleItem(ctx, data)
 	default:
 		return fmt.Errorf("sqlite source %q: unknown action %q", s.name, action)
 	}
@@ -244,6 +246,46 @@ func (s *SQLiteSource) deleteItem(ctx context.Context, data map[string]interface
 	query := fmt.Sprintf("DELETE FROM %s WHERE id = ?", s.table)
 	_, err := s.db.ExecContext(ctx, query, id)
 	return err
+}
+
+// toggleItem toggles a boolean column (defaults to "done") for a record by ID
+func (s *SQLiteSource) toggleItem(ctx context.Context, data map[string]interface{}) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id, ok := getID(data)
+	if !ok {
+		return fmt.Errorf("toggle requires 'id' field")
+	}
+
+	// Get column to toggle (default: "done")
+	column := "done"
+	if col, ok := data["column"].(string); ok && col != "" {
+		column = col
+	}
+
+	if !isValidIdentifier(column) {
+		return fmt.Errorf("invalid column name: %s", column)
+	}
+
+	// Use SQL to toggle the value: 0 -> 1, non-zero -> 0
+	query := fmt.Sprintf("UPDATE %s SET %s = CASE WHEN %s = 0 OR %s IS NULL THEN 1 ELSE 0 END WHERE id = ?",
+		s.table, column, column, column)
+
+	result, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("toggle failed: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no record found with id: %v", id)
+	}
+
+	return nil
 }
 
 // ensureTable creates the table if it doesn't exist, based on data fields

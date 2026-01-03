@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/source"
 )
 
@@ -96,15 +97,29 @@ func (s *GenericState) handleWriteAction(action string, data map[string]interfac
 		return fmt.Errorf("source %q is read-only", s.sourceName)
 	}
 
+	// Resolve template expressions in action data (e.g., {{timestamp}}, {{today}}, {{.operator}})
+	// This enables auto-filling timestamps and operator identity on form submission
+	resolver := NewDefaultResolver(s.getOperator())
+	resolvedData, err := resolver.ResolveMap(data)
+	if err != nil {
+		s.Error = err.Error()
+		return fmt.Errorf("failed to resolve template expressions: %w", err)
+	}
+
 	// Delegate to the source's WriteItem
 	ctx := context.Background()
-	if err := writable.WriteItem(ctx, strings.ToLower(action), data); err != nil {
+	if err := writable.WriteItem(ctx, strings.ToLower(action), resolvedData); err != nil {
 		s.Error = err.Error()
 		return err
 	}
 
 	// Refresh data after write
 	return s.refresh()
+}
+
+// getOperator returns the current operator identity from config.
+func (s *GenericState) getOperator() string {
+	return config.GetOperator()
 }
 
 // handleDatatableAction handles Sort, NextPage, PrevPage actions
