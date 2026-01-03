@@ -338,7 +338,8 @@ func (s *GenericState) Close() error {
 // refresh fetches data from the source
 func (s *GenericState) refresh() error {
 	if s.source == nil {
-		return fmt.Errorf("source not initialized")
+		// No source to refresh - this is valid for actions without a source binding
+		return nil
 	}
 
 	ctx := context.Background()

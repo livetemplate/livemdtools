@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"sort"
 	"strings"
@@ -336,6 +338,11 @@ func (s *GenericState) executeSQLAction(action *config.Action, data map[string]i
 // Input:  "DELETE FROM tasks WHERE id = :id", {"id": "123"}
 // Output: "DELETE FROM tasks WHERE id = ?", ["123"]
 // Returns an error if a parameter in the statement is not found in data.
+//
+// Parameter names must start with a letter (a-z, A-Z) and can contain
+// letters, digits, and underscores. This avoids false matches on:
+// - Time literals like '12:30:00' (digits after colon)
+// - Postgres casts like value::text (double colon)
 func substituteParams(stmt string, data map[string]interface{}) (string, []interface{}, error) {
 	var args []interface{}
 	result := stmt
@@ -349,6 +356,27 @@ func substituteParams(stmt string, data map[string]interface{}) (string, []inter
 			break
 		}
 
+		// Skip double colons (postgres cast syntax like ::text)
+		if idx+1 < len(result) && result[idx+1] == ':' {
+			result = result[:idx] + "\x00DOUBLECOLON\x00" + result[idx+2:]
+			continue
+		}
+
+		// Check if next character is a letter (parameter names must start with letter)
+		if idx+1 >= len(result) {
+			// Colon at end of string, not a parameter
+			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
+			continue
+		}
+
+		firstChar := result[idx+1]
+		if !((firstChar >= 'a' && firstChar <= 'z') || (firstChar >= 'A' && firstChar <= 'Z')) {
+			// Not a valid parameter (starts with digit, symbol, etc.)
+			// This handles time literals like '12:30:00'
+			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
+			continue
+		}
+
 		// Extract the parameter name (alphanumeric and underscore)
 		endIdx := idx + 1
 		for endIdx < len(result) {
@@ -360,13 +388,6 @@ func substituteParams(stmt string, data map[string]interface{}) (string, []inter
 			}
 		}
 
-		if endIdx == idx+1 {
-			// Not a valid parameter name, skip this colon
-			// Replace with a marker and continue
-			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
-			continue
-		}
-
 		paramName := result[idx+1 : endIdx]
 		paramValue, exists := data[paramName]
 		if !exists {
@@ -376,18 +397,87 @@ func substituteParams(stmt string, data map[string]interface{}) (string, []inter
 		result = result[:idx] + "?" + result[endIdx:]
 	}
 
-	// Restore any escaped colons
+	// Restore markers
+	result = strings.ReplaceAll(result, "\x00DOUBLECOLON\x00", "::")
 	result = strings.ReplaceAll(result, "\x00COLON\x00", ":")
 
 	return result, args, nil
 }
 
+// testBypassSSRF is a testing hook to bypass SSRF validation.
+// This should only be set in tests.
+var testBypassSSRF bool
+
+// validateHTTPURL checks for SSRF vulnerabilities by blocking requests to internal networks.
+// It rejects localhost, private IP ranges, link-local addresses, and cloud metadata endpoints.
+func validateHTTPURL(rawURL string) error {
+	if testBypassSSRF {
+		return nil
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Only allow http and https schemes
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("URL scheme must be http or https, got %q", parsed.Scheme)
+	}
+
+	host := parsed.Hostname()
+	if host == "" {
+		return fmt.Errorf("URL must have a host")
+	}
+
+	// Block localhost variations
+	hostLower := strings.ToLower(host)
+	if hostLower == "localhost" || hostLower == "localhost.localdomain" {
+		return fmt.Errorf("requests to localhost are not allowed")
+	}
+
+	// Parse as IP address
+	ip := net.ParseIP(host)
+	if ip == nil {
+		// Not an IP address - could be a hostname that resolves to internal IP
+		// For now, allow hostnames (DNS rebinding attacks are harder to prevent)
+		// A more complete solution would resolve the hostname and check the IP
+		return nil
+	}
+
+	// Block loopback addresses (127.0.0.0/8, ::1)
+	if ip.IsLoopback() {
+		return fmt.Errorf("requests to loopback addresses are not allowed")
+	}
+
+	// Block private network addresses
+	if ip.IsPrivate() {
+		return fmt.Errorf("requests to private network addresses are not allowed")
+	}
+
+	// Block link-local addresses (169.254.0.0/16, fe80::/10)
+	if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return fmt.Errorf("requests to link-local addresses are not allowed")
+	}
+
+	// Block unspecified addresses (0.0.0.0, ::)
+	if ip.IsUnspecified() {
+		return fmt.Errorf("requests to unspecified addresses are not allowed")
+	}
+
+	return nil
+}
+
 // executeHTTPAction executes an HTTP request.
 func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]interface{}) error {
 	// Expand template expressions in URL and body
-	url, err := expandTemplate(action.URL, data)
+	urlStr, err := expandTemplate(action.URL, data)
 	if err != nil {
 		return fmt.Errorf("failed to expand URL template: %w", err)
+	}
+
+	// Validate URL for SSRF protection
+	if err := validateHTTPURL(urlStr); err != nil {
+		return fmt.Errorf("URL validation failed: %w", err)
 	}
 
 	var body string
@@ -396,6 +486,12 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 		if err != nil {
 			return fmt.Errorf("failed to expand body template: %w", err)
 		}
+	}
+
+	// Limit request body size to 1MB to prevent memory exhaustion
+	const maxBodySize = 1 << 20 // 1MB
+	if len(body) > maxBodySize {
+		return fmt.Errorf("request body too large: %d bytes (max %d)", len(body), maxBodySize)
 	}
 
 	// Default method is POST
@@ -410,7 +506,7 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 		reqBody = strings.NewReader(body)
 	}
 
-	req, err := http.NewRequest(method, url, reqBody)
+	req, err := http.NewRequest(method, urlStr, reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to create HTTP request: %w", err)
 	}
@@ -461,6 +557,11 @@ func sanitizeExecCommand(cmd string) error {
 	cmd = strings.TrimSpace(cmd)
 	if cmd == "" {
 		return fmt.Errorf("exec command is empty after templating")
+	}
+
+	// Reject null bytes (can be used to truncate strings in some contexts)
+	if strings.ContainsRune(cmd, '\x00') {
+		return fmt.Errorf("exec command contains null byte")
 	}
 
 	// Reject characters used for shell metacharacters and command chaining
