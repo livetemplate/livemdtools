@@ -208,15 +208,36 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 ### Exec Actions
 
 ```go
+// sanitizeExecCommand validates commands for shell safety
+func sanitizeExecCommand(cmd string) error {
+    cmd = strings.TrimSpace(cmd)
+    if cmd == "" {
+        return fmt.Errorf("exec command is empty after templating")
+    }
+    // Reject shell metacharacters to prevent command injection
+    if strings.ContainsAny(cmd, "&;|$><`\\\n\r") {
+        return fmt.Errorf("exec command contains disallowed shell characters")
+    }
+    return nil
+}
+
 func (s *GenericState) executeExecAction(action *config.Action, data map[string]interface{}) error {
     if !config.IsExecAllowed() {
         return fmt.Errorf("exec actions disabled (use --allow-exec)")
     }
 
     cmd := expandTemplate(action.Cmd, data)
+
+    // Validate command for shell safety
+    if err := sanitizeExecCommand(cmd); err != nil {
+        return err
+    }
+
     return runCommand(ctx, cmd, s.siteDir)
 }
 ```
+
+**Security Note**: The `sanitizeExecCommand` function rejects shell metacharacters (`&;|$><\`\\`) to prevent command injection when user-supplied parameters are expanded into commands via templates.
 
 ## Error Handling & Security
 

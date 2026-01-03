@@ -280,8 +280,15 @@ func (s *GenericState) executeCustomAction(action *config.Action, data map[strin
 func validateParams(action *config.Action, data map[string]interface{}) error {
 	for name, def := range action.Params {
 		val, exists := data[name]
-		if def.Required && (!exists || val == nil || val == "") {
-			return fmt.Errorf("required parameter %q is missing", name)
+		if def.Required {
+			// Missing key or nil value is always treated as missing
+			if !exists || val == nil {
+				return fmt.Errorf("required parameter %q is missing", name)
+			}
+			// For string values, also treat empty string as missing
+			if str, ok := val.(string); ok && str == "" {
+				return fmt.Errorf("required parameter %q is missing", name)
+			}
 		}
 	}
 	return nil
@@ -308,8 +315,9 @@ func (s *GenericState) executeSQLAction(action *config.Action, data map[string]i
 	// Substitute parameters in SQL statement
 	query, args := substituteParams(action.Statement, data)
 
-	// Execute the query
-	ctx := context.Background()
+	// Execute the query with timeout to avoid hanging indefinitely
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	_, err := executor.Exec(ctx, query, args...)
 	if err != nil {
 		s.Error = err.Error()
@@ -399,9 +407,15 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 		return fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	// Set Content-Type for JSON body
-	if body != "" {
-		req.Header.Set("Content-Type", "application/json")
+	// Set Content-Type for JSON body if it looks like JSON
+	if body != "" && req.Header.Get("Content-Type") == "" {
+		trimmedBody := strings.TrimSpace(body)
+		if len(trimmedBody) > 0 {
+			firstChar := trimmedBody[0]
+			if firstChar == '{' || firstChar == '[' {
+				req.Header.Set("Content-Type", "application/json")
+			}
+		}
 	}
 
 	// Execute request with timeout
@@ -418,9 +432,11 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 
 	// Check for HTTP errors
 	if resp.StatusCode >= 400 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, readErr := io.ReadAll(resp.Body)
 		errMsg := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, resp.Status)
-		if len(bodyBytes) > 0 {
+		if readErr != nil {
+			errMsg += fmt.Sprintf(" (failed to read response body: %v)", readErr)
+		} else if len(bodyBytes) > 0 {
 			errMsg += ": " + string(bodyBytes[:min(len(bodyBytes), 200)])
 		}
 		s.Error = errMsg
@@ -429,6 +445,22 @@ func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]
 
 	// Success - refresh data if this block has a source
 	return s.refresh()
+}
+
+// sanitizeExecCommand validates a command string for shell safety.
+// It rejects characters commonly used for command chaining/injection.
+func sanitizeExecCommand(cmd string) error {
+	cmd = strings.TrimSpace(cmd)
+	if cmd == "" {
+		return fmt.Errorf("exec command is empty after templating")
+	}
+
+	// Reject characters used for shell metacharacters and command chaining
+	if strings.ContainsAny(cmd, "&;|$><`\\\n\r") {
+		return fmt.Errorf("exec command contains disallowed shell characters")
+	}
+
+	return nil
 }
 
 // executeExecAction executes a shell command.
@@ -442,6 +474,11 @@ func (s *GenericState) executeExecAction(action *config.Action, data map[string]
 	cmdStr, err := expandTemplate(action.Cmd, data)
 	if err != nil {
 		return fmt.Errorf("failed to expand command template: %w", err)
+	}
+
+	// Validate command for shell safety
+	if err := sanitizeExecCommand(cmdStr); err != nil {
+		return err
 	}
 
 	// Create command with timeout

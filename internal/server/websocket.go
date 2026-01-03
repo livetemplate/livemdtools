@@ -56,6 +56,7 @@ type WebSocketHandler struct {
 	rootDir        string                          // Site root directory for database path
 	config         *config.Config                  // Site configuration with sources
 	conn           *websocket.Conn                 // Current connection for this handler
+	actionSources  map[string]source.Source       // Cached sources for custom actions
 }
 
 // BlockInstance represents a running LiveTemplate instance for an interactive block.
@@ -84,6 +85,7 @@ func NewWebSocketHandler(page *tinkerdown.Page, server *Server, debug bool, root
 		stateFactories: make(map[string]func() runtime.Store),
 		rootDir:        rootDir,
 		config:         cfg,
+		actionSources:  make(map[string]source.Source),
 	}
 
 	// Initialize lvt-source blocks (no compilation needed)
@@ -110,8 +112,16 @@ func (h *WebSocketHandler) Close() {
 		}
 	}
 
-	// Clear instances map
+	// Close cached action sources
+	for name, src := range h.actionSources {
+		if err := src.Close(); err != nil && h.debug {
+			log.Printf("[WS] Error closing action source %s: %v", name, err)
+		}
+	}
+
+	// Clear maps
 	h.instances = make(map[string]*BlockInstance)
+	h.actionSources = make(map[string]source.Source)
 }
 
 // initializeSourceBlocks initializes all lvt-source blocks with runtime state.
@@ -778,15 +788,23 @@ func (h *WebSocketHandler) getPageActions() map[string]*config.Action {
 
 // lookupSource looks up a source by name for custom SQL actions.
 // It checks page-level sources first, then site-level sources.
+// Sources are cached for reuse and closed when the handler is closed.
 func (h *WebSocketHandler) lookupSource(name string) (source.Source, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	// Check cache first
+	if src, exists := h.actionSources[name]; exists {
+		return src, true
+	}
+
 	// Get source config (checks page then site level)
 	srcCfg, found := h.getEffectiveSource(name)
 	if !found {
 		return nil, false
 	}
 
-	// Create and return the source
-	// Note: Sources for custom actions are created on demand
+	// Create and cache the source
 	currentFile := ""
 	if h.page != nil {
 		currentFile = h.page.SourceFile
@@ -798,6 +816,7 @@ func (h *WebSocketHandler) lookupSource(name string) (source.Source, bool) {
 		return nil, false
 	}
 
+	h.actionSources[name] = src
 	return src, true
 }
 
@@ -810,6 +829,6 @@ func createSourceForAction(name string, cfg config.SourceConfig, siteDir, curren
 	case "pg":
 		return source.NewPostgresSource(name, cfg.Query, cfg.Options)
 	default:
-		return nil, fmt.Errorf("source type %q does not support SQL actions", cfg.Type)
+		return nil, fmt.Errorf("unsupported source type %q for action", cfg.Type)
 	}
 }

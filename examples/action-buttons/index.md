@@ -15,15 +15,6 @@ actions:
     statement: "DELETE FROM tasks WHERE done = 1"
     confirm: "Delete all completed tasks?"
 
-  archive-old:
-    kind: sql
-    source: tasks
-    statement: "UPDATE tasks SET archived = 1 WHERE created_at < :cutoff"
-    params:
-      cutoff:
-        type: date
-        required: true
-
   mark-all-done:
     kind: sql
     source: tasks
