@@ -39,7 +39,7 @@ func NewRestSource(name, apiURL string, options map[string]string) (*RestSource,
 func NewRestSourceWithConfig(name string, cfg config.SourceConfig) (*RestSource, error) {
 	apiURL := cfg.From
 	if apiURL == "" {
-		return nil, &ValidationError{Source: name, Field: "from", Reason: "from is required for REST source"}
+		return nil, &ValidationError{Source: name, Field: "from", Reason: "from is required"}
 	}
 
 	// Expand environment variables in URL
@@ -280,10 +280,15 @@ func (s *RestSource) convertToMapSlice(data interface{}) ([]map[string]interface
 	switch v := data.(type) {
 	case []interface{}:
 		results := make([]map[string]interface{}, 0, len(v))
-		for _, item := range v {
-			if itemMap, ok := item.(map[string]interface{}); ok {
-				results = append(results, itemMap)
+		for i, item := range v {
+			itemMap, ok := item.(map[string]interface{})
+			if !ok {
+				return nil, &ValidationError{
+					Source: s.name,
+					Reason: fmt.Sprintf("expected array of objects, but element %d is %T", i, item),
+				}
 			}
+			results = append(results, itemMap)
 		}
 		return results, nil
 
@@ -318,8 +323,9 @@ func (s *RestSource) String() string {
 	maskedHeaders := make(map[string]string, len(s.headers))
 	for key, value := range s.headers {
 		if sensitiveHeaders[strings.ToLower(key)] {
-			if len(value) > 4 {
-				maskedHeaders[key] = value[:4] + "****"
+			runes := []rune(value)
+			if len(runes) > 4 {
+				maskedHeaders[key] = string(runes[:4]) + "****"
 			} else {
 				maskedHeaders[key] = "****"
 			}

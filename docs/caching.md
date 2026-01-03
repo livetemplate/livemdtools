@@ -10,7 +10,7 @@ Add a `cache` section to any source in `tinkerdown.yaml`:
 sources:
   users:
     type: rest
-    url: https://api.example.com/users
+    from: https://api.example.com/users
     cache:
       ttl: 5m
       strategy: simple
@@ -33,7 +33,7 @@ With `strategy: simple`, data is cached for the TTL duration. When the TTL expir
 sources:
   products:
     type: rest
-    url: https://api.example.com/products
+    from: https://api.example.com/products
     cache:
       ttl: 5m
       strategy: simple
@@ -52,7 +52,7 @@ With `strategy: stale-while-revalidate`, stale data is returned immediately whil
 sources:
   metrics:
     type: rest
-    url: https://api.example.com/metrics
+    from: https://api.example.com/metrics
     cache:
       ttl: 1m
       strategy: stale-while-revalidate
@@ -121,14 +121,14 @@ This invalidates the cache for the specified source and triggers a fresh fetch.
 sources:
   sales:
     type: rest
-    url: https://api.example.com/sales/summary
+    from: https://api.example.com/sales/summary
     cache:
       ttl: 5m
       strategy: stale-while-revalidate
 
   inventory:
     type: rest
-    url: https://api.example.com/inventory
+    from: https://api.example.com/inventory
     cache:
       ttl: 1m
 ```
