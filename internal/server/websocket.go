@@ -18,6 +18,7 @@ import (
 	"github.com/livetemplate/tinkerdown"
 	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/runtime"
+	"github.com/livetemplate/tinkerdown/internal/source"
 )
 
 var upgrader = websocket.Upgrader{
@@ -163,12 +164,22 @@ func (h *WebSocketHandler) initializeSourceBlocks() {
 		for k, v := range block.Metadata {
 			blockMeta[k] = v
 		}
+
+		// Build page-level actions map (convert from parser types to config types)
+		pageActions := h.getPageActions()
+
 		factory := func() runtime.Store {
 			state, err := runtime.NewGenericStateWithMetadata(srcName, srcCfg, rootDir, curFile, blockMeta)
 			if err != nil {
 				log.Printf("[WS] Failed to create runtime state for %s: %v", srcName, err)
 				return nil
 			}
+
+			// Configure page-level settings for custom actions
+			if len(pageActions) > 0 {
+				state.SetPageConfig(pageActions, h.lookupSource)
+			}
+
 			return state
 		}
 
@@ -728,5 +739,77 @@ func (h *WebSocketHandler) RefreshSourcesForFile(filePath string) {
 				break // File matched, no need to check other files for this block
 			}
 		}
+	}
+}
+
+// getPageActions converts page-level actions from parser types to config types.
+// Returns nil if no actions are defined.
+func (h *WebSocketHandler) getPageActions() map[string]*config.Action {
+	if h.page == nil || h.page.Config.Actions == nil {
+		return nil
+	}
+
+	result := make(map[string]*config.Action)
+	for name, action := range h.page.Config.Actions {
+		// Convert parser ParamDef to config ParamDef
+		params := make(map[string]config.ParamDef)
+		for pname, pdef := range action.Params {
+			params[pname] = config.ParamDef{
+				Type:     pdef.Type,
+				Required: pdef.Required,
+				Default:  pdef.Default,
+			}
+		}
+
+		result[name] = &config.Action{
+			Kind:      action.Kind,
+			Source:    action.Source,
+			Statement: action.Statement,
+			URL:       action.URL,
+			Method:    action.Method,
+			Body:      action.Body,
+			Cmd:       action.Cmd,
+			Params:    params,
+			Confirm:   action.Confirm,
+		}
+	}
+	return result
+}
+
+// lookupSource looks up a source by name for custom SQL actions.
+// It checks page-level sources first, then site-level sources.
+func (h *WebSocketHandler) lookupSource(name string) (source.Source, bool) {
+	// Get source config (checks page then site level)
+	srcCfg, found := h.getEffectiveSource(name)
+	if !found {
+		return nil, false
+	}
+
+	// Create and return the source
+	// Note: Sources for custom actions are created on demand
+	currentFile := ""
+	if h.page != nil {
+		currentFile = h.page.SourceFile
+	}
+
+	src, err := createSourceForAction(name, srcCfg, h.rootDir, currentFile)
+	if err != nil {
+		log.Printf("[WS] Failed to create source %s for action: %v", name, err)
+		return nil, false
+	}
+
+	return src, true
+}
+
+// createSourceForAction creates a source instance for use in custom actions.
+// This is similar to runtime.createSource but imported here for action execution.
+func createSourceForAction(name string, cfg config.SourceConfig, siteDir, currentFile string) (source.Source, error) {
+	switch cfg.Type {
+	case "sqlite":
+		return source.NewSQLiteSource(name, cfg.DB, cfg.Table, siteDir, cfg.IsReadonly())
+	case "pg":
+		return source.NewPostgresSource(name, cfg.Query, cfg.Options)
+	default:
+		return nil, fmt.Errorf("source type %q does not support SQL actions", cfg.Type)
 	}
 }

@@ -25,6 +25,7 @@ type PageConfig struct {
 
 	// Effective config (merged from frontmatter + site config)
 	Sources  map[string]SourceConfig
+	Actions  map[string]Action
 	Styling  StylingConfig
 	Blocks   BlocksConfig
 	Features FeaturesConfig

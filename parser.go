@@ -53,6 +53,26 @@ type FeaturesConfig struct {
 	Sidebar   bool `yaml:"sidebar"` // Show navigation sidebar
 }
 
+// Action defines a custom action that can be triggered via lvt-click.
+type Action struct {
+	Kind      string              `yaml:"kind"`                // Action kind: "sql", "http", "exec"
+	Source    string              `yaml:"source,omitempty"`    // For sql: source name to execute against
+	Statement string              `yaml:"statement,omitempty"` // For sql: SQL statement with :param placeholders
+	URL       string              `yaml:"url,omitempty"`       // For http: request URL (supports template expressions)
+	Method    string              `yaml:"method,omitempty"`    // For http: HTTP method (default: POST)
+	Body      string              `yaml:"body,omitempty"`      // For http: request body template
+	Cmd       string              `yaml:"cmd,omitempty"`       // For exec: command to run
+	Params    map[string]ParamDef `yaml:"params,omitempty"`    // Parameter definitions
+	Confirm   string              `yaml:"confirm,omitempty"`   // Confirmation message (triggers dialog)
+}
+
+// ParamDef defines a parameter for an action.
+type ParamDef struct {
+	Type     string `yaml:"type,omitempty"`     // Parameter type: "string", "number", "date", "bool"
+	Required bool   `yaml:"required,omitempty"` // Whether the parameter is required
+	Default  string `yaml:"default,omitempty"`  // Default value
+}
+
 // Frontmatter represents the YAML frontmatter at the top of a markdown file.
 type Frontmatter struct {
 	// Page metadata
@@ -66,6 +86,7 @@ type Frontmatter struct {
 
 	// Config options (can override livemdtools.yaml)
 	Sources  map[string]SourceConfig `yaml:"sources,omitempty"`
+	Actions  map[string]Action       `yaml:"actions,omitempty"`
 	Styling  *StylingConfig          `yaml:"styling,omitempty"`
 	Blocks   *BlocksConfig           `yaml:"blocks,omitempty"`
 	Features *FeaturesConfig         `yaml:"features,omitempty"`

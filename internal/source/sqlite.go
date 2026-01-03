@@ -136,6 +136,30 @@ func (s *SQLiteSource) IsReadonly() bool {
 	return s.readonly
 }
 
+// Exec executes a SQL statement with the given arguments.
+// This implements the SQLExecutor interface for custom action support.
+// Returns the number of rows affected.
+func (s *SQLiteSource) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	if s.readonly {
+		return 0, fmt.Errorf("sqlite source %q is read-only", s.name)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result, err := s.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("sqlite source %q: exec failed: %w", s.name, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("sqlite source %q: failed to get rows affected: %w", s.name, err)
+	}
+
+	return rowsAffected, nil
+}
+
 // WriteItem performs write operations (add, update, delete)
 func (s *SQLiteSource) WriteItem(ctx context.Context, action string, data map[string]interface{}) error {
 	if s.readonly {

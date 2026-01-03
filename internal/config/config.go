@@ -22,6 +22,7 @@ type Config struct {
 	Features    FeaturesConfig          `yaml:"features"`
 	Ignore      []string                `yaml:"ignore"`
 	Sources     map[string]SourceConfig `yaml:"sources,omitempty"`
+	Actions     map[string]*Action      `yaml:"actions,omitempty"`
 }
 
 // SourceConfig defines a data source for lvt-source blocks
@@ -142,6 +143,26 @@ func (c SourceConfig) GetCacheStrategy() string {
 // IsStaleWhileRevalidate returns true if using stale-while-revalidate strategy
 func (c SourceConfig) IsStaleWhileRevalidate() bool {
 	return c.GetCacheStrategy() == "stale-while-revalidate"
+}
+
+// Action defines a custom action that can be triggered via lvt-click
+type Action struct {
+	Kind      string              `yaml:"kind"`                // Action kind: "sql", "http", "exec"
+	Source    string              `yaml:"source,omitempty"`    // For sql: source name to execute against
+	Statement string              `yaml:"statement,omitempty"` // For sql: SQL statement with :param placeholders
+	URL       string              `yaml:"url,omitempty"`       // For http: request URL (supports template expressions)
+	Method    string              `yaml:"method,omitempty"`    // For http: HTTP method (default: POST)
+	Body      string              `yaml:"body,omitempty"`      // For http: request body template
+	Cmd       string              `yaml:"cmd,omitempty"`       // For exec: command to run
+	Params    map[string]ParamDef `yaml:"params,omitempty"`    // Parameter definitions
+	Confirm   string              `yaml:"confirm,omitempty"`   // Confirmation message (triggers dialog)
+}
+
+// ParamDef defines a parameter for an action
+type ParamDef struct {
+	Type     string `yaml:"type,omitempty"`     // Parameter type: "string", "number", "date", "bool"
+	Required bool   `yaml:"required,omitempty"` // Whether the parameter is required
+	Default  string `yaml:"default,omitempty"`  // Default value
 }
 
 // SiteConfig holds site-level configuration

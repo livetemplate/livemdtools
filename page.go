@@ -88,6 +88,16 @@ func (pc *PageConfig) MergeFromFrontmatter(fm *Frontmatter) {
 		}
 	}
 
+	// Actions - copy from frontmatter if present
+	if fm.Actions != nil {
+		if pc.Actions == nil {
+			pc.Actions = make(map[string]Action)
+		}
+		for name, action := range fm.Actions {
+			pc.Actions[name] = action
+		}
+	}
+
 	// Styling - frontmatter takes precedence for non-zero values
 	if fm.Styling != nil {
 		if fm.Styling.Theme != "" {

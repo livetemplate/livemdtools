@@ -1,10 +1,16 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"os/exec"
 	"sort"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/source"
@@ -249,4 +255,237 @@ func toFloat64(v interface{}) float64 {
 	default:
 		return 0
 	}
+}
+
+// executeCustomAction dispatches a custom action declared in frontmatter.
+func (s *GenericState) executeCustomAction(action *config.Action, data map[string]interface{}) error {
+	// Validate required params
+	if err := validateParams(action, data); err != nil {
+		return err
+	}
+
+	switch action.Kind {
+	case "sql":
+		return s.executeSQLAction(action, data)
+	case "http":
+		return s.executeHTTPAction(action, data)
+	case "exec":
+		return s.executeExecAction(action, data)
+	default:
+		return fmt.Errorf("unknown action kind: %s", action.Kind)
+	}
+}
+
+// validateParams checks that required parameters are present.
+func validateParams(action *config.Action, data map[string]interface{}) error {
+	for name, def := range action.Params {
+		val, exists := data[name]
+		if def.Required && (!exists || val == nil || val == "") {
+			return fmt.Errorf("required parameter %q is missing", name)
+		}
+	}
+	return nil
+}
+
+// executeSQLAction executes a SQL action against a source.
+func (s *GenericState) executeSQLAction(action *config.Action, data map[string]interface{}) error {
+	if s.registry == nil {
+		return fmt.Errorf("source registry not configured")
+	}
+
+	// Look up the source
+	src, ok := s.registry(action.Source)
+	if !ok {
+		return fmt.Errorf("source %q not found", action.Source)
+	}
+
+	// Check if source supports SQL execution
+	executor, ok := src.(source.SQLExecutor)
+	if !ok {
+		return fmt.Errorf("source %q does not support SQL execution", action.Source)
+	}
+
+	// Substitute parameters in SQL statement
+	query, args := substituteParams(action.Statement, data)
+
+	// Execute the query
+	ctx := context.Background()
+	_, err := executor.Exec(ctx, query, args...)
+	if err != nil {
+		s.Error = err.Error()
+		return err
+	}
+
+	// Refresh data after mutation
+	return s.refresh()
+}
+
+// substituteParams converts :name placeholders to positional args.
+// Input:  "DELETE FROM tasks WHERE id = :id", {"id": "123"}
+// Output: "DELETE FROM tasks WHERE id = ?", ["123"]
+func substituteParams(stmt string, data map[string]interface{}) (string, []interface{}) {
+	var args []interface{}
+	result := stmt
+
+	// Find all :name patterns and replace with ?
+	// Process in a way that handles overlapping names correctly
+	for {
+		// Find the next :name pattern
+		idx := strings.Index(result, ":")
+		if idx == -1 {
+			break
+		}
+
+		// Extract the parameter name (alphanumeric and underscore)
+		endIdx := idx + 1
+		for endIdx < len(result) {
+			c := result[endIdx]
+			if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+				endIdx++
+			} else {
+				break
+			}
+		}
+
+		if endIdx == idx+1 {
+			// Not a valid parameter name, skip this colon
+			// Replace with a marker and continue
+			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
+			continue
+		}
+
+		paramName := result[idx+1 : endIdx]
+		paramValue := data[paramName]
+		args = append(args, paramValue)
+		result = result[:idx] + "?" + result[endIdx:]
+	}
+
+	// Restore any escaped colons
+	result = strings.ReplaceAll(result, "\x00COLON\x00", ":")
+
+	return result, args
+}
+
+// executeHTTPAction executes an HTTP request.
+func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]interface{}) error {
+	// Expand template expressions in URL and body
+	url, err := expandTemplate(action.URL, data)
+	if err != nil {
+		return fmt.Errorf("failed to expand URL template: %w", err)
+	}
+
+	var body string
+	if action.Body != "" {
+		body, err = expandTemplate(action.Body, data)
+		if err != nil {
+			return fmt.Errorf("failed to expand body template: %w", err)
+		}
+	}
+
+	// Default method is POST
+	method := action.Method
+	if method == "" {
+		method = "POST"
+	}
+
+	// Create HTTP request
+	var reqBody io.Reader
+	if body != "" {
+		reqBody = strings.NewReader(body)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	// Set Content-Type for JSON body
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	// Execute request with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		s.Error = err.Error()
+		return fmt.Errorf("HTTP request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for HTTP errors
+	if resp.StatusCode >= 400 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		errMsg := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, resp.Status)
+		if len(bodyBytes) > 0 {
+			errMsg += ": " + string(bodyBytes[:min(len(bodyBytes), 200)])
+		}
+		s.Error = errMsg
+		return fmt.Errorf("%s", errMsg)
+	}
+
+	// Success - refresh data if this block has a source
+	return s.refresh()
+}
+
+// executeExecAction executes a shell command.
+func (s *GenericState) executeExecAction(action *config.Action, data map[string]interface{}) error {
+	// Check if exec is allowed
+	if !config.IsExecAllowed() {
+		return fmt.Errorf("exec actions disabled (use --allow-exec flag)")
+	}
+
+	// Expand template expressions in command
+	cmdStr, err := expandTemplate(action.Cmd, data)
+	if err != nil {
+		return fmt.Errorf("failed to expand command template: %w", err)
+	}
+
+	// Create command with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", cmdStr)
+	cmd.Dir = s.siteDir
+
+	// Capture output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Run command
+	err = cmd.Run()
+	if err != nil {
+		errMsg := fmt.Sprintf("command failed: %v", err)
+		if stderr.Len() > 0 {
+			errMsg += ": " + stderr.String()
+		}
+		s.Error = errMsg
+		return fmt.Errorf("%s", errMsg)
+	}
+
+	// Success - refresh data
+	return s.refresh()
+}
+
+// expandTemplate expands Go template expressions in a string.
+func expandTemplate(text string, data map[string]interface{}) (string, error) {
+	if !strings.Contains(text, "{{") {
+		return text, nil
+	}
+
+	tmpl, err := template.New("action").Parse(text)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
