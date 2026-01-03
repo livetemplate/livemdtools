@@ -133,6 +133,13 @@ func (r *Registry) InvalidateAllCaches() {
 func createSource(name string, cfg config.SourceConfig, siteDir, currentFile string) (Source, error) {
 	switch cfg.Type {
 	case "exec":
+		if !config.IsExecAllowed() {
+			return nil, &ValidationError{
+				Source: name,
+				Field:  "type",
+				Reason: "exec sources are disabled by default for security. Use --allow-exec flag to enable.",
+			}
+		}
 		return NewExecSource(name, cfg.Cmd, siteDir)
 	case "pg":
 		return NewPostgresSourceWithConfig(name, cfg.Query, cfg.Options, cfg)

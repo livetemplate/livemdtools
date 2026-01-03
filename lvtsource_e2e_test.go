@@ -21,6 +21,10 @@ import (
 // 2. The data is rendered in the template
 // 3. The Refresh action re-fetches data
 func TestLvtSourceExec(t *testing.T) {
+	// Enable exec sources for this test (disabled by default for security)
+	config.SetAllowExec(true)
+	defer config.SetAllowExec(false)
+
 	// Load config from test example
 	cfg, err := config.LoadFromDir("examples/lvt-source-exec-test")
 	if err != nil {

@@ -24,6 +24,10 @@ import (
 // 5. Form submission triggers Run action
 // 6. Output reflects the submitted values
 func TestExecArgsForm(t *testing.T) {
+	// Enable exec sources for this test (disabled by default for security)
+	config.SetAllowExec(true)
+	defer config.SetAllowExec(false)
+
 	// Load config from test example
 	cfg, err := config.LoadFromDir("examples/exec-args-test")
 	if err != nil {

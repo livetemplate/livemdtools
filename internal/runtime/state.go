@@ -128,6 +128,9 @@ func NewGenericStateWithMetadata(name string, cfg config.SourceConfig, siteDir, 
 func createSource(name string, cfg config.SourceConfig, siteDir, currentFile string) (source.Source, error) {
 	switch cfg.Type {
 	case "exec":
+		if !config.IsExecAllowed() {
+			return nil, fmt.Errorf("source %q: exec sources are disabled by default for security. Use --allow-exec flag to enable", name)
+		}
 		return source.NewExecSource(name, cfg.Cmd, siteDir)
 	case "pg":
 		return source.NewPostgresSource(name, cfg.Query, cfg.Options)

@@ -41,3 +41,24 @@ func TestGetOperatorEmpty(t *testing.T) {
 	// Without calling SetOperator, GetOperator returns empty
 	assert.Equal(t, "", GetOperator())
 }
+
+func TestExecAllowedDefault(t *testing.T) {
+	// Reset state
+	globalRuntime.allowExec = false
+
+	// By default, exec should NOT be allowed
+	assert.False(t, IsExecAllowed())
+}
+
+func TestSetAllowExec(t *testing.T) {
+	// Reset state
+	globalRuntime.allowExec = false
+
+	// Enable exec
+	SetAllowExec(true)
+	assert.True(t, IsExecAllowed())
+
+	// Disable exec
+	SetAllowExec(false)
+	assert.False(t, IsExecAllowed())
+}
