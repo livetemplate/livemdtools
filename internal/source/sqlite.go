@@ -101,7 +101,7 @@ func (s *SQLiteSource) Fetch(ctx context.Context) ([]map[string]interface{}, err
 		return nil, err
 	}
 
-	var results []map[string]interface{}
+	results := make([]map[string]interface{}, 0)
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
 		valuePtrs := make([]interface{}, len(columns))
@@ -134,6 +134,30 @@ func (s *SQLiteSource) Close() error {
 // IsReadonly returns whether the source is read-only
 func (s *SQLiteSource) IsReadonly() bool {
 	return s.readonly
+}
+
+// Exec executes a SQL statement with the given arguments.
+// This implements the SQLExecutor interface for custom action support.
+// Returns the number of rows affected.
+func (s *SQLiteSource) Exec(ctx context.Context, query string, args ...interface{}) (int64, error) {
+	if s.readonly {
+		return 0, fmt.Errorf("sqlite source %q is read-only", s.name)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	result, err := s.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("sqlite source %q: exec failed: %w", s.name, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("sqlite source %q: failed to get rows affected: %w", s.name, err)
+	}
+
+	return rowsAffected, nil
 }
 
 // WriteItem performs write operations (add, update, delete)

@@ -53,6 +53,14 @@ type GenericState struct {
 	elementType  string   // "table", "select", or "div"
 	tableColumns []string // columns for datatable rendering
 	mu           sync.RWMutex
+
+	// Page-level configuration for custom actions.
+	// These fields are configured via SetPageConfig during initialization only
+	// and must be treated as read-only for the lifetime of the GenericState
+	// once any action execution has begun. SetPageConfig must not be called
+	// concurrently with action handling.
+	actions  map[string]*config.Action          // Custom actions declared in frontmatter
+	registry func(string) (source.Source, bool) // Lookup function for sources (for SQL actions)
 }
 
 // Arg represents an exec source argument
@@ -124,6 +132,16 @@ func NewGenericStateWithMetadata(name string, cfg config.SourceConfig, siteDir, 
 	return s, nil
 }
 
+// SetPageConfig configures page-level settings for custom actions.
+// actions is the map of custom actions declared in frontmatter.
+// registry is a lookup function to find sources by name (for SQL actions).
+func (s *GenericState) SetPageConfig(actions map[string]*config.Action, registry func(string) (source.Source, bool)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.actions = actions
+	s.registry = registry
+}
+
 // createSource creates a source from config (mirrors source.createSource)
 func createSource(name string, cfg config.SourceConfig, siteDir, currentFile string) (source.Source, error) {
 	switch cfg.Type {
@@ -184,7 +202,13 @@ func (s *GenericState) HandleAction(action string, data map[string]interface{}) 
 			strings.HasPrefix(actionLower, "prevpage") {
 			return s.handleDatatableAction(action, data)
 		}
-		return fmt.Errorf("unknown action: %s", action)
+
+		// Check for custom declared actions
+		if customAction, ok := s.actions[action]; ok {
+			return s.executeCustomAction(customAction, data)
+		}
+
+		return fmt.Errorf("unknown action %q", action)
 	}
 }
 
@@ -321,7 +345,8 @@ func (s *GenericState) Close() error {
 // refresh fetches data from the source
 func (s *GenericState) refresh() error {
 	if s.source == nil {
-		return fmt.Errorf("source not initialized")
+		// No source to refresh - this is valid for actions without a source binding
+		return nil
 	}
 
 	ctx := context.Background()

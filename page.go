@@ -88,6 +88,22 @@ func (pc *PageConfig) MergeFromFrontmatter(fm *Frontmatter) {
 		}
 	}
 
+	// Actions - copy from frontmatter if present with validation
+	if fm.Actions != nil {
+		if pc.Actions == nil {
+			pc.Actions = make(map[string]Action)
+		}
+		for name, action := range fm.Actions {
+			// Validate action configuration
+			if err := validateAction(name, action); err != nil {
+				// Log warning but don't fail - runtime will handle errors
+				// This provides early feedback during development
+				fmt.Fprintf(os.Stderr, "Warning: action %q: %v\n", name, err)
+			}
+			pc.Actions[name] = action
+		}
+	}
+
 	// Styling - frontmatter takes precedence for non-zero values
 	if fm.Styling != nil {
 		if fm.Styling.Theme != "" {
@@ -739,4 +755,31 @@ func autoGenerateListTemplate(content string) string {
 
 	// Replace the original list with the generated template
 	return activeRegex.ReplaceAllLiteralString(content, generated.String())
+}
+
+// validateAction validates an action configuration.
+// Returns an error if required fields are missing for the action kind.
+func validateAction(name string, action Action) error {
+	switch action.Kind {
+	case "sql":
+		if action.Source == "" {
+			return fmt.Errorf("sql action requires 'source' field")
+		}
+		if action.Statement == "" {
+			return fmt.Errorf("sql action requires 'statement' field")
+		}
+	case "http":
+		if action.URL == "" {
+			return fmt.Errorf("http action requires 'url' field")
+		}
+	case "exec":
+		if action.Cmd == "" {
+			return fmt.Errorf("exec action requires 'cmd' field")
+		}
+	case "":
+		return fmt.Errorf("action requires 'kind' field (sql, http, or exec)")
+	default:
+		return fmt.Errorf("unknown action kind %q (expected sql, http, or exec)", action.Kind)
+	}
+	return nil
 }

@@ -39,6 +39,16 @@ type WritableSource interface {
 	IsReadonly() bool
 }
 
+// SQLExecutor extends Source with ability to execute arbitrary SQL statements.
+// This is used by custom actions defined in frontmatter (action kind: "sql").
+type SQLExecutor interface {
+	Source
+
+	// Exec executes a SQL statement with the given arguments.
+	// Returns the number of rows affected.
+	Exec(ctx context.Context, query string, args ...interface{}) (int64, error)
+}
+
 // Registry holds configured sources for a site
 type Registry struct {
 	sources map[string]Source

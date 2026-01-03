@@ -15,6 +15,21 @@ type RuntimeConfig struct {
 
 var globalRuntime = &RuntimeConfig{}
 
+// SetAllowExec enables or disables exec actions.
+// Exec actions (shell commands) are disabled by default for security.
+func SetAllowExec(allow bool) {
+	globalRuntime.mu.Lock()
+	defer globalRuntime.mu.Unlock()
+	globalRuntime.allowExec = allow
+}
+
+// IsExecAllowed returns whether exec actions are enabled.
+func IsExecAllowed() bool {
+	globalRuntime.mu.RLock()
+	defer globalRuntime.mu.RUnlock()
+	return globalRuntime.allowExec
+}
+
 // SetOperator sets the operator identity for this session.
 // If empty, defaults to the current user from $USER environment variable.
 func SetOperator(op string) {

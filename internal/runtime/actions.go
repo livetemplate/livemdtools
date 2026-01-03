@@ -1,10 +1,18 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/url"
+	"os/exec"
 	"sort"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/livetemplate/tinkerdown/internal/config"
 	"github.com/livetemplate/tinkerdown/internal/source"
@@ -249,4 +257,381 @@ func toFloat64(v interface{}) float64 {
 	default:
 		return 0
 	}
+}
+
+// executeCustomAction dispatches a custom action declared in frontmatter.
+func (s *GenericState) executeCustomAction(action *config.Action, data map[string]interface{}) error {
+	// Validate required params
+	if err := validateParams(action, data); err != nil {
+		return err
+	}
+
+	switch action.Kind {
+	case "sql":
+		return s.executeSQLAction(action, data)
+	case "http":
+		return s.executeHTTPAction(action, data)
+	case "exec":
+		return s.executeExecAction(action, data)
+	default:
+		return fmt.Errorf("unknown action kind: %s", action.Kind)
+	}
+}
+
+// validateParams checks that required parameters are present.
+func validateParams(action *config.Action, data map[string]interface{}) error {
+	for name, def := range action.Params {
+		val, exists := data[name]
+		if def.Required {
+			// Missing key or nil value is always treated as missing
+			if !exists || val == nil {
+				return fmt.Errorf("required parameter %q is missing", name)
+			}
+			// For string values, also treat empty string as missing
+			if str, ok := val.(string); ok && str == "" {
+				return fmt.Errorf("required parameter %q is missing", name)
+			}
+		}
+	}
+	return nil
+}
+
+// executeSQLAction executes a SQL action against a source.
+func (s *GenericState) executeSQLAction(action *config.Action, data map[string]interface{}) error {
+	if s.registry == nil {
+		return fmt.Errorf("source registry not configured")
+	}
+
+	// Look up the source
+	src, ok := s.registry(action.Source)
+	if !ok {
+		return fmt.Errorf("source %q not found", action.Source)
+	}
+
+	// Check if source supports SQL execution
+	executor, ok := src.(source.SQLExecutor)
+	if !ok {
+		return fmt.Errorf("source %q does not support SQL execution", action.Source)
+	}
+
+	// Substitute parameters in SQL statement
+	query, args, err := substituteParams(action.Statement, data)
+	if err != nil {
+		s.Error = err.Error()
+		return err
+	}
+
+	// Execute the query with timeout to avoid hanging indefinitely
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err = executor.Exec(ctx, query, args...)
+	if err != nil {
+		s.Error = err.Error()
+		return err
+	}
+
+	// Refresh data after mutation
+	return s.refresh()
+}
+
+// substituteParams converts :name placeholders to positional args.
+// Input:  "DELETE FROM tasks WHERE id = :id", {"id": "123"}
+// Output: "DELETE FROM tasks WHERE id = ?", ["123"]
+// Returns an error if a parameter in the statement is not found in data.
+//
+// Parameter names must start with a letter (a-z, A-Z) and can contain
+// letters, digits, and underscores. This avoids false matches on:
+// - Time literals like '12:30:00' (digits after colon)
+// - Postgres casts like value::text (double colon)
+func substituteParams(stmt string, data map[string]interface{}) (string, []interface{}, error) {
+	var args []interface{}
+	result := stmt
+
+	// Find all :name patterns and replace with ?
+	// Process in a way that handles overlapping names correctly
+	for {
+		// Find the next :name pattern
+		idx := strings.Index(result, ":")
+		if idx == -1 {
+			break
+		}
+
+		// Skip double colons (postgres cast syntax like ::text)
+		if idx+1 < len(result) && result[idx+1] == ':' {
+			result = result[:idx] + "\x00DOUBLECOLON\x00" + result[idx+2:]
+			continue
+		}
+
+		// Check if next character is a letter (parameter names must start with letter)
+		if idx+1 >= len(result) {
+			// Colon at end of string, not a parameter
+			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
+			continue
+		}
+
+		firstChar := result[idx+1]
+		if !((firstChar >= 'a' && firstChar <= 'z') || (firstChar >= 'A' && firstChar <= 'Z')) {
+			// Not a valid parameter (starts with digit, symbol, etc.)
+			// This handles time literals like '12:30:00'
+			result = result[:idx] + "\x00COLON\x00" + result[idx+1:]
+			continue
+		}
+
+		// Extract the parameter name (alphanumeric and underscore)
+		endIdx := idx + 1
+		for endIdx < len(result) {
+			c := result[endIdx]
+			if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+				endIdx++
+			} else {
+				break
+			}
+		}
+
+		paramName := result[idx+1 : endIdx]
+		paramValue, exists := data[paramName]
+		if !exists {
+			return "", nil, fmt.Errorf("undefined parameter %q in SQL statement", paramName)
+		}
+		args = append(args, paramValue)
+		result = result[:idx] + "?" + result[endIdx:]
+	}
+
+	// Restore markers
+	result = strings.ReplaceAll(result, "\x00DOUBLECOLON\x00", "::")
+	result = strings.ReplaceAll(result, "\x00COLON\x00", ":")
+
+	return result, args, nil
+}
+
+// testBypassSSRF is a testing hook to bypass SSRF validation.
+// This should only be set in tests.
+var testBypassSSRF bool
+
+// validateHTTPURL checks for SSRF vulnerabilities by blocking requests to internal networks.
+// It rejects localhost, private IP ranges, link-local addresses, and cloud metadata endpoints.
+func validateHTTPURL(rawURL string) error {
+	if testBypassSSRF {
+		return nil
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Only allow http and https schemes
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("URL scheme must be http or https, got %q", parsed.Scheme)
+	}
+
+	host := parsed.Hostname()
+	if host == "" {
+		return fmt.Errorf("URL must have a host")
+	}
+
+	// Block localhost variations
+	hostLower := strings.ToLower(host)
+	if hostLower == "localhost" || hostLower == "localhost.localdomain" {
+		return fmt.Errorf("requests to localhost are not allowed")
+	}
+
+	// Parse as IP address
+	ip := net.ParseIP(host)
+	if ip == nil {
+		// Not an IP address - could be a hostname that resolves to internal IP
+		// For now, allow hostnames (DNS rebinding attacks are harder to prevent)
+		// A more complete solution would resolve the hostname and check the IP
+		return nil
+	}
+
+	// Block loopback addresses (127.0.0.0/8, ::1)
+	if ip.IsLoopback() {
+		return fmt.Errorf("requests to loopback addresses are not allowed")
+	}
+
+	// Block private network addresses
+	if ip.IsPrivate() {
+		return fmt.Errorf("requests to private network addresses are not allowed")
+	}
+
+	// Block link-local addresses (169.254.0.0/16, fe80::/10)
+	if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return fmt.Errorf("requests to link-local addresses are not allowed")
+	}
+
+	// Block unspecified addresses (0.0.0.0, ::)
+	if ip.IsUnspecified() {
+		return fmt.Errorf("requests to unspecified addresses are not allowed")
+	}
+
+	return nil
+}
+
+// executeHTTPAction executes an HTTP request.
+func (s *GenericState) executeHTTPAction(action *config.Action, data map[string]interface{}) error {
+	// Expand template expressions in URL and body
+	urlStr, err := expandTemplate(action.URL, data)
+	if err != nil {
+		return fmt.Errorf("failed to expand URL template: %w", err)
+	}
+
+	// Validate URL for SSRF protection
+	if err := validateHTTPURL(urlStr); err != nil {
+		return fmt.Errorf("URL validation failed: %w", err)
+	}
+
+	var body string
+	if action.Body != "" {
+		body, err = expandTemplate(action.Body, data)
+		if err != nil {
+			return fmt.Errorf("failed to expand body template: %w", err)
+		}
+	}
+
+	// Limit request body size to 1MB to prevent memory exhaustion
+	const maxBodySize = 1 << 20 // 1MB
+	if len(body) > maxBodySize {
+		return fmt.Errorf("request body too large: %d bytes (max %d)", len(body), maxBodySize)
+	}
+
+	// Default method is POST
+	method := action.Method
+	if method == "" {
+		method = "POST"
+	}
+
+	// Create HTTP request
+	var reqBody io.Reader
+	if body != "" {
+		reqBody = strings.NewReader(body)
+	}
+
+	req, err := http.NewRequest(method, urlStr, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	// Set Content-Type for JSON body if it looks like JSON
+	if body != "" && req.Header.Get("Content-Type") == "" {
+		trimmedBody := strings.TrimSpace(body)
+		if len(trimmedBody) > 0 {
+			firstChar := trimmedBody[0]
+			if firstChar == '{' || firstChar == '[' {
+				req.Header.Set("Content-Type", "application/json")
+			}
+		}
+	}
+
+	// Execute request with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		s.Error = err.Error()
+		return fmt.Errorf("HTTP request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for HTTP errors
+	if resp.StatusCode >= 400 {
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		errMsg := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, resp.Status)
+		if readErr != nil {
+			errMsg += fmt.Sprintf(" (failed to read response body: %v)", readErr)
+		} else if len(bodyBytes) > 0 {
+			errMsg += ": " + string(bodyBytes[:min(len(bodyBytes), 200)])
+		}
+		s.Error = errMsg
+		return fmt.Errorf("%s", errMsg)
+	}
+
+	// Success - refresh data if this block has a source
+	return s.refresh()
+}
+
+// sanitizeExecCommand validates a command string for shell safety.
+// It rejects characters commonly used for command chaining/injection.
+func sanitizeExecCommand(cmd string) error {
+	cmd = strings.TrimSpace(cmd)
+	if cmd == "" {
+		return fmt.Errorf("exec command is empty after templating")
+	}
+
+	// Reject null bytes (can be used to truncate strings in some contexts)
+	if strings.ContainsRune(cmd, '\x00') {
+		return fmt.Errorf("exec command contains null byte")
+	}
+
+	// Reject characters used for shell metacharacters and command chaining
+	if strings.ContainsAny(cmd, "&;|$><`\\\n\r") {
+		return fmt.Errorf("exec command contains disallowed shell characters")
+	}
+
+	return nil
+}
+
+// executeExecAction executes a shell command.
+func (s *GenericState) executeExecAction(action *config.Action, data map[string]interface{}) error {
+	// Check if exec is allowed
+	if !config.IsExecAllowed() {
+		return fmt.Errorf("exec actions disabled (use --allow-exec flag)")
+	}
+
+	// Expand template expressions in command
+	cmdStr, err := expandTemplate(action.Cmd, data)
+	if err != nil {
+		return fmt.Errorf("failed to expand command template: %w", err)
+	}
+
+	// Validate command for shell safety
+	if err := sanitizeExecCommand(cmdStr); err != nil {
+		return err
+	}
+
+	// Create command with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", cmdStr)
+	cmd.Dir = s.siteDir
+
+	// Capture output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Run command
+	err = cmd.Run()
+	if err != nil {
+		errMsg := fmt.Sprintf("command failed: %v", err)
+		if stderr.Len() > 0 {
+			errMsg += ": " + stderr.String()
+		}
+		s.Error = errMsg
+		return fmt.Errorf("%s", errMsg)
+	}
+
+	// Success - refresh data
+	return s.refresh()
+}
+
+// expandTemplate expands Go template expressions in a string.
+func expandTemplate(text string, data map[string]interface{}) (string, error) {
+	if !strings.Contains(text, "{{") {
+		return text, nil
+	}
+
+	tmpl, err := template.New("action").Parse(text)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
